@@ -1,0 +1,15 @@
+{
+  "app": {
+    "title": "Debt Tracker",
+    "tagline": "ติดตามหนี้และรายจ่ายส่วนตัว"
+  },
+  "nav": {
+    "dashboard": "แดชบอร์ด",
+    "banks": "ธนาคาร",
+    "categories": "หมวดหมู่",
+    "users": "ผู้ใช้",
+    "cards": "บัตร",
+    "transactions": "ธุรกรรม",
+    "installments": "ผ่อนชำระ"
+  }
+}
