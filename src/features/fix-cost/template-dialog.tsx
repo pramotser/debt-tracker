@@ -108,11 +108,17 @@ export function AddTemplateDialog({
               onValueChange={(v) => v && setCategoryId(v)}
             >
               <SelectTrigger id="tpl-category" className="w-full">
-                <SelectValue placeholder="เลือกหมวดหมู่" />
+                <SelectValue placeholder="เลือกหมวดหมู่">
+                  {(value: string | null) =>
+                    value
+                      ? categories.find((c) => c.id === value)?.name ?? value
+                      : ""
+                  }
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {categories.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>
+                  <SelectItem key={c.id} value={c.id} label={c.name}>
                     {c.name}
                   </SelectItem>
                 ))}
