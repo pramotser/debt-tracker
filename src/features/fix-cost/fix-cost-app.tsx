@@ -210,9 +210,22 @@ export function FixCostApp() {
       <h1 className="text-2xl font-bold">ค่าใช้จ่ายประจำ</h1>
 
       <Tabs defaultValue="month">
-        <TabsList>
-          <TabsTrigger value="month">รายการเดือนนี้</TabsTrigger>
-          <TabsTrigger value="tpl">Template จ่ายประจำ</TabsTrigger>
+        <TabsList
+          variant="line"
+          className="h-auto w-full justify-start gap-6 rounded-none border-b border-border bg-transparent p-0"
+        >
+          <TabsTrigger
+            value="month"
+            className="flex-none rounded-none border-b-2 border-transparent px-0 pt-1 pb-3 text-sm text-muted-foreground data-active:border-primary data-active:font-semibold data-active:text-primary! after:hidden"
+          >
+            รายการ Fix Cost
+          </TabsTrigger>
+          <TabsTrigger
+            value="tpl"
+            className="flex-none rounded-none border-b-2 border-transparent px-0 pt-1 pb-3 text-sm text-muted-foreground data-active:border-primary data-active:font-semibold data-active:text-primary! after:hidden"
+          >
+            รายการที่ใช้ประจำ
+          </TabsTrigger>
         </TabsList>
         <TabsContent value="month" className="mt-4">
           <MonthView
