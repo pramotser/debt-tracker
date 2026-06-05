@@ -1,6 +1,6 @@
 import { FixCostApp } from "@/features/fix-cost/fix-cost-app";
 import { listTemplates } from "@/server/queries/fixed-cost-templates";
-import { listEntriesByMonth } from "@/server/queries/ledger-entries";
+import { listFixCostEntriesByMonth } from "@/server/queries/ledger-entries";
 
 function parseYm(searchParams: Record<string, string | string[] | undefined>) {
   const yRaw = Array.isArray(searchParams.y) ? searchParams.y[0] : searchParams.y;
@@ -28,7 +28,7 @@ export default async function FixCostPage({
   const ym = parseYm(sp);
   const [templates, entries] = await Promise.all([
     listTemplates(),
-    listEntriesByMonth(ym.year, ym.month),
+    listFixCostEntriesByMonth(ym.year, ym.month),
   ]);
   return (
     <FixCostApp

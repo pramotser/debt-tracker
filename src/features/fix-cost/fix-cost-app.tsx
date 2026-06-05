@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 
 import {
   AlertDialog,
@@ -23,11 +23,12 @@ import {
 import {
   createLedgerEntry,
   deleteLedgerEntry,
-  pullTemplatesIntoMonth,
+  importFixCostTemplatesToMonth,
   toggleLedgerEntryPaid,
   updateLedgerEntryAmount,
 } from "@/server/actions/ledger-entries";
 
+import { ImportModal } from "./import-modal";
 import { AddItemDialog, type ItemDraft } from "./item-dialog";
 import { DEV_USER_ID, MOCK_CATEGORIES } from "./mock";
 import { MonthView } from "./month-view";
@@ -51,6 +52,10 @@ function shiftMonth(ym: YearMonth, delta: number): YearMonth {
 
 function normalizeName(s: string) {
   return s.trim().toLocaleLowerCase("th");
+}
+
+function ymKey(year: number, month: number): string {
+  return `${year}-${month}`;
 }
 
 export function FixCostApp({
@@ -82,16 +87,30 @@ export function FixCostApp({
   const [pendingDeleteTemplateId, setPendingDeleteTemplateId] = useState<
     string | null
   >(null);
-  const [pullConfirmOpen, setPullConfirmOpen] = useState(false);
-  const [pendingPullCounts, setPendingPullCounts] = useState<{
-    addCount: number;
-    replaceCount: number;
-  } | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
+  const [dismissedMonths, setDismissedMonths] = useState<Set<string>>(
+    () => new Set()
+  );
 
   const navigateMonth = (delta: number) => {
     const next = shiftMonth(ym, delta);
     router.push(`?y=${next.year}&m=${next.month}`);
   };
+
+  // pending = active template ที่ยังไม่มี ledger row sourceId ตรงในเดือนนี้
+  const pendingTemplates = useMemo(() => {
+    const usedSourceIds = new Set(
+      entries
+        .filter((e) => e.sourceType === "fixed_cost_template")
+        .map((e) => e.sourceId)
+        .filter((v): v is string => v !== null)
+    );
+    return templates.filter(
+      (t) => t.active && !usedSourceIds.has(t.id)
+    );
+  }, [templates, entries]);
+
+  const bannerDismissed = dismissedMonths.has(ymKey(ym.year, ym.month));
 
   // === entry mutations ===
   const handleTogglePaid = (id: string) => {
@@ -203,50 +222,21 @@ export function FixCostApp({
     }
   };
 
-  // === pull templates → ledger ===
-  const pullTemplates = () => {
-    const existingByName = new Map(
-      entries.map((e) => [normalizeName(e.name), e])
-    );
-    let addCount = 0;
-    let replaceCount = 0;
-    for (const t of templates) {
-      if (!t.active) continue;
-      if (existingByName.has(normalizeName(t.name))) replaceCount += 1;
-      else addCount += 1;
-    }
-    if (addCount === 0 && replaceCount === 0) return;
-    if (replaceCount === 0) {
-      commitPull(false);
-      return;
-    }
-    setPendingPullCounts({ addCount, replaceCount });
-    setPullConfirmOpen(true);
-  };
-
-  const commitPull = (replaceConflicts: boolean) => {
+  // === import templates → ledger ===
+  const handleImport = (templateIds: string[]) => {
+    if (templateIds.length === 0) return;
     startEntryMutation(async () => {
       try {
-        const { added, replacedIds } = await pullTemplatesIntoMonth(
+        const added = await importFixCostTemplatesToMonth(
+          templateIds,
           ym.year,
-          ym.month,
-          replaceConflicts
+          ym.month
         );
-        const replacedSet = new Set(replacedIds);
-        setEntries((p) => {
-          // remove replaced rows (action returned fresh data, but we don't have it here)
-          // simpler: trigger a refresh so server sends fresh entries
-          const kept = p.filter((e) => !replacedSet.has(e.id));
-          return [...kept, ...added];
-        });
-        // ask server to re-render so replaced rows update too
-        router.refresh();
+        setEntries((p) => [...p, ...added]);
       } catch (err) {
-        console.error("pullTemplatesIntoMonth failed", err);
+        console.error("importFixCostTemplatesToMonth failed", err);
       }
     });
-    setPullConfirmOpen(false);
-    setPendingPullCounts(null);
   };
 
   // === template mutations ===
@@ -373,7 +363,7 @@ export function FixCostApp({
             value="tpl"
             className="-mb-px flex-none rounded-none border-0 border-b-2 border-transparent bg-transparent px-0 pt-2 pb-3 text-sm font-medium text-muted-foreground after:hidden data-active:border-primary! data-active:bg-transparent! data-active:font-semibold data-active:text-primary!"
           >
-            Template รายการจ่ายประจำ
+            รายการจ่ายประจำ
           </TabsTrigger>
         </TabsList>
         <TabsContent value="month" className="mt-4">
@@ -381,13 +371,22 @@ export function FixCostApp({
             ym={ym}
             items={entries}
             categories={MOCK_CATEGORIES}
+            pendingTemplates={pendingTemplates}
+            bannerDismissed={bannerDismissed}
             onPrev={() => navigateMonth(-1)}
             onNext={() => navigateMonth(1)}
             onTogglePaid={handleTogglePaid}
             onUpdateAmount={handleUpdateAmount}
             onDelete={handleDeleteEntry}
             onAdd={() => setAddItemOpen(true)}
-            onPullTemplates={pullTemplates}
+            onOpenImport={() => setImportOpen(true)}
+            onDismissBanner={() =>
+              setDismissedMonths((p) => {
+                const next = new Set(p);
+                next.add(ymKey(ym.year, ym.month));
+                return next;
+              })
+            }
           />
         </TabsContent>
         <TabsContent value="tpl" className="mt-4">
@@ -437,33 +436,14 @@ export function FixCostApp({
         </AlertDialogContent>
       </AlertDialog>
 
-      <AlertDialog open={pullConfirmOpen} onOpenChange={setPullConfirmOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>มีรายการชื่อซ้ำ</AlertDialogTitle>
-            <AlertDialogDescription>
-              {pendingPullCounts?.replaceCount} รายการในเดือนนี้ชื่อซ้ำกับ
-              template ยืนยันเพื่อแทนที่ด้วยค่าจาก template
-              {pendingPullCounts?.addCount
-                ? ` (และเพิ่ม ${pendingPullCounts.addCount} รายการใหม่)`
-                : ""}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel
-              onClick={() => {
-                setPendingPullCounts(null);
-                setPullConfirmOpen(false);
-              }}
-            >
-              ยกเลิก
-            </AlertDialogCancel>
-            <AlertDialogAction onClick={() => commitPull(true)}>
-              ยืนยันแทนที่
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ImportModal
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        ym={ym}
+        pendingTemplates={pendingTemplates}
+        categories={MOCK_CATEGORIES}
+        onSubmit={handleImport}
+      />
     </div>
   );
 }
