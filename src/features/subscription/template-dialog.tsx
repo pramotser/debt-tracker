@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { DatePicker } from "@/components/ui/date-picker";
 import {
   Dialog,
   DialogContent,
@@ -60,7 +61,7 @@ export function TemplateDialog({
   const [categoryId, setCategoryId] = useState(categories[0]?.id ?? "");
   const [billingCycle, setBillingCycle] =
     useState<SubscriptionCycle>("monthly");
-  const [renewDate, setRenewDate] = useState<string>(todayIso());
+  const [renewDate, setRenewDate] = useState<string | null>(todayIso());
 
   useEffect(() => {
     if (!open) return;
@@ -83,8 +84,7 @@ export function TemplateDialog({
   const canSubmit =
     name.trim().length > 0 &&
     categoryId.length > 0 &&
-    parsedAmount !== null &&
-    /^\d{4}-\d{2}-\d{2}$/.test(renewDate);
+    parsedAmount !== null;
 
   const handleSubmit = () => {
     if (!canSubmit || parsedAmount === null) return;
@@ -93,7 +93,7 @@ export function TemplateDialog({
       categoryId,
       defaultAmount: parsedAmount,
       billingCycle,
-      renewDate: renewDate || null,
+      renewDate,
     });
     onOpenChange(false);
   };
@@ -187,11 +187,10 @@ export function TemplateDialog({
                   : "(ใช้แสดงในรายการ)"}
               </span>
             </Label>
-            <Input
+            <DatePicker
               id="sub-renew"
-              type="date"
               value={renewDate}
-              onChange={(e) => setRenewDate(e.target.value)}
+              onChange={setRenewDate}
             />
           </div>
         </div>
