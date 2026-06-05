@@ -23,3 +23,22 @@ export async function listEntriesByMonth(
     )
     .orderBy(asc(ledgerEntries.createdAt));
 }
+
+export async function listSubscriptionEntriesByMonth(
+  year: number,
+  month: number
+): Promise<LedgerEntry[]> {
+  const user = await getCurrentUser();
+  return db
+    .select()
+    .from(ledgerEntries)
+    .where(
+      and(
+        eq(ledgerEntries.userId, user.id),
+        eq(ledgerEntries.year, year),
+        eq(ledgerEntries.month, month),
+        eq(ledgerEntries.type, "SUBSCRIPTION")
+      )
+    )
+    .orderBy(asc(ledgerEntries.createdAt));
+}

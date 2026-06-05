@@ -1,21 +1,40 @@
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { SubscriptionApp } from "@/features/subscription/subscription-app";
+import { listSubscriptionEntriesByMonth } from "@/server/queries/ledger-entries";
+import { listSubscriptionTemplates } from "@/server/queries/subscription-templates";
 
-export default function SubscriptionPage() {
+function parseYm(searchParams: Record<string, string | string[] | undefined>) {
+  const yRaw = Array.isArray(searchParams.y) ? searchParams.y[0] : searchParams.y;
+  const mRaw = Array.isArray(searchParams.m) ? searchParams.m[0] : searchParams.m;
+  const yParsed = yRaw ? Number(yRaw) : NaN;
+  const mParsed = mRaw ? Number(mRaw) : NaN;
+  const now = new Date();
+  const year =
+    Number.isInteger(yParsed) && yParsed >= 1970 && yParsed <= 9999
+      ? yParsed
+      : now.getFullYear();
+  const month =
+    Number.isInteger(mParsed) && mParsed >= 1 && mParsed <= 12
+      ? mParsed
+      : now.getMonth() + 1;
+  return { year, month };
+}
+
+export default async function SubscriptionPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const sp = await searchParams;
+  const ym = parseYm(sp);
+  const [templates, entries] = await Promise.all([
+    listSubscriptionTemplates(),
+    listSubscriptionEntriesByMonth(ym.year, ym.month),
+  ]);
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>สมาชิก/บริการ</CardTitle>
-        <CardDescription>per user · มี userId</CardDescription>
-      </CardHeader>
-      <CardContent className="text-sm text-muted-foreground">
-        placeholder — Subscription ที่ตัดเงินเป็นรอบ (ยังไม่ต่อ DB)
-      </CardContent>
-    </Card>
+    <SubscriptionApp
+      initialTemplates={templates}
+      initialEntries={entries}
+      ym={ym}
+    />
   );
 }

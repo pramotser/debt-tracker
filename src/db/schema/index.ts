@@ -10,4 +10,5 @@ export * from "./enums";
 export * from "./users";
 export * from "./user-settings";
 export * from "./fixed-cost-templates";
+export * from "./subscription-templates";
 export * from "./ledger-entries";
