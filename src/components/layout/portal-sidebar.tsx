@@ -46,9 +46,10 @@ const adminLinks: NavLink[] = [
   { href: "/users", label: "ผู้ใช้", icon: Users },
 ];
 
-// base-ui emits data-active="" when isActive, so use the bare selector (not [active=true])
+// base-ui emits data-active="" when isActive, so use the bare data-active selector
+// `!` (Tailwind v4 important suffix) ensures navy wins over hover:bg-sidebar-accent
 const activeClasses =
-  "data-active:bg-primary data-active:text-primary-foreground data-active:hover:bg-primary data-active:hover:text-primary-foreground";
+  "data-active:bg-primary! data-active:text-primary-foreground! data-active:hover:bg-primary! data-active:hover:text-primary-foreground!";
 
 function isActivePath(pathname: string, href: string) {
   if (href === "/dashboard") {

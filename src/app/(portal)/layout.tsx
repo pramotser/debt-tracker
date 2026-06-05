@@ -12,9 +12,9 @@ export default function PortalLayout({
       <PortalSidebar />
       <SidebarInset>
         <PortalHeader />
-        <main className="flex-1 overflow-auto p-6 sm:p-7">
+        <div className="flex-1 px-6 pt-10 pb-8 sm:px-8 sm:pt-12 sm:pb-10">
           <div className="mx-auto w-full max-w-6xl">{children}</div>
-        </main>
+        </div>
       </SidebarInset>
     </SidebarProvider>
   );
