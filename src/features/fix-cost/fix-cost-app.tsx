@@ -212,7 +212,7 @@ export function FixCostApp() {
       <Tabs defaultValue="month">
         <TabsList>
           <TabsTrigger value="month">รายการเดือนนี้</TabsTrigger>
-          <TabsTrigger value="tpl">Template</TabsTrigger>
+          <TabsTrigger value="tpl">Template จ่ายประจำ</TabsTrigger>
         </TabsList>
         <TabsContent value="month" className="mt-4">
           <MonthView

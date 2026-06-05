@@ -103,7 +103,7 @@ export function MonthView({
           </Button>
           <Button variant="outline" onClick={onCloseMonth} disabled={closed}>
             <Lock />
-            ปิดรอบ
+            ปิดรอบ เก็บประวัติ
           </Button>
           <Button onClick={onAdd}>
             <Plus />
@@ -112,8 +112,8 @@ export function MonthView({
         </div>
       </div>
 
-      {/* Summary */}
-      <Card className="flex flex-wrap items-center gap-8 px-6 py-5">
+      {/* Summary — แถวเดียวแนวนอน (flex-row! กัน flex-col จาก Card default) */}
+      <Card className="flex-row! flex-wrap items-center gap-x-10 gap-y-3 px-6 py-5">
         <Stat label="ยอดรวม" value={formatMoney(total)} />
         <Stat
           label="จ่ายแล้ว"
@@ -217,8 +217,16 @@ function ItemRow({
         >
           {item.name}
         </div>
-        <div>
+        <div className="flex flex-wrap items-center gap-1.5">
           <CategoryBadge category={category} />
+          {item.amount === undefined && (
+            <Badge
+              variant="secondary"
+              className="bg-muted text-muted-foreground"
+            >
+              กรอกเอง
+            </Badge>
+          )}
         </div>
       </div>
       {editing ? (
