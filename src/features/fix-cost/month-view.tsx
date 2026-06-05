@@ -1,9 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronLeft, ChevronRight, Download, Plus, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Trash2 } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -12,7 +11,12 @@ import { formatMoney, formatYearMonth } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 import { CategoryBadge } from "./category-badge";
-import type { Category, LedgerEntry, YearMonth } from "./types";
+import type {
+  Category,
+  FixedCostTemplate,
+  LedgerEntry,
+  YearMonth,
+} from "./types";
 
 function toNumber(value: string | null): number {
   if (value === null) return 0;
@@ -24,24 +28,30 @@ export function MonthView({
   ym,
   items,
   categories,
+  pendingTemplates,
+  bannerDismissed,
   onPrev,
   onNext,
   onTogglePaid,
   onUpdateAmount,
   onDelete,
   onAdd,
-  onPullTemplates,
+  onOpenImport,
+  onDismissBanner,
 }: {
   ym: YearMonth;
   items: LedgerEntry[];
   categories: Category[];
+  pendingTemplates: FixedCostTemplate[];
+  bannerDismissed: boolean;
   onPrev: () => void;
   onNext: () => void;
   onTogglePaid: (id: string) => void;
   onUpdateAmount: (id: string, amount: string | null) => void;
   onDelete: (id: string) => void;
   onAdd: () => void;
-  onPullTemplates: () => void;
+  onOpenImport: () => void;
+  onDismissBanner: () => void;
 }) {
   const total = items.reduce((s, i) => s + toNumber(i.amount), 0);
   const paidSum = items
@@ -50,6 +60,7 @@ export function MonthView({
   const paidCount = items.filter((i) => i.paid).length;
 
   const categoryById = new Map(categories.map((c) => [c.id, c]));
+  const showBanner = !bannerDismissed && pendingTemplates.length > 0;
 
   return (
     <div className="flex flex-col gap-4">
@@ -77,10 +88,6 @@ export function MonthView({
           </Button>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button variant="outline" onClick={onPullTemplates}>
-            <Download />
-            ดึงจาก template
-          </Button>
           <Button onClick={onAdd}>
             <Plus />
             เพิ่มรายการ
@@ -106,11 +113,27 @@ export function MonthView({
         </div>
       </Card>
 
+      {showBanner && (
+        <Card className="flex-row! items-center gap-3 border-blue-200 bg-blue-50/60 px-5 py-3">
+          <div className="flex-1 text-sm text-blue-900">
+            มีรายการจ่ายประจำ active{" "}
+            <span className="font-semibold">{pendingTemplates.length}</span>{" "}
+            รายการ ยังไม่ได้ดึงเข้าเดือนนี้
+          </div>
+          <Button variant="ghost" onClick={onDismissBanner}>
+            ข้าม
+          </Button>
+          <Button onClick={onOpenImport}>ดึงรายการ</Button>
+        </Card>
+      )}
+
       {/* Item list */}
       {items.length === 0 ? (
         <Card className="px-6 py-10 text-center text-sm text-muted-foreground">
-          ยังไม่มีรายการเดือนนี้ กด &quot;เพิ่มรายการ&quot; หรือ &quot;ดึงจาก
-          template&quot;
+          ยังไม่มีรายการเดือนนี้
+          {pendingTemplates.length > 0
+            ? " — กด \"ดึงรายการ\" ด้านบนหรือ \"เพิ่มรายการ\""
+            : " — กด \"เพิ่มรายการ\""}
         </Card>
       ) : (
         <div className="flex flex-col gap-2.5">
@@ -199,14 +222,6 @@ function ItemRow({
         </div>
         <div className="flex flex-wrap items-center gap-1.5">
           <CategoryBadge category={category} />
-          {item.amount === null && (
-            <Badge
-              variant="secondary"
-              className="bg-muted text-muted-foreground"
-            >
-              กรอกเอง
-            </Badge>
-          )}
         </div>
       </div>
       {editing ? (

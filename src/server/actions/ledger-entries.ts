@@ -1,6 +1,6 @@
 "use server";
 
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
@@ -29,10 +29,6 @@ const createSchema = z.object({
   year: yearSchema,
   month: monthSchema,
 });
-
-function normalize(s: string) {
-  return s.trim().toLocaleLowerCase("th");
-}
 
 export async function createLedgerEntry(
   input: z.infer<typeof createSchema>
@@ -110,140 +106,66 @@ export async function deleteLedgerEntry(id: string): Promise<void> {
   revalidatePath(PAGE_PATH);
 }
 
-// ดึง template (active=true) เข้าเดือนที่เลือก
-// replaceConflicts=true → row เดิมที่ชื่อตรงกัน จะถูก update ด้วยค่าจาก template (category, amount, source)
-// replaceConflicts=false → row เดิมไม่ถูกแตะ · เพิ่มเฉพาะ template ที่ยังไม่มีชื่อตรงกัน
-export async function pullTemplatesIntoMonth(
+// import template ที่เลือกเข้าเดือนนั้น · skip template ที่มี ledger row อยู่แล้ว (เทียบจาก sourceId)
+export async function importFixCostTemplatesToMonth(
+  templateIds: string[],
   year: number,
-  month: number,
-  replaceConflicts: boolean
-): Promise<{ added: LedgerEntry[]; replacedIds: string[] }> {
+  month: number
+): Promise<LedgerEntry[]> {
+  const parsedIds = z.array(idSchema).min(1).parse(templateIds);
   const parsedYear = yearSchema.parse(year);
   const parsedMonth = monthSchema.parse(month);
   const user = await getCurrentUser();
 
-  const [activeTemplates, existing] = await Promise.all([
+  const [templates, existing] = await Promise.all([
     db
       .select()
       .from(fixedCostTemplates)
       .where(
         and(
           eq(fixedCostTemplates.userId, user.id),
-          eq(fixedCostTemplates.active, true)
+          inArray(fixedCostTemplates.id, parsedIds)
         )
       ),
     db
-      .select()
+      .select({ sourceId: ledgerEntries.sourceId })
       .from(ledgerEntries)
       .where(
         and(
           eq(ledgerEntries.userId, user.id),
           eq(ledgerEntries.year, parsedYear),
-          eq(ledgerEntries.month, parsedMonth)
+          eq(ledgerEntries.month, parsedMonth),
+          eq(ledgerEntries.type, "FIXED_COST"),
+          eq(ledgerEntries.sourceType, "fixed_cost_template")
         )
       ),
   ]);
 
-  const existingByName = new Map(existing.map((e) => [normalize(e.name), e]));
-  const toInsert: (typeof ledgerEntries.$inferInsert)[] = [];
-  const replaceTargets: { existingId: string; template: typeof activeTemplates[number] }[] = [];
+  const existingSourceIds = new Set(
+    existing.map((e) => e.sourceId).filter((v): v is string => v !== null)
+  );
 
-  for (const t of activeTemplates) {
-    const match = existingByName.get(normalize(t.name));
-    if (match) {
-      if (replaceConflicts) {
-        replaceTargets.push({ existingId: match.id, template: t });
-      }
-      continue;
-    }
-    toInsert.push({
+  const toInsert = templates
+    .filter((t) => !existingSourceIds.has(t.id))
+    .map((t) => ({
       userId: user.id,
       categoryId: t.categoryId,
       sourceType: "fixed_cost_template",
       sourceId: t.id,
-      type: "FIXED_COST",
+      type: "FIXED_COST" as const,
       name: t.name,
       amount: t.defaultAmount,
       year: parsedYear,
       month: parsedMonth,
       paid: false,
-    });
+    }));
+
+  if (toInsert.length === 0) {
+    revalidatePath(PAGE_PATH);
+    return [];
   }
 
-  const result = await db.transaction(async (tx) => {
-    const added =
-      toInsert.length > 0
-        ? await tx.insert(ledgerEntries).values(toInsert).returning()
-        : [];
-
-    const replacedIds: string[] = [];
-    for (const r of replaceTargets) {
-      const [updated] = await tx
-        .update(ledgerEntries)
-        .set({
-          categoryId: r.template.categoryId,
-          sourceType: "fixed_cost_template",
-          sourceId: r.template.id,
-          type: "FIXED_COST",
-          name: r.template.name,
-          amount: r.template.defaultAmount,
-          updatedAt: new Date(),
-        })
-        .where(
-          and(
-            eq(ledgerEntries.id, r.existingId),
-            eq(ledgerEntries.userId, user.id)
-          )
-        )
-        .returning({ id: ledgerEntries.id });
-      if (updated) replacedIds.push(updated.id);
-    }
-
-    return { added, replacedIds };
-  });
-
+  const added = await db.insert(ledgerEntries).values(toInsert).returning();
   revalidatePath(PAGE_PATH);
-  return result;
+  return added;
 }
-
-// preview เฉยๆ ไม่แตะ DB — ใช้ตัดสินใจฝั่ง client ว่าควรโชว์ confirm dialog มั้ย
-export async function previewPullTemplates(
-  year: number,
-  month: number
-): Promise<{ toAddNames: string[]; conflictNames: string[] }> {
-  const parsedYear = yearSchema.parse(year);
-  const parsedMonth = monthSchema.parse(month);
-  const user = await getCurrentUser();
-
-  const [activeTemplates, existing] = await Promise.all([
-    db
-      .select({ name: fixedCostTemplates.name })
-      .from(fixedCostTemplates)
-      .where(
-        and(
-          eq(fixedCostTemplates.userId, user.id),
-          eq(fixedCostTemplates.active, true)
-        )
-      ),
-    db
-      .select({ name: ledgerEntries.name })
-      .from(ledgerEntries)
-      .where(
-        and(
-          eq(ledgerEntries.userId, user.id),
-          eq(ledgerEntries.year, parsedYear),
-          eq(ledgerEntries.month, parsedMonth)
-        )
-      ),
-  ]);
-
-  const existingSet = new Set(existing.map((e) => normalize(e.name)));
-  const toAddNames: string[] = [];
-  const conflictNames: string[] = [];
-  for (const t of activeTemplates) {
-    if (existingSet.has(normalize(t.name))) conflictNames.push(t.name);
-    else toAddNames.push(t.name);
-  }
-  return { toAddNames, conflictNames };
-}
-
