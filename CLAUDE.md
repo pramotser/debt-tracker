@@ -7,8 +7,8 @@ Next.js App Router + TS · shadcn/ui + Tailwind v4 (UI เดียว ห้า
 
 ## กฎเหล็ก (สำคัญสุด)
 1. ทำบน branch `chore/feat/fix-<x>` เท่านั้น ห้ามแตะ `main`
-2. เขียนเสร็จ **หยุด** → `npm run dev` ให้ขึ้น → สรุปสิ่งที่ทำ → รอเจ้าของยืนยัน
-3. **ห้าม commit/push/เปิด PR เอง** จนกว่าเจ้าของยืนยัน (commit แบบ Conventional Commits)
+2. เขียนเสร็จ → `npm run dev` ให้ขึ้น + `tsc` ผ่าน → commit ได้เลย (Conventional Commits) → สรุปสิ่งที่ทำ
+3. **ห้าม push / เปิด PR เอง** จนกว่าเจ้าของยืนยัน (commit local ได้ แต่ของห้ามออก remote)
 4. ตรวจก่อน commit: ไม่มี `.env*`/secret หลุด
 
 ## Conventions
