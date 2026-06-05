@@ -24,6 +24,8 @@ import {
   MOCK_TEMPLATES,
 } from "./mock";
 import { MonthView } from "./month-view";
+import { AddTemplateDialog, type TemplateDraft } from "./template-dialog";
+import { TemplateView } from "./template-view";
 import type { FixCostItem, MonthClose, Template, YearMonth } from "./types";
 
 function shiftMonth(ym: YearMonth, delta: number): YearMonth {
@@ -47,11 +49,15 @@ function normalizeName(s: string) {
 export function FixCostApp() {
   const [ym, setYm] = useState<YearMonth>(CURRENT_YM);
   const [items, setItems] = useState<FixCostItem[]>(MOCK_ITEMS);
-  const [templates] = useState<Template[]>(MOCK_TEMPLATES);
+  const [templates, setTemplates] = useState<Template[]>(MOCK_TEMPLATES);
   const [monthCloses, setMonthCloses] =
     useState<MonthClose[]>(MOCK_MONTH_CLOSES);
 
   const [addItemOpen, setAddItemOpen] = useState(false);
+  const [addTemplateOpen, setAddTemplateOpen] = useState(false);
+  const [pendingDeleteTemplateId, setPendingDeleteTemplateId] = useState<
+    string | null
+  >(null);
   const [pullConfirmOpen, setPullConfirmOpen] = useState(false);
   const [pendingPull, setPendingPull] = useState<{
     toAdd: FixCostItem[];
@@ -106,8 +112,45 @@ export function FixCostApp() {
       paid: false,
     };
     setItems((p) => [...p, newItem]);
-    // saveAsTemplate handled in Tab 2 commit
+    if (d.saveAsTemplate) {
+      const exists = templates.some(
+        (t) => normalizeName(t.name) === normalizeName(d.name)
+      );
+      if (!exists) {
+        setTemplates((p) => [
+          ...p,
+          {
+            id: `tpl-${Date.now()}`,
+            name: d.name,
+            amount: d.amount,
+            categoryId: d.categoryId,
+          },
+        ]);
+      }
+    }
   };
+
+  const submitTemplate = (d: TemplateDraft) => {
+    setTemplates((p) => [
+      ...p,
+      {
+        id: `tpl-${Date.now()}`,
+        name: d.name,
+        amount: d.amount,
+        categoryId: d.categoryId,
+      },
+    ]);
+  };
+
+  const confirmDeleteTemplate = () => {
+    if (!pendingDeleteTemplateId) return;
+    setTemplates((p) => p.filter((t) => t.id !== pendingDeleteTemplateId));
+    setPendingDeleteTemplateId(null);
+  };
+
+  const pendingDeleteTemplate = templates.find(
+    (t) => t.id === pendingDeleteTemplateId
+  );
 
   const pullTemplates = () => {
     if (isPast) return;
@@ -189,9 +232,12 @@ export function FixCostApp() {
           />
         </TabsContent>
         <TabsContent value="tpl" className="mt-4">
-          <div className="rounded-lg border border-dashed border-border p-10 text-center text-sm text-muted-foreground">
-            จัดการ template — ทำใน commit ถัดไป
-          </div>
+          <TemplateView
+            templates={templates}
+            categories={MOCK_CATEGORIES}
+            onAdd={() => setAddTemplateOpen(true)}
+            onDelete={(id) => setPendingDeleteTemplateId(id)}
+          />
         </TabsContent>
       </Tabs>
 
@@ -201,6 +247,34 @@ export function FixCostApp() {
         categories={MOCK_CATEGORIES}
         onSubmit={submitItem}
       />
+
+      <AddTemplateDialog
+        open={addTemplateOpen}
+        onOpenChange={setAddTemplateOpen}
+        categories={MOCK_CATEGORIES}
+        onSubmit={submitTemplate}
+      />
+
+      <AlertDialog
+        open={pendingDeleteTemplateId !== null}
+        onOpenChange={(o) => !o && setPendingDeleteTemplateId(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>ลบ template?</AlertDialogTitle>
+            <AlertDialogDescription>
+              ลบ &quot;{pendingDeleteTemplate?.name}&quot; ออกจากรายการ template
+              รายการที่เคยดึงเข้าเดือนแล้วจะไม่ถูกลบ
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteTemplate}>
+              ลบ
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={pullConfirmOpen} onOpenChange={setPullConfirmOpen}>
         <AlertDialogContent>
