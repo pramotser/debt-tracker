@@ -71,7 +71,7 @@ function NavLinks({ links, pathname }: { links: NavLink[]; pathname: string }) {
               tooltip={l.label}
               className={activeClasses}
             >
-              <l.icon />
+              <l.icon className="size-4 shrink-0" />
               <span>{l.label}</span>
             </SidebarMenuButton>
           </SidebarMenuItem>

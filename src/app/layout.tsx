@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
 import { Noto_Sans_Thai } from "next/font/google";
+
+import { TooltipProvider } from "@/components/ui/tooltip";
+
 import "./globals.css";
 
 const fontSans = Noto_Sans_Thai({
@@ -20,7 +23,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="th" className={`${fontSans.variable} h-full antialiased`}>
-      <body className="bg-background text-foreground">{children}</body>
+      <body className="bg-background text-foreground">
+        <TooltipProvider>{children}</TooltipProvider>
+      </body>
     </html>
   );
 }
