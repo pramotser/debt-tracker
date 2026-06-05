@@ -5,8 +5,8 @@ import { Plus, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import { formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
@@ -100,10 +100,11 @@ function TemplateRow({
         !template.active && "opacity-50"
       )}
     >
-      <Checkbox
+      <Switch
         checked={template.active}
         onCheckedChange={onToggleActive}
         aria-label="toggle active"
+        className="data-checked:bg-emerald-500 data-unchecked:bg-rose-500"
       />
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         <div className="truncate text-sm font-medium">{template.name}</div>
