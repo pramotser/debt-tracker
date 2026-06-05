@@ -1,14 +1,19 @@
-// drizzle-kit config — STUB รอบนี้ยังไม่ต่อ DB
-// ตอนต่อจริง: drizzle-kit ไม่อ่าน .env.local อัตโนมัติ ต้อง load เอง เช่น
-//   import { config } from "dotenv";
-//   config({ path: ".env.local" });
-// migrate ใช้ session pooler 5432 (DATABASE_URL_MIGRATE)
+// drizzle-kit config — โหลด .env.local เอง (drizzle-kit ไม่อ่านอัตโนมัติ)
+// migrate ใช้ DIRECT_URL (Session pooler 5432) — runtime ค่อยใช้ DATABASE_URL (6543) แยกกัน
 
+import { config } from "dotenv";
 import type { Config } from "drizzle-kit";
+
+config({ path: ".env.local" });
+
+const url = process.env.DIRECT_URL;
+if (!url) {
+  throw new Error("DIRECT_URL is not set (expected in .env.local)");
+}
 
 export default {
   schema: "./src/db/schema",
   out: "./drizzle",
   dialect: "postgresql",
-  // dbCredentials: { url: process.env.DATABASE_URL_MIGRATE! },
+  dbCredentials: { url },
 } satisfies Config;
