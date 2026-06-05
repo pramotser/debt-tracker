@@ -11,3 +11,12 @@ export const LEDGER_ENTRY_TYPES = [
 export type LedgerEntryType = (typeof LEDGER_ENTRY_TYPES)[number];
 
 export const ledgerEntryType = pgEnum("ledger_entry_type", LEDGER_ENTRY_TYPES);
+
+export const SUBSCRIPTION_CYCLES = ["monthly", "yearly"] as const;
+
+export type SubscriptionCycle = (typeof SUBSCRIPTION_CYCLES)[number];
+
+export const subscriptionCycle = pgEnum(
+  "subscription_cycle",
+  SUBSCRIPTION_CYCLES
+);
