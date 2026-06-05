@@ -1,30 +1,19 @@
+// UI types ของหน้าค่าใช้จ่ายรายเดือน — re-export จาก Drizzle schema (source of truth)
+// เก็บเฉพาะ Category / YearMonth ที่ UI ใช้เป็นของตัวเอง (categories ยังไม่มีตาราง)
+export type {
+  FixedCostTemplate,
+  NewFixedCostTemplate,
+  LedgerEntry,
+  NewLedgerEntry,
+  LedgerEntryType,
+} from "@/db/schema";
+
 export type Category = {
   id: string;
   name: string;
-  color: string;
 };
 
-export type Template = {
-  id: string;
-  name: string;
-  amount?: number;
-  categoryId: string;
-};
-
-export type FixCostItem = {
-  id: string;
+export type YearMonth = {
   year: number;
   month: number;
-  name: string;
-  amount?: number;
-  categoryId: string;
-  paid: boolean;
 };
-
-export type MonthClose = {
-  year: number;
-  month: number;
-  closed: boolean;
-};
-
-export type YearMonth = { year: number; month: number };

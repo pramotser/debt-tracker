@@ -26,10 +26,17 @@ import type { Category } from "./types";
 
 export type ItemDraft = {
   name: string;
-  amount?: number;
+  amount: string | null;
   categoryId: string;
   saveAsTemplate: boolean;
 };
+
+function parseAmount(raw: string): string | null {
+  const trimmed = raw.trim();
+  if (trimmed === "") return null;
+  const n = Number(trimmed);
+  return Number.isFinite(n) ? n.toFixed(2) : null;
+}
 
 export function AddItemDialog({
   open,
@@ -60,10 +67,9 @@ export function AddItemDialog({
 
   const handleSubmit = () => {
     if (!canSubmit) return;
-    const parsed = amount.trim() === "" ? undefined : Number(amount);
     onSubmit({
       name: name.trim(),
-      amount: Number.isFinite(parsed) ? parsed : undefined,
+      amount: parseAmount(amount),
       categoryId,
       saveAsTemplate,
     });

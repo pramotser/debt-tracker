@@ -11,11 +11,7 @@ export function CategoryBadge({ category }: { category?: Category }) {
     );
   }
   return (
-    <Badge
-      variant="outline"
-      className="border-transparent"
-      style={{ color: category.color, backgroundColor: `${category.color}22` }}
-    >
+    <Badge variant="outline" className="text-muted-foreground">
       {category.name}
     </Badge>
   );

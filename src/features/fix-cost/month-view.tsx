@@ -1,14 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import {
-  ChevronLeft,
-  ChevronRight,
-  Download,
-  Lock,
-  Plus,
-  Trash2,
-} from "lucide-react";
+import { ChevronLeft, ChevronRight, Download, Plus, Trash2 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -19,12 +12,16 @@ import { formatMoney, formatYearMonth } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 import { CategoryBadge } from "./category-badge";
-import type { Category, FixCostItem, YearMonth } from "./types";
+import type { Category, LedgerEntry, YearMonth } from "./types";
+
+function toNumber(value: string | null): number {
+  if (value === null) return 0;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : 0;
+}
 
 export function MonthView({
   ym,
-  isPast,
-  closed,
   items,
   categories,
   onPrev,
@@ -32,28 +29,24 @@ export function MonthView({
   onTogglePaid,
   onUpdateAmount,
   onDelete,
-  onCloseMonth,
   onAdd,
   onPullTemplates,
 }: {
   ym: YearMonth;
-  isPast: boolean;
-  closed: boolean;
-  items: FixCostItem[];
+  items: LedgerEntry[];
   categories: Category[];
   onPrev: () => void;
   onNext: () => void;
   onTogglePaid: (id: string) => void;
-  onUpdateAmount: (id: string, amount: number | undefined) => void;
+  onUpdateAmount: (id: string, amount: string | null) => void;
   onDelete: (id: string) => void;
-  onCloseMonth: () => void;
   onAdd: () => void;
   onPullTemplates: () => void;
 }) {
-  const total = items.reduce((s, i) => s + (i.amount ?? 0), 0);
+  const total = items.reduce((s, i) => s + toNumber(i.amount), 0);
   const paidSum = items
     .filter((i) => i.paid)
-    .reduce((s, i) => s + (i.amount ?? 0), 0);
+    .reduce((s, i) => s + toNumber(i.amount), 0);
   const paidCount = items.filter((i) => i.paid).length;
 
   const categoryById = new Map(categories.map((c) => [c.id, c]));
@@ -82,28 +75,11 @@ export function MonthView({
           >
             <ChevronRight />
           </Button>
-          {closed && (
-            <Badge
-              variant="outline"
-              className="border-transparent bg-emerald-50 text-emerald-700"
-            >
-              ปิดรอบแล้ว
-            </Badge>
-          )}
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button
-            variant="outline"
-            onClick={onPullTemplates}
-            disabled={isPast}
-            title={isPast ? "เดือนอดีตเพิ่มเองเท่านั้น" : undefined}
-          >
+          <Button variant="outline" onClick={onPullTemplates}>
             <Download />
             ดึงจาก template
-          </Button>
-          <Button variant="outline" onClick={onCloseMonth} disabled={closed}>
-            <Lock />
-            ปิดรอบ เก็บประวัติ
           </Button>
           <Button onClick={onAdd}>
             <Plus />
@@ -133,8 +109,8 @@ export function MonthView({
       {/* Item list */}
       {items.length === 0 ? (
         <Card className="px-6 py-10 text-center text-sm text-muted-foreground">
-          ยังไม่มีรายการเดือนนี้ กด &quot;เพิ่มรายการ&quot;
-          {!isPast && " หรือ \"ดึงจาก template\""}
+          ยังไม่มีรายการเดือนนี้ กด &quot;เพิ่มรายการ&quot; หรือ &quot;ดึงจาก
+          template&quot;
         </Card>
       ) : (
         <div className="flex flex-col gap-2.5">
@@ -180,10 +156,10 @@ function ItemRow({
   onUpdateAmount,
   onDelete,
 }: {
-  item: FixCostItem;
+  item: LedgerEntry;
   category?: Category;
   onTogglePaid: () => void;
-  onUpdateAmount: (amt: number | undefined) => void;
+  onUpdateAmount: (amt: string | null) => void;
   onDelete: () => void;
 }) {
   const [editing, setEditing] = useState(false);
@@ -191,12 +167,16 @@ function ItemRow({
 
   const startEdit = () => {
     setEditing(true);
-    setDraft(item.amount?.toString() ?? "");
+    setDraft(item.amount ?? "");
   };
   const commit = () => {
     const trimmed = draft.trim();
-    const parsed = trimmed === "" ? undefined : Number(trimmed);
-    onUpdateAmount(Number.isFinite(parsed) ? parsed : undefined);
+    if (trimmed === "") {
+      onUpdateAmount(null);
+    } else {
+      const n = Number(trimmed);
+      onUpdateAmount(Number.isFinite(n) ? n.toFixed(2) : null);
+    }
     setEditing(false);
   };
 
@@ -219,7 +199,7 @@ function ItemRow({
         </div>
         <div className="flex flex-wrap items-center gap-1.5">
           <CategoryBadge category={category} />
-          {item.amount === undefined && (
+          {item.amount === null && (
             <Badge
               variant="secondary"
               className="bg-muted text-muted-foreground"
@@ -250,10 +230,10 @@ function ItemRow({
           className={cn(
             "min-w-[7rem] cursor-pointer rounded-md px-2 py-1 text-right text-base font-semibold tabular-nums transition-colors hover:bg-accent",
             item.paid && "line-through",
-            item.amount === undefined && "text-orange-600"
+            item.amount === null && "text-orange-600"
           )}
         >
-          {item.amount === undefined ? "แตะเพื่อกรอก" : formatMoney(item.amount)}
+          {item.amount === null ? "แตะเพื่อกรอก" : formatMoney(item.amount)}
         </button>
       )}
       <Button

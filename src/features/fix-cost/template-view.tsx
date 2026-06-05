@@ -1,23 +1,31 @@
 "use client";
 
+import { useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
 import { formatMoney } from "@/lib/format";
+import { cn } from "@/lib/utils";
 
 import { CategoryBadge } from "./category-badge";
-import type { Category, Template } from "./types";
+import type { Category, FixedCostTemplate } from "./types";
 
 export function TemplateView({
   templates,
   categories,
   onAdd,
+  onToggleActive,
+  onUpdateDefaultAmount,
   onDelete,
 }: {
-  templates: Template[];
+  templates: FixedCostTemplate[];
   categories: Category[];
   onAdd: () => void;
+  onToggleActive: (id: string) => void;
+  onUpdateDefaultAmount: (id: string, amount: string | null) => void;
   onDelete: (id: string) => void;
 }) {
   const categoryById = new Map(categories.map((c) => [c.id, c]));
@@ -37,32 +45,109 @@ export function TemplateView({
       ) : (
         <div className="flex flex-col gap-2.5">
           {templates.map((t) => (
-            <Card
+            <TemplateRow
               key={t.id}
-              className="flex flex-row items-center gap-3 px-4 py-3"
-            >
-              <div className="flex min-w-0 flex-1 flex-col gap-1">
-                <div className="truncate text-sm font-medium">{t.name}</div>
-                <div>
-                  <CategoryBadge category={categoryById.get(t.categoryId)} />
-                </div>
-              </div>
-              <div className="min-w-[7rem] text-right text-base font-semibold tabular-nums text-muted-foreground">
-                {t.amount === undefined ? "กรอกเอง" : formatMoney(t.amount)}
-              </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => onDelete(t.id)}
-                aria-label="ลบ template"
-                className="text-muted-foreground hover:text-destructive"
-              >
-                <Trash2 />
-              </Button>
-            </Card>
+              template={t}
+              category={categoryById.get(t.categoryId)}
+              onToggleActive={() => onToggleActive(t.id)}
+              onUpdateDefaultAmount={(amt) =>
+                onUpdateDefaultAmount(t.id, amt)
+              }
+              onDelete={() => onDelete(t.id)}
+            />
           ))}
         </div>
       )}
     </div>
+  );
+}
+
+function TemplateRow({
+  template,
+  category,
+  onToggleActive,
+  onUpdateDefaultAmount,
+  onDelete,
+}: {
+  template: FixedCostTemplate;
+  category?: Category;
+  onToggleActive: () => void;
+  onUpdateDefaultAmount: (amt: string | null) => void;
+  onDelete: () => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState("");
+
+  const startEdit = () => {
+    setEditing(true);
+    setDraft(template.defaultAmount ?? "");
+  };
+  const commit = () => {
+    const trimmed = draft.trim();
+    if (trimmed === "") {
+      onUpdateDefaultAmount(null);
+    } else {
+      const n = Number(trimmed);
+      onUpdateDefaultAmount(Number.isFinite(n) ? n.toFixed(2) : null);
+    }
+    setEditing(false);
+  };
+
+  return (
+    <Card
+      className={cn(
+        "flex flex-row items-center gap-3 px-4 py-3",
+        !template.active && "opacity-50"
+      )}
+    >
+      <Checkbox
+        checked={template.active}
+        onCheckedChange={onToggleActive}
+        aria-label="toggle active"
+      />
+      <div className="flex min-w-0 flex-1 flex-col gap-1">
+        <div className="truncate text-sm font-medium">{template.name}</div>
+        <div>
+          <CategoryBadge category={category} />
+        </div>
+      </div>
+      {editing ? (
+        <Input
+          autoFocus
+          type="number"
+          inputMode="decimal"
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={commit}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") commit();
+            else if (e.key === "Escape") setEditing(false);
+          }}
+          className="h-9 w-28 text-right tabular-nums"
+        />
+      ) : (
+        <button
+          type="button"
+          onClick={startEdit}
+          className={cn(
+            "min-w-[7rem] cursor-pointer rounded-md px-2 py-1 text-right text-base font-semibold tabular-nums transition-colors hover:bg-accent",
+            template.defaultAmount === null && "text-muted-foreground"
+          )}
+        >
+          {template.defaultAmount === null
+            ? "กรอกเอง"
+            : formatMoney(template.defaultAmount)}
+        </button>
+      )}
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={onDelete}
+        aria-label="ลบ template"
+        className="text-muted-foreground hover:text-destructive"
+      >
+        <Trash2 />
+      </Button>
+    </Card>
   );
 }

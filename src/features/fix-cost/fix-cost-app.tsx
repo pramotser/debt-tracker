@@ -13,20 +13,19 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { yearMonthKey } from "@/lib/format";
 
 import { AddItemDialog, type ItemDraft } from "./item-dialog";
 import {
   CURRENT_YM,
+  DEV_USER_ID,
   MOCK_CATEGORIES,
-  MOCK_ITEMS,
-  MOCK_MONTH_CLOSES,
+  MOCK_LEDGER_ENTRIES,
   MOCK_TEMPLATES,
 } from "./mock";
 import { MonthView } from "./month-view";
 import { AddTemplateDialog, type TemplateDraft } from "./template-dialog";
 import { TemplateView } from "./template-view";
-import type { FixCostItem, MonthClose, Template, YearMonth } from "./types";
+import type { FixedCostTemplate, LedgerEntry, YearMonth } from "./types";
 
 function shiftMonth(ym: YearMonth, delta: number): YearMonth {
   let m = ym.month + delta;
@@ -48,10 +47,9 @@ function normalizeName(s: string) {
 
 export function FixCostApp() {
   const [ym, setYm] = useState<YearMonth>(CURRENT_YM);
-  const [items, setItems] = useState<FixCostItem[]>(MOCK_ITEMS);
-  const [templates, setTemplates] = useState<Template[]>(MOCK_TEMPLATES);
-  const [monthCloses, setMonthCloses] =
-    useState<MonthClose[]>(MOCK_MONTH_CLOSES);
+  const [entries, setEntries] = useState<LedgerEntry[]>(MOCK_LEDGER_ENTRIES);
+  const [templates, setTemplates] =
+    useState<FixedCostTemplate[]>(MOCK_TEMPLATES);
 
   const [addItemOpen, setAddItemOpen] = useState(false);
   const [addTemplateOpen, setAddTemplateOpen] = useState(false);
@@ -60,58 +58,52 @@ export function FixCostApp() {
   >(null);
   const [pullConfirmOpen, setPullConfirmOpen] = useState(false);
   const [pendingPull, setPendingPull] = useState<{
-    toAdd: FixCostItem[];
-    toReplace: { existingId: string; template: Template }[];
+    toAdd: LedgerEntry[];
+    toReplace: { existingId: string; template: FixedCostTemplate }[];
   } | null>(null);
 
-  const currentKey = yearMonthKey(ym.year, ym.month);
-  const todayKey = yearMonthKey(CURRENT_YM.year, CURRENT_YM.month);
-  const isPast = currentKey < todayKey;
-
-  const monthItems = useMemo(
-    () => items.filter((i) => i.year === ym.year && i.month === ym.month),
-    [items, ym]
-  );
-
-  const closed = monthCloses.some(
-    (mc) => mc.year === ym.year && mc.month === ym.month && mc.closed
+  const monthEntries = useMemo(
+    () => entries.filter((e) => e.year === ym.year && e.month === ym.month),
+    [entries, ym]
   );
 
   const togglePaid = (id: string) =>
-    setItems((p) =>
-      p.map((i) => (i.id === id ? { ...i, paid: !i.paid } : i))
+    setEntries((p) =>
+      p.map((e) => {
+        if (e.id !== id) return e;
+        const next = !e.paid;
+        return { ...e, paid: next, paidAt: next ? new Date() : null };
+      })
     );
 
-  const updateAmount = (id: string, amount: number | undefined) =>
-    setItems((p) => p.map((i) => (i.id === id ? { ...i, amount } : i)));
+  const updateAmount = (id: string, amount: string | null) =>
+    setEntries((p) => p.map((e) => (e.id === id ? { ...e, amount } : e)));
 
-  const deleteItem = (id: string) =>
-    setItems((p) => p.filter((i) => i.id !== id));
-
-  const closeMonth = () =>
-    setMonthCloses((p) => {
-      const idx = p.findIndex(
-        (mc) => mc.year === ym.year && mc.month === ym.month
-      );
-      if (idx >= 0) {
-        const next = [...p];
-        next[idx] = { ...next[idx], closed: true };
-        return next;
-      }
-      return [...p, { year: ym.year, month: ym.month, closed: true }];
-    });
+  const deleteEntry = (id: string) =>
+    setEntries((p) => p.filter((e) => e.id !== id));
 
   const submitItem = (d: ItemDraft) => {
-    const newItem: FixCostItem = {
-      id: `it-${Date.now()}`,
-      year: ym.year,
-      month: ym.month,
+    const now = new Date();
+    const newEntry: LedgerEntry = {
+      id: `le-${Date.now()}`,
+      userId: DEV_USER_ID,
+      categoryId: d.categoryId,
+      sourceType: null,
+      sourceId: null,
+      type: "ONE_TIME_COST",
       name: d.name,
       amount: d.amount,
-      categoryId: d.categoryId,
+      principalAmount: null,
+      interestAmount: null,
+      year: ym.year,
+      month: ym.month,
       paid: false,
+      paidAt: null,
+      note: null,
+      createdAt: now,
+      updatedAt: now,
     };
-    setItems((p) => [...p, newItem]);
+    setEntries((p) => [...p, newEntry]);
     if (d.saveAsTemplate) {
       const exists = templates.some(
         (t) => normalizeName(t.name) === normalizeName(d.name)
@@ -121,9 +113,13 @@ export function FixCostApp() {
           ...p,
           {
             id: `tpl-${Date.now()}`,
-            name: d.name,
-            amount: d.amount,
+            userId: DEV_USER_ID,
             categoryId: d.categoryId,
+            name: d.name,
+            defaultAmount: d.amount,
+            active: true,
+            createdAt: now,
+            updatedAt: now,
           },
         ]);
       }
@@ -131,16 +127,37 @@ export function FixCostApp() {
   };
 
   const submitTemplate = (d: TemplateDraft) => {
+    const now = new Date();
     setTemplates((p) => [
       ...p,
       {
         id: `tpl-${Date.now()}`,
-        name: d.name,
-        amount: d.amount,
+        userId: DEV_USER_ID,
         categoryId: d.categoryId,
+        name: d.name,
+        defaultAmount: d.defaultAmount,
+        active: true,
+        createdAt: now,
+        updatedAt: now,
       },
     ]);
   };
+
+  const toggleTemplateActive = (id: string) =>
+    setTemplates((p) =>
+      p.map((t) =>
+        t.id === id ? { ...t, active: !t.active, updatedAt: new Date() } : t
+      )
+    );
+
+  const updateTemplateDefaultAmount = (id: string, amount: string | null) =>
+    setTemplates((p) =>
+      p.map((t) =>
+        t.id === id
+          ? { ...t, defaultAmount: amount, updatedAt: new Date() }
+          : t
+      )
+    );
 
   const confirmDeleteTemplate = () => {
     if (!pendingDeleteTemplateId) return;
@@ -153,30 +170,41 @@ export function FixCostApp() {
   );
 
   const pullTemplates = () => {
-    if (isPast) return;
     const existingByName = new Map(
-      monthItems.map((i) => [normalizeName(i.name), i])
+      monthEntries.map((e) => [normalizeName(e.name), e])
     );
-    const toAdd: FixCostItem[] = [];
-    const toReplace: { existingId: string; template: Template }[] = [];
+    const now = new Date();
+    const toAdd: LedgerEntry[] = [];
+    const toReplace: { existingId: string; template: FixedCostTemplate }[] = [];
     for (const t of templates) {
+      if (!t.active) continue;
       const exist = existingByName.get(normalizeName(t.name));
       if (exist) {
         toReplace.push({ existingId: exist.id, template: t });
       } else {
         toAdd.push({
-          id: `it-${Date.now()}-${t.id}`,
+          id: `le-${Date.now()}-${t.id}`,
+          userId: DEV_USER_ID,
+          categoryId: t.categoryId,
+          sourceType: "fixed_cost_template",
+          sourceId: t.id,
+          type: "FIXED_COST",
+          name: t.name,
+          amount: t.defaultAmount,
+          principalAmount: null,
+          interestAmount: null,
           year: ym.year,
           month: ym.month,
-          name: t.name,
-          amount: t.amount,
-          categoryId: t.categoryId,
           paid: false,
+          paidAt: null,
+          note: null,
+          createdAt: now,
+          updatedAt: now,
         });
       }
     }
     if (toReplace.length === 0) {
-      setItems((p) => [...p, ...toAdd]);
+      setEntries((p) => [...p, ...toAdd]);
       return;
     }
     setPendingPull({ toAdd, toReplace });
@@ -188,15 +216,20 @@ export function FixCostApp() {
     const replaceMap = new Map(
       pendingPull.toReplace.map((r) => [r.existingId, r.template])
     );
-    setItems((p) => {
-      const replaced = p.map((i) => {
-        const t = replaceMap.get(i.id);
-        if (!t) return i;
+    const now = new Date();
+    setEntries((p) => {
+      const replaced = p.map((e) => {
+        const t = replaceMap.get(e.id);
+        if (!t) return e;
         return {
-          ...i,
-          name: t.name,
-          amount: t.amount,
+          ...e,
           categoryId: t.categoryId,
+          sourceType: "fixed_cost_template",
+          sourceId: t.id,
+          type: "FIXED_COST" as const,
+          name: t.name,
+          amount: t.defaultAmount,
+          updatedAt: now,
         };
       });
       return [...replaced, ...pendingPull.toAdd];
@@ -207,7 +240,7 @@ export function FixCostApp() {
 
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="text-2xl font-bold">ค่าใช้จ่ายประจำ</h1>
+      <h1 className="text-2xl font-bold">ค่าใช้จ่ายรายเดือน</h1>
 
       <Tabs defaultValue="month">
         <TabsList
@@ -220,28 +253,25 @@ export function FixCostApp() {
             value="month"
             className="-mb-px flex-none rounded-none border-0 border-b-2 border-transparent bg-transparent px-0 pt-2 pb-3 text-sm font-medium text-muted-foreground after:hidden data-active:border-primary! data-active:bg-transparent! data-active:font-semibold data-active:text-primary!"
           >
-            รายการ Fix Cost
+            รายการจ่ายรายเดือน
           </TabsTrigger>
           <TabsTrigger
             value="tpl"
             className="-mb-px flex-none rounded-none border-0 border-b-2 border-transparent bg-transparent px-0 pt-2 pb-3 text-sm font-medium text-muted-foreground after:hidden data-active:border-primary! data-active:bg-transparent! data-active:font-semibold data-active:text-primary!"
           >
-            รายการที่ใช้ประจำ
+            Template รายการจ่ายประจำ
           </TabsTrigger>
         </TabsList>
         <TabsContent value="month" className="mt-4">
           <MonthView
             ym={ym}
-            isPast={isPast}
-            closed={closed}
-            items={monthItems}
+            items={monthEntries}
             categories={MOCK_CATEGORIES}
             onPrev={() => setYm((p) => shiftMonth(p, -1))}
             onNext={() => setYm((p) => shiftMonth(p, 1))}
             onTogglePaid={togglePaid}
             onUpdateAmount={updateAmount}
-            onDelete={deleteItem}
-            onCloseMonth={closeMonth}
+            onDelete={deleteEntry}
             onAdd={() => setAddItemOpen(true)}
             onPullTemplates={pullTemplates}
           />
@@ -251,6 +281,8 @@ export function FixCostApp() {
             templates={templates}
             categories={MOCK_CATEGORIES}
             onAdd={() => setAddTemplateOpen(true)}
+            onToggleActive={toggleTemplateActive}
+            onUpdateDefaultAmount={updateTemplateDefaultAmount}
             onDelete={(id) => setPendingDeleteTemplateId(id)}
           />
         </TabsContent>

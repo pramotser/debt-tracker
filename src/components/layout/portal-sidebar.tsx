@@ -32,7 +32,7 @@ type NavLink = { href: string; label: string; icon: LucideIcon };
 
 const mainLinks: NavLink[] = [
   { href: "/dashboard", label: "ภาพรวม", icon: LayoutGrid },
-  { href: "/fix-cost", label: "ค่าใช้จ่ายประจำ", icon: ReceiptText },
+  { href: "/fix-cost", label: "ค่าใช้จ่ายรายเดือน", icon: ReceiptText },
   { href: "/subscription", label: "สมาชิก/บริการ", icon: Repeat },
   { href: "/installment", label: "ผ่อนชำระ", icon: Wallet },
   { href: "/cards", label: "บัตรเครดิต", icon: CreditCard },

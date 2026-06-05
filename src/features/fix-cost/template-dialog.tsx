@@ -25,9 +25,16 @@ import type { Category } from "./types";
 
 export type TemplateDraft = {
   name: string;
-  amount?: number;
+  defaultAmount: string | null;
   categoryId: string;
 };
+
+function parseAmount(raw: string): string | null {
+  const trimmed = raw.trim();
+  if (trimmed === "") return null;
+  const n = Number(trimmed);
+  return Number.isFinite(n) ? n.toFixed(2) : null;
+}
 
 export function AddTemplateDialog({
   open,
@@ -56,10 +63,9 @@ export function AddTemplateDialog({
 
   const handleSubmit = () => {
     if (!canSubmit) return;
-    const parsed = amount.trim() === "" ? undefined : Number(amount);
     onSubmit({
       name: name.trim(),
-      amount: Number.isFinite(parsed) ? parsed : undefined,
+      defaultAmount: parseAmount(amount),
       categoryId,
     });
     onOpenChange(false);
