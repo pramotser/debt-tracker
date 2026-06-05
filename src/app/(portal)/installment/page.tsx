@@ -6,7 +6,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-export default function InstallmentsPage() {
+export default function InstallmentPage() {
   return (
     <Card>
       <CardHeader>

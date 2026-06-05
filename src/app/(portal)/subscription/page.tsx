@@ -6,15 +6,15 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-export default function CardsPage() {
+export default function SubscriptionPage() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>บัตรเครดิต</CardTitle>
+        <CardTitle>สมาชิก/บริการ</CardTitle>
         <CardDescription>per user · มี userId</CardDescription>
       </CardHeader>
       <CardContent className="text-sm text-muted-foreground">
-        placeholder — บัตรเครดิตของผู้ใช้ (ยังไม่ต่อ DB)
+        placeholder — Subscription ที่ตัดเงินเป็นรอบ (ยังไม่ต่อ DB)
       </CardContent>
     </Card>
   );

@@ -4,12 +4,19 @@
     "tagline": "ติดตามหนี้และรายจ่ายส่วนตัว"
   },
   "nav": {
-    "dashboard": "แดชบอร์ด",
+    "groups": {
+      "main": "เมนูหลัก",
+      "admin": "จัดการระบบ"
+    },
+    "dashboard": "ภาพรวม",
+    "fixCost": "ค่าใช้จ่ายประจำ",
+    "subscription": "สมาชิก/บริการ",
+    "installment": "ผ่อนชำระ",
+    "cards": "บัตรเครดิต",
+    "ledger": "รายการทั้งหมด",
+    "settings": "ตั้งค่า",
     "banks": "ธนาคาร",
     "categories": "หมวดหมู่",
-    "users": "ผู้ใช้",
-    "cards": "บัตร",
-    "transactions": "ธุรกรรม",
-    "installments": "ผ่อนชำระ"
+    "users": "ผู้ใช้"
   }
 }
