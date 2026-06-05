@@ -1,12 +1,7 @@
 // mock layer — รอบนี้ยังไม่ต่อ DB จริง แต่ใช้ type จาก Drizzle schema เป็น source of truth
 // row ทุกตัวจึงมีรูปร่างเดียวกับที่จะได้คืนจาก db.select() ของจริง (Decimal = string, ts = Date)
 
-import type {
-  Category,
-  FixedCostTemplate,
-  LedgerEntry,
-  YearMonth,
-} from "./types";
+import type { Category, LedgerEntry, YearMonth } from "./types";
 
 // dev user (matches lib/auth.ts dev stub แบบหลวมๆ — uuid-ลูก fake ใช้ผูก mock ฝั่ง client)
 export const DEV_USER_ID = "00000000-0000-0000-0000-000000000001";
@@ -25,30 +20,6 @@ export const MOCK_CATEGORIES: Category[] = [
 ];
 
 const NOW = new Date();
-
-const tpl = (
-  id: string,
-  name: string,
-  categoryId: string,
-  defaultAmount: string | null
-): FixedCostTemplate => ({
-  id,
-  userId: DEV_USER_ID,
-  categoryId,
-  name,
-  defaultAmount,
-  active: true,
-  createdAt: NOW,
-  updatedAt: NOW,
-});
-
-export const MOCK_TEMPLATES: FixedCostTemplate[] = [
-  tpl("tpl-home-loan", "Home loan", "c-loan", "7800.00"),
-  tpl("tpl-car-loan", "Car Loan", "c-loan", "3878.50"),
-  tpl("tpl-dad", "Money for Dad", "c-family", "4000.00"),
-  tpl("tpl-electric", "Electricity bill", "c-utility", null),
-  tpl("tpl-water", "Water bill", "c-utility", null),
-];
 
 const entry = (
   id: string,

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useTransition } from "react";
 
 import {
   AlertDialog,
@@ -13,6 +13,12 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  createTemplate,
+  deleteTemplate,
+  toggleTemplateActive,
+  updateTemplateDefaultAmount,
+} from "@/server/actions/fixed-cost-templates";
 
 import { AddItemDialog, type ItemDraft } from "./item-dialog";
 import {
@@ -20,7 +26,6 @@ import {
   DEV_USER_ID,
   MOCK_CATEGORIES,
   MOCK_LEDGER_ENTRIES,
-  MOCK_TEMPLATES,
 } from "./mock";
 import { MonthView } from "./month-view";
 import { AddTemplateDialog, type TemplateDraft } from "./template-dialog";
@@ -45,11 +50,16 @@ function normalizeName(s: string) {
   return s.trim().toLocaleLowerCase("th");
 }
 
-export function FixCostApp() {
+export function FixCostApp({
+  initialTemplates,
+}: {
+  initialTemplates: FixedCostTemplate[];
+}) {
   const [ym, setYm] = useState<YearMonth>(CURRENT_YM);
   const [entries, setEntries] = useState<LedgerEntry[]>(MOCK_LEDGER_ENTRIES);
   const [templates, setTemplates] =
-    useState<FixedCostTemplate[]>(MOCK_TEMPLATES);
+    useState<FixedCostTemplate[]>(initialTemplates);
+  const [, startTemplateMutation] = useTransition();
 
   const [addItemOpen, setAddItemOpen] = useState(false);
   const [addTemplateOpen, setAddTemplateOpen] = useState(false);
@@ -109,48 +119,79 @@ export function FixCostApp() {
         (t) => normalizeName(t.name) === normalizeName(d.name)
       );
       if (!exists) {
-        setTemplates((p) => [
-          ...p,
-          {
-            id: `tpl-${Date.now()}`,
-            userId: DEV_USER_ID,
-            categoryId: d.categoryId,
-            name: d.name,
-            defaultAmount: d.amount,
-            active: true,
-            createdAt: now,
-            updatedAt: now,
-          },
-        ]);
+        persistNewTemplate({
+          name: d.name,
+          categoryId: d.categoryId,
+          defaultAmount: d.amount,
+        });
       }
     }
   };
 
-  const submitTemplate = (d: TemplateDraft) => {
+  // optimistic create → reconcile กับ row จริงที่ action คืน (id เปลี่ยน)
+  const persistNewTemplate = (input: {
+    name: string;
+    categoryId: string;
+    defaultAmount: string | null;
+  }) => {
     const now = new Date();
-    setTemplates((p) => [
-      ...p,
-      {
-        id: `tpl-${Date.now()}`,
-        userId: DEV_USER_ID,
-        categoryId: d.categoryId,
-        name: d.name,
-        defaultAmount: d.defaultAmount,
-        active: true,
-        createdAt: now,
-        updatedAt: now,
-      },
-    ]);
+    const tempId = `tmp-${Date.now()}`;
+    const optimistic: FixedCostTemplate = {
+      id: tempId,
+      userId: DEV_USER_ID,
+      categoryId: input.categoryId,
+      name: input.name,
+      defaultAmount: input.defaultAmount,
+      active: true,
+      createdAt: now,
+      updatedAt: now,
+    };
+    setTemplates((p) => [...p, optimistic]);
+    startTemplateMutation(async () => {
+      try {
+        const row = await createTemplate(input);
+        setTemplates((p) => p.map((t) => (t.id === tempId ? row : t)));
+      } catch (e) {
+        console.error("createTemplate failed", e);
+        setTemplates((p) => p.filter((t) => t.id !== tempId));
+      }
+    });
   };
 
-  const toggleTemplateActive = (id: string) =>
+  const submitTemplate = (d: TemplateDraft) =>
+    persistNewTemplate({
+      name: d.name,
+      categoryId: d.categoryId,
+      defaultAmount: d.defaultAmount,
+    });
+
+  const handleToggleTemplateActive = (id: string) => {
+    const target = templates.find((t) => t.id === id);
+    if (!target) return;
+    const next = !target.active;
     setTemplates((p) =>
       p.map((t) =>
-        t.id === id ? { ...t, active: !t.active, updatedAt: new Date() } : t
+        t.id === id ? { ...t, active: next, updatedAt: new Date() } : t
       )
     );
+    startTemplateMutation(async () => {
+      try {
+        await toggleTemplateActive(id, next);
+      } catch (e) {
+        console.error("toggleTemplateActive failed", e);
+        setTemplates((p) =>
+          p.map((t) => (t.id === id ? { ...t, active: !next } : t))
+        );
+      }
+    });
+  };
 
-  const updateTemplateDefaultAmount = (id: string, amount: string | null) =>
+  const handleUpdateTemplateDefaultAmount = (
+    id: string,
+    amount: string | null
+  ) => {
+    const prev = templates.find((t) => t.id === id);
+    if (!prev) return;
     setTemplates((p) =>
       p.map((t) =>
         t.id === id
@@ -158,11 +199,34 @@ export function FixCostApp() {
           : t
       )
     );
+    startTemplateMutation(async () => {
+      try {
+        await updateTemplateDefaultAmount(id, amount);
+      } catch (e) {
+        console.error("updateTemplateDefaultAmount failed", e);
+        setTemplates((p) =>
+          p.map((t) =>
+            t.id === id ? { ...t, defaultAmount: prev.defaultAmount } : t
+          )
+        );
+      }
+    });
+  };
 
   const confirmDeleteTemplate = () => {
     if (!pendingDeleteTemplateId) return;
-    setTemplates((p) => p.filter((t) => t.id !== pendingDeleteTemplateId));
+    const id = pendingDeleteTemplateId;
+    const prev = templates.find((t) => t.id === id);
+    setTemplates((p) => p.filter((t) => t.id !== id));
     setPendingDeleteTemplateId(null);
+    startTemplateMutation(async () => {
+      try {
+        await deleteTemplate(id);
+      } catch (e) {
+        console.error("deleteTemplate failed", e);
+        if (prev) setTemplates((p) => [...p, prev]);
+      }
+    });
   };
 
   const pendingDeleteTemplate = templates.find(
@@ -281,8 +345,8 @@ export function FixCostApp() {
             templates={templates}
             categories={MOCK_CATEGORIES}
             onAdd={() => setAddTemplateOpen(true)}
-            onToggleActive={toggleTemplateActive}
-            onUpdateDefaultAmount={updateTemplateDefaultAmount}
+            onToggleActive={handleToggleTemplateActive}
+            onUpdateDefaultAmount={handleUpdateTemplateDefaultAmount}
             onDelete={(id) => setPendingDeleteTemplateId(id)}
           />
         </TabsContent>
