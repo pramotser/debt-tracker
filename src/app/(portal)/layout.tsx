@@ -1,5 +1,6 @@
-import { PortalNav } from "@/components/layout/portal-nav";
-import { Separator } from "@/components/ui/separator";
+import { PortalHeader } from "@/components/layout/portal-header";
+import { PortalSidebar } from "@/components/layout/portal-sidebar";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 
 export default function PortalLayout({
   children,
@@ -7,18 +8,14 @@ export default function PortalLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-4 py-6 sm:px-6 sm:py-8">
-      <header className="flex flex-col gap-3">
-        <div className="flex items-baseline justify-between">
-          <h1 className="text-2xl font-semibold tracking-tight">
-            Debt Tracker
-          </h1>
-          <span className="text-xs text-muted-foreground">scaffold</span>
-        </div>
-        <PortalNav />
-        <Separator />
-      </header>
-      <main className="flex flex-1 flex-col gap-6">{children}</main>
-    </div>
+    <SidebarProvider>
+      <PortalSidebar />
+      <SidebarInset>
+        <PortalHeader />
+        <main className="flex-1 overflow-auto p-6 sm:p-7">
+          <div className="mx-auto w-full max-w-6xl">{children}</div>
+        </main>
+      </SidebarInset>
+    </SidebarProvider>
   );
 }
