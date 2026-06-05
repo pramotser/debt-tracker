@@ -214,15 +214,17 @@ export function FixCostApp() {
           variant="line"
           className="h-auto w-full justify-start gap-6 rounded-none border-b border-border bg-transparent p-0"
         >
+          {/* base TabsTrigger มี `border` (1px ทุกด้าน) — ต้อง border-0 ก่อนแล้ว
+              ค่อย border-b-2 เพื่อให้เหลือเส้นใต้อย่างเดียว (กัน "กล่อง outline") */}
           <TabsTrigger
             value="month"
-            className="flex-none rounded-none border-b-2 border-transparent px-0 pt-1 pb-3 text-sm text-muted-foreground data-active:border-primary data-active:font-semibold data-active:text-primary! after:hidden"
+            className="-mb-px flex-none rounded-none border-0 border-b-2 border-transparent bg-transparent px-0 pt-2 pb-3 text-sm font-medium text-muted-foreground after:hidden data-active:border-primary! data-active:bg-transparent! data-active:font-semibold data-active:text-primary!"
           >
             รายการ Fix Cost
           </TabsTrigger>
           <TabsTrigger
             value="tpl"
-            className="flex-none rounded-none border-b-2 border-transparent px-0 pt-1 pb-3 text-sm text-muted-foreground data-active:border-primary data-active:font-semibold data-active:text-primary! after:hidden"
+            className="-mb-px flex-none rounded-none border-0 border-b-2 border-transparent bg-transparent px-0 pt-2 pb-3 text-sm font-medium text-muted-foreground after:hidden data-active:border-primary! data-active:bg-transparent! data-active:font-semibold data-active:text-primary!"
           >
             รายการที่ใช้ประจำ
           </TabsTrigger>
