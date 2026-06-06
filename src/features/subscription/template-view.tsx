@@ -1,10 +1,16 @@
 "use client";
 
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Switch } from "@/components/ui/switch";
 import { formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -176,24 +182,33 @@ function TemplateRow({
       <div className="min-w-[7rem] text-right text-base font-semibold tabular-nums">
         {formatMoney(template.defaultAmount)}
       </div>
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={onEdit}
-        aria-label="แก้ไข"
-        className="text-muted-foreground hover:text-foreground"
-      >
-        <Pencil />
-      </Button>
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={onDelete}
-        aria-label="ลบบริการ"
-        className="text-muted-foreground hover:text-destructive"
-      >
-        <Trash2 />
-      </Button>
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          render={
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label="เมนู"
+              className="text-muted-foreground hover:text-foreground"
+            >
+              <MoreHorizontal />
+            </Button>
+          }
+        />
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem onClick={onEdit}>
+            <Pencil />
+            แก้ไข
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={onDelete}
+            className="text-destructive focus:text-destructive"
+          >
+            <Trash2 />
+            ลบ
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </Card>
   );
 }

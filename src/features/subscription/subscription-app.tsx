@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, useTransition } from "react";
+import { toast } from "sonner";
 
 import {
   AlertDialog,
@@ -136,6 +137,7 @@ export function SubscriptionApp({
       try {
         await toggleSubscriptionPaid(id, next);
       } catch (err) {
+        toast.error("บันทึกไม่สำเร็จ");
         console.error("toggleSubscriptionPaid failed", err);
         setEntries((p) =>
           p.map((e) =>
@@ -156,6 +158,7 @@ export function SubscriptionApp({
       try {
         await updateSubscriptionAmount(id, amount);
       } catch (err) {
+        toast.error("บันทึกไม่สำเร็จ");
         console.error("updateSubscriptionAmount failed", err);
         setEntries((p) =>
           p.map((e) => (e.id === id ? { ...e, amount: prev.amount } : e))
@@ -174,6 +177,7 @@ export function SubscriptionApp({
       try {
         await deleteSubscriptionLedger(id);
       } catch (err) {
+        toast.error("บันทึกไม่สำเร็จ");
         console.error("deleteSubscriptionLedger failed", err);
         if (prev) setEntries((p) => [...p, prev]);
       }
@@ -192,6 +196,7 @@ export function SubscriptionApp({
         );
         setEntries((p) => [...p, ...added]);
       } catch (err) {
+        toast.error("บันทึกไม่สำเร็จ");
         console.error("importSubscriptionsToMonth failed", err);
       }
     });
@@ -223,6 +228,7 @@ export function SubscriptionApp({
           const row = await updateSubscriptionTemplate(id, d);
           setTemplates((p) => p.map((t) => (t.id === id ? row : t)));
         } catch (err) {
+          toast.error("บันทึกไม่สำเร็จ");
           console.error("updateSubscriptionTemplate failed", err);
           setTemplates((p) => p.map((t) => (t.id === id ? prev : t)));
         }
@@ -251,6 +257,7 @@ export function SubscriptionApp({
         const row = await createSubscriptionTemplate(d);
         setTemplates((p) => p.map((t) => (t.id === tempId ? row : t)));
       } catch (err) {
+        toast.error("บันทึกไม่สำเร็จ");
         console.error("createSubscriptionTemplate failed", err);
         setTemplates((p) => p.filter((t) => t.id !== tempId));
       }
@@ -268,6 +275,7 @@ export function SubscriptionApp({
       try {
         await toggleSubscriptionTemplateActive(id, next);
       } catch (err) {
+        toast.error("บันทึกไม่สำเร็จ");
         console.error("toggleSubscriptionTemplateActive failed", err);
         setTemplates((p) =>
           p.map((t) => (t.id === id ? { ...t, active: !next } : t))
@@ -286,6 +294,7 @@ export function SubscriptionApp({
       try {
         await deleteSubscriptionTemplate(id);
       } catch (err) {
+        toast.error("บันทึกไม่สำเร็จ");
         console.error("deleteSubscriptionTemplate failed", err);
         if (prev) setTemplates((p) => [...p, prev]);
       }

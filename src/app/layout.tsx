@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Noto_Sans_Thai } from "next/font/google";
 
+import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
 import "./globals.css";
@@ -25,6 +26,7 @@ export default function RootLayout({
     <html lang="th" className={`${fontSans.variable} h-full antialiased`}>
       <body className="bg-background text-foreground">
         <TooltipProvider>{children}</TooltipProvider>
+        <Toaster richColors position="top-right" />
       </body>
     </html>
   );
