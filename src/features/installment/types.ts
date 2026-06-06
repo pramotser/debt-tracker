@@ -1,30 +1,22 @@
-export type InstallmentStatus =
+export type {
+  CreditCard,
+  CreditCardInstallment,
+  LedgerEntry,
+  InstallmentStatusDb,
+} from "@/db/schema";
+
+export type Category = {
+  id: string;
+  name: string;
+};
+
+export type Bank = {
+  id: string;
+  name: string;
+};
+
+export type UiStatus =
   | "active"
   | "near-end"
   | "completed"
   | "early-settlement";
-
-export type InstallmentPlan = {
-  id: string;
-  icon: string;
-  name: string;
-  cardName: string;
-  totalAmount: number;
-  remainingAmount: number;
-  installmentAmount: number;
-  totalInstallments: number;
-  paidInstallments: number;
-  expectedEnd: string;
-  status: InstallmentStatus;
-  earlySettlementAmount?: number;
-  closedDate?: string;
-};
-
-export type UpcomingPayment = {
-  id: string;
-  dueDate: string;
-  icon: string;
-  name: string;
-  cardName: string;
-  amount: number;
-};

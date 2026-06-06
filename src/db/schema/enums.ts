@@ -20,3 +20,12 @@ export const subscriptionCycle = pgEnum(
   "subscription_cycle",
   SUBSCRIPTION_CYCLES
 );
+
+export const INSTALLMENT_STATUSES = ["active", "early_settled"] as const;
+
+export type InstallmentStatusDb = (typeof INSTALLMENT_STATUSES)[number];
+
+export const installmentStatus = pgEnum(
+  "installment_status",
+  INSTALLMENT_STATUSES
+);

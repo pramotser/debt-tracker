@@ -1,98 +1,20 @@
-import type { InstallmentPlan, UpcomingPayment } from "./types";
+// banks + categories ยังไม่มีตารางใน DB (admin tables มาทีหลัง) → mock list
 
-export const MOCK_PLANS: InstallmentPlan[] = [
-  {
-    id: "p-ipad",
-    icon: "📱",
-    name: "iPad Pro",
-    cardName: "UOB Premier",
-    totalAmount: 33860,
-    remainingAmount: 16930,
-    installmentAmount: 3386,
-    totalInstallments: 10,
-    paidInstallments: 5,
-    expectedEnd: "กันยายน 2026",
-    status: "active",
-  },
-  {
-    id: "p-speaker",
-    icon: "🔊",
-    name: "ลำโพง",
-    cardName: "TTB So Smart",
-    totalAmount: 8990,
-    remainingAmount: 5993,
-    installmentAmount: 1498,
-    totalInstallments: 6,
-    paidInstallments: 2,
-    expectedEnd: "ตุลาคม 2026",
-    status: "active",
-  },
-  {
-    id: "p-airpods",
-    icon: "🎧",
-    name: "AirPods 4",
-    cardName: "UOB Premier",
-    totalAmount: 6100,
-    remainingAmount: 610,
-    installmentAmount: 610,
-    totalInstallments: 10,
-    paidInstallments: 9,
-    expectedEnd: "กรกฎาคม 2026",
-    status: "near-end",
-  },
-  {
-    id: "p-watch",
-    icon: "⌚",
-    name: "Apple Watch",
-    cardName: "UOB Premier",
-    totalAmount: 12000,
-    remainingAmount: 0,
-    installmentAmount: 1200,
-    totalInstallments: 10,
-    paidInstallments: 10,
-    expectedEnd: "พฤษภาคม 2026",
-    status: "completed",
-  },
-  {
-    id: "p-trip",
-    icon: "🏝️",
-    name: "เที่ยว",
-    cardName: "UOB Premier",
-    totalAmount: 20000,
-    remainingAmount: 0,
-    installmentAmount: 1718,
-    totalInstallments: 12,
-    paidInstallments: 7,
-    expectedEnd: "พฤษภาคม 2027",
-    status: "early-settlement",
-    earlySettlementAmount: 8000,
-    closedDate: "20 พ.ค. 2026",
-  },
+import type { Bank, Category } from "./types";
+
+export const DEV_USER_ID = "00000000-0000-0000-0000-000000000001";
+
+export const MOCK_BANKS: Bank[] = [
+  { id: "b-uob", name: "UOB" },
+  { id: "b-ttb", name: "TTB" },
+  { id: "b-scb", name: "SCB" },
+  { id: "b-kbank", name: "KBank" },
+  { id: "b-kkp", name: "KKP" },
 ];
 
-export const MOCK_UPCOMING: UpcomingPayment[] = [
-  {
-    id: "u-1",
-    dueDate: "05 มิ.ย.",
-    icon: "🔊",
-    name: "ลำโพง",
-    cardName: "TTB So Smart",
-    amount: 1498.35,
-  },
-  {
-    id: "u-2",
-    dueDate: "20 มิ.ย.",
-    icon: "🏝️",
-    name: "เที่ยว",
-    cardName: "UOB Premier",
-    amount: 1718,
-  },
-  {
-    id: "u-3",
-    dueDate: "01 ก.ค.",
-    icon: "📱",
-    name: "iPad Pro",
-    cardName: "UOB Premier",
-    amount: 3386,
-  },
+export const MOCK_CATEGORIES: Category[] = [
+  { id: "c-electronics", name: "อิเล็กทรอนิกส์" },
+  { id: "c-travel", name: "ท่องเที่ยว" },
+  { id: "c-furniture", name: "เฟอร์นิเจอร์" },
+  { id: "c-other", name: "อื่นๆ" },
 ];

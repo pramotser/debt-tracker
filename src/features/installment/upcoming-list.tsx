@@ -1,33 +1,45 @@
+"use client";
+
 import { Card } from "@/components/ui/card";
-import { formatMoney } from "@/lib/format";
+import { Checkbox } from "@/components/ui/checkbox";
+import { formatMoney, formatYearMonth } from "@/lib/format";
+import { cn } from "@/lib/utils";
 
-import type { UpcomingPayment } from "./types";
+import type { LedgerEntry } from "./types";
 
-export function UpcomingList({ items }: { items: UpcomingPayment[] }) {
+export function UpcomingList({
+  items,
+  onTogglePaid,
+}: {
+  items: LedgerEntry[];
+  onTogglePaid: (id: string) => void;
+}) {
   if (items.length === 0) {
     return (
       <Card className="px-6 py-8 text-center text-sm text-muted-foreground">
-        ไม่มีงวดที่ใกล้ถึงกำหนด
+        ไม่มีงวดที่ยังไม่จ่าย
       </Card>
     );
   }
   return (
     <Card className="gap-0 divide-y divide-border p-0">
-      {items.map((p) => (
+      {items.map((e) => (
         <div
-          key={p.id}
-          className="flex items-center gap-4 px-5 py-3.5 text-sm"
+          key={e.id}
+          className={cn(
+            "flex items-center gap-4 px-5 py-3.5 text-sm",
+            e.paid && "opacity-60"
+          )}
         >
-          <div className="w-16 shrink-0 text-muted-foreground tabular-nums">
-            {p.dueDate}
+          <Checkbox checked={e.paid} onCheckedChange={() => onTogglePaid(e.id)} />
+          <div className="w-20 shrink-0 text-muted-foreground tabular-nums">
+            {formatYearMonth(e.year, e.month)}
           </div>
-          <div className="text-lg shrink-0">{p.icon}</div>
-          <div className="min-w-0 flex-1">
-            <div className="truncate font-medium">{p.name}</div>
-            <div className="text-xs text-muted-foreground">{p.cardName}</div>
+          <div className={cn("min-w-0 flex-1 truncate", e.paid && "line-through")}>
+            {e.name}
           </div>
           <div className="text-base font-semibold tabular-nums">
-            {formatMoney(p.amount)}
+            {formatMoney(e.amount ?? "0")}
           </div>
         </div>
       ))}

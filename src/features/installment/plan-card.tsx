@@ -1,11 +1,33 @@
+"use client";
+
+import { useState } from "react";
+import { ChevronDown, ChevronUp, MoreHorizontal, Trash2, XCircle } from "lucide-react";
+
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
-import { formatMoney } from "@/lib/format";
+import { formatMoney, formatYearMonth } from "@/lib/format";
+import { cn } from "@/lib/utils";
 
-import type { InstallmentPlan } from "./types";
+import { CategoryBadge } from "./category-badge";
+import type {
+  Category,
+  CreditCard,
+  CreditCardInstallment,
+  LedgerEntry,
+  UiStatus,
+} from "./types";
 
-function StatusBadge({ status }: { status: InstallmentPlan["status"] }) {
+export function StatusBadge({ status }: { status: UiStatus }) {
   switch (status) {
     case "active":
       return (
@@ -34,61 +56,130 @@ function StatusBadge({ status }: { status: InstallmentPlan["status"] }) {
   }
 }
 
-export function PlanCard({ plan }: { plan: InstallmentPlan }) {
-  const percent =
-    plan.totalInstallments > 0
-      ? (plan.paidInstallments / plan.totalInstallments) * 100
-      : 0;
-  const isCompleted = plan.status === "completed";
-  const isEarly = plan.status === "early-settlement";
-  const isNearEnd = plan.status === "near-end";
+function toNumber(v: string | null): number {
+  if (v === null) return 0;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : 0;
+}
+
+export function PlanCard({
+  plan,
+  uiStatus,
+  card,
+  category,
+  entries,
+  onTogglePaid,
+  onUpdateInterestSplit,
+  onSettle,
+  onDelete,
+}: {
+  plan: CreditCardInstallment;
+  uiStatus: UiStatus;
+  card?: CreditCard;
+  category?: Category;
+  entries: LedgerEntry[];
+  onTogglePaid: (entryId: string) => void;
+  onUpdateInterestSplit: (
+    entryId: string,
+    principal: string,
+    interest: string
+  ) => void;
+  onSettle: () => void;
+  onDelete: () => void;
+}) {
+  const [expanded, setExpanded] = useState(false);
+
+  const paidCount = entries.filter((e) => e.paid).length;
+  const total = plan.totalInstallments;
+  const remaining = total - paidCount;
+  const percent = total > 0 ? (paidCount / total) * 100 : 0;
+
+  const totalAmount = toNumber(plan.totalAmount);
+  const remainingAmount = entries
+    .filter((e) => !e.paid)
+    .reduce((s, e) => s + toNumber(e.amount), 0);
+
+  // last unpaid งวด → expected end (fall back to last งวด overall)
+  const lastEntry =
+    entries.slice().reverse().find((e) => !e.paid) ??
+    entries[entries.length - 1];
+  const expectedEnd = lastEntry
+    ? formatYearMonth(lastEntry.year, lastEntry.month)
+    : "—";
+
+  const isCompleted = uiStatus === "completed";
+  const isEarly = uiStatus === "early-settlement";
+  const isOpenForActions = !isCompleted && !isEarly;
 
   return (
     <Card className="gap-3 px-5 py-4">
       <div className="flex items-start justify-between gap-3">
-        <div className="flex items-center gap-2 min-w-0">
-          <span className="text-xl">{plan.icon}</span>
-          <div className="min-w-0">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
             <div className="truncate text-base font-semibold">{plan.name}</div>
-            {!isCompleted && (
-              <div className="text-xs text-muted-foreground">{plan.cardName}</div>
-            )}
+            <CategoryBadge category={category} />
+          </div>
+          <div className="mt-0.5 text-xs text-muted-foreground">
+            {card?.name ?? "—"}
+            {card?.lastFourDigits ? ` (****${card.lastFourDigits})` : ""}
           </div>
         </div>
-        <StatusBadge status={plan.status} />
+        <div className="flex items-center gap-2">
+          <StatusBadge status={uiStatus} />
+          {isOpenForActions && (
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                render={
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label="เมนู"
+                    className="text-muted-foreground hover:text-foreground"
+                  >
+                    <MoreHorizontal />
+                  </Button>
+                }
+              />
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={onSettle}>
+                  <XCircle />
+                  ปิดยอดก่อนกำหนด
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={onDelete}
+                  className="text-destructive focus:text-destructive"
+                >
+                  <Trash2 />
+                  ลบแผน
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+        </div>
       </div>
 
-      {isCompleted && (
+      {isCompleted ? (
         <div className="text-sm text-muted-foreground">
-          ผ่อนครบ {plan.paidInstallments}/{plan.totalInstallments} งวด
+          ผ่อนครบ {paidCount}/{total} งวด
         </div>
-      )}
-
-      {isEarly && (
+      ) : isEarly ? (
         <div className="flex flex-col gap-1 text-sm">
-          <Row label="ยอดปิดก่อนกำหนด" value={formatMoney(plan.earlySettlementAmount ?? 0)} />
-          <Row label="ปิดเมื่อ" value={plan.closedDate ?? "—"} />
+          <Row
+            label="ยอดปิดก่อนกำหนด"
+            value={formatMoney(plan.settlementAmount ?? "0")}
+          />
+          {plan.closedAt && (
+            <Row
+              label="ปิดเมื่อ"
+              value={new Date(plan.closedAt).toLocaleDateString("th-TH")}
+            />
+          )}
         </div>
-      )}
-
-      {isNearEnd && (
-        <div className="flex flex-col gap-1.5 text-sm">
-          <div className="text-muted-foreground">
-            งวด <span className="font-semibold text-foreground">{plan.paidInstallments}</span>{" "}
-            / {plan.totalInstallments}
-          </div>
-          <div className="text-orange-600 font-medium">
-            เหลืออีก {plan.totalInstallments - plan.paidInstallments} งวด
-          </div>
-          <Row label="ค่างวด" value={formatMoney(plan.installmentAmount)} />
-        </div>
-      )}
-
-      {plan.status === "active" && (
+      ) : (
         <>
           <div className="flex flex-col gap-1 text-sm">
-            <Row label="ยอดรวม" value={formatMoney(plan.totalAmount)} />
-            <Row label="คงเหลือ" value={formatMoney(plan.remainingAmount)} />
+            <Row label="ยอดรวม" value={formatMoney(totalAmount)} />
+            <Row label="คงเหลือ" value={formatMoney(remainingAmount)} />
             <Row
               label="ค่างวด"
               value={`${formatMoney(plan.installmentAmount)} / เดือน`}
@@ -97,11 +188,42 @@ export function PlanCard({ plan }: { plan: InstallmentPlan }) {
           <Progress value={percent} className="h-2.5" />
           <div className="flex flex-wrap justify-between gap-2 text-xs text-muted-foreground">
             <span>
-              งวด {plan.paidInstallments} / {plan.totalInstallments}
+              งวด {paidCount} / {total}
+              {uiStatus === "near-end" && (
+                <span className="ml-2 font-medium text-orange-600">
+                  เหลืออีก {remaining} งวด
+                </span>
+              )}
             </span>
-            <span>คาดว่าจะจบ : {plan.expectedEnd}</span>
+            <span>คาดว่าจะจบ : {expectedEnd}</span>
           </div>
         </>
+      )}
+
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => setExpanded((v) => !v)}
+        className="self-start text-xs text-muted-foreground"
+      >
+        {expanded ? <ChevronUp /> : <ChevronDown />}
+        {expanded ? "ซ่อนรายงวด" : "ดูรายงวด"}
+      </Button>
+
+      {expanded && (
+        <div className="flex flex-col gap-0 divide-y divide-border border-t border-border pt-1">
+          {entries.map((e) => (
+            <EntryRow
+              key={e.id}
+              entry={e}
+              hasInterest={plan.hasInterest}
+              onTogglePaid={() => onTogglePaid(e.id)}
+              onUpdateInterestSplit={(p, i) =>
+                onUpdateInterestSplit(e.id, p, i)
+              }
+            />
+          ))}
+        </div>
       )}
     </Card>
   );
@@ -112,6 +234,114 @@ function Row({ label, value }: { label: string; value: string }) {
     <div className="flex items-center justify-between">
       <span className="text-muted-foreground">{label}</span>
       <span className="font-semibold tabular-nums">{value}</span>
+    </div>
+  );
+}
+
+function EntryRow({
+  entry,
+  hasInterest,
+  onTogglePaid,
+  onUpdateInterestSplit,
+}: {
+  entry: LedgerEntry;
+  hasInterest: boolean;
+  onTogglePaid: () => void;
+  onUpdateInterestSplit: (principal: string, interest: string) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [pDraft, setPDraft] = useState("");
+  const [iDraft, setIDraft] = useState("");
+
+  const needsSplit =
+    hasInterest && !entry.paid && entry.principalAmount === null;
+
+  const startEdit = () => {
+    setPDraft(entry.principalAmount ?? "");
+    setIDraft(entry.interestAmount ?? "");
+    setEditing(true);
+  };
+
+  const commit = () => {
+    const p = Number(pDraft);
+    const i = Number(iDraft);
+    if (Number.isFinite(p) && Number.isFinite(i) && p >= 0 && i >= 0) {
+      onUpdateInterestSplit(p.toFixed(2), i.toFixed(2));
+    }
+    setEditing(false);
+  };
+
+  return (
+    <div className={cn("flex items-center gap-3 py-2", entry.paid && "opacity-60")}>
+      <Checkbox checked={entry.paid} onCheckedChange={onTogglePaid} />
+      <div className="w-20 shrink-0 text-xs text-muted-foreground tabular-nums">
+        {formatYearMonth(entry.year, entry.month)}
+      </div>
+      {editing ? (
+        <div className="flex flex-1 items-center gap-1.5">
+          <Input
+            autoFocus
+            type="number"
+            inputMode="decimal"
+            placeholder="เงินต้น"
+            value={pDraft}
+            onChange={(e) => setPDraft(e.target.value)}
+            className="h-8 w-24 text-right tabular-nums"
+          />
+          <span className="text-xs text-muted-foreground">+</span>
+          <Input
+            type="number"
+            inputMode="decimal"
+            placeholder="ดอกเบี้ย"
+            value={iDraft}
+            onChange={(e) => setIDraft(e.target.value)}
+            onBlur={commit}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") commit();
+              else if (e.key === "Escape") setEditing(false);
+            }}
+            className="h-8 w-24 text-right tabular-nums"
+          />
+        </div>
+      ) : (
+        <>
+          <div
+            className={cn(
+              "min-w-0 flex-1 text-sm",
+              entry.paid && "line-through"
+            )}
+          >
+            {hasInterest && entry.principalAmount !== null ? (
+              <span className="text-xs text-muted-foreground">
+                ต้น {formatMoney(entry.principalAmount)} + ดอก{" "}
+                {formatMoney(entry.interestAmount ?? "0")}
+              </span>
+            ) : (
+              <span className="text-xs text-muted-foreground">
+                {entry.note ?? ""}
+              </span>
+            )}
+          </div>
+          {needsSplit && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={startEdit}
+              className="text-xs text-orange-600"
+            >
+              กรอกต้น/ดอก
+            </Button>
+          )}
+          <div
+            className={cn(
+              "min-w-[5rem] text-right text-sm font-semibold tabular-nums",
+              entry.paid && "line-through"
+            )}
+          >
+            {formatMoney(entry.amount ?? "0")}
+          </div>
+        </>
+      )}
     </div>
   );
 }
