@@ -12,6 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 import { formatMoney, formatYearMonth } from "@/lib/format";
 
 import { CategoryBadge } from "./category-badge";
@@ -74,9 +75,9 @@ export function ImportModal({
           {pendingTemplates.map((t) => {
             const checked = selected.has(t.id);
             return (
-              <label
+              <Label
                 key={t.id}
-                className="flex cursor-pointer items-center gap-3 rounded-md border border-border bg-card px-3 py-2.5 transition-colors hover:bg-accent"
+                className="flex cursor-pointer items-center gap-3 rounded-md border border-border bg-card px-3 py-2.5 font-normal transition-colors hover:bg-accent"
               >
                 <Checkbox
                   checked={checked}
@@ -89,7 +90,7 @@ export function ImportModal({
                 <span className="text-sm font-semibold tabular-nums">
                   {t.defaultAmount === null ? "—" : formatMoney(t.defaultAmount)}
                 </span>
-              </label>
+              </Label>
             );
           })}
         </div>

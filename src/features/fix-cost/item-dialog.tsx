@@ -136,13 +136,13 @@ export function AddItemDialog({
               </SelectContent>
             </Select>
           </div>
-          <label className="flex cursor-pointer items-center gap-2 text-sm">
+          <Label className="flex cursor-pointer items-center gap-2 text-sm font-normal">
             <Checkbox
               checked={saveAsTemplate}
               onCheckedChange={(v) => setSaveAsTemplate(Boolean(v))}
             />
             <span>บันทึกเป็น template ด้วย</span>
-          </label>
+          </Label>
         </div>
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>

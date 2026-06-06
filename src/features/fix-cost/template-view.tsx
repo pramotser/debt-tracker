@@ -127,18 +127,18 @@ function TemplateRow({
           className="h-9 w-28 text-right tabular-nums"
         />
       ) : (
-        <button
-          type="button"
+        <Button
+          variant="ghost"
           onClick={startEdit}
           className={cn(
-            "min-w-[7rem] cursor-pointer rounded-md px-2 py-1 text-right text-base font-semibold tabular-nums transition-colors hover:bg-accent",
+            "h-auto min-w-[7rem] justify-end px-2 py-1 text-base font-semibold tabular-nums",
             template.defaultAmount === null && "text-muted-foreground"
           )}
         >
           {template.defaultAmount === null
             ? "กรอกเอง"
             : formatMoney(template.defaultAmount)}
-        </button>
+        </Button>
       )}
       <Button
         variant="ghost"
