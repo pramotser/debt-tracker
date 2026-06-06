@@ -11,4 +11,6 @@ export * from "./users";
 export * from "./user-settings";
 export * from "./fixed-cost-templates";
 export * from "./subscription-templates";
+export * from "./credit-cards";
+export * from "./credit-card-installments";
 export * from "./ledger-entries";
