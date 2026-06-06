@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronLeft, ChevronRight, Plus, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Info, Plus, Trash2 } from "lucide-react";
 
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -114,17 +115,24 @@ export function MonthView({
       </Card>
 
       {showBanner && (
-        <Card className="flex-row! items-center gap-3 border-blue-200 bg-blue-50/60 px-5 py-3">
-          <div className="flex-1 text-sm text-blue-900">
-            มีรายการจ่ายประจำ active{" "}
-            <span className="font-semibold">{pendingTemplates.length}</span>{" "}
-            รายการ ยังไม่ได้ดึงเข้าเดือนนี้
-          </div>
-          <Button variant="ghost" onClick={onDismissBanner}>
-            ข้าม
-          </Button>
-          <Button onClick={onOpenImport}>ดึงรายการ</Button>
-        </Card>
+        <Alert className="border-blue-200 bg-blue-50/60 text-blue-900">
+          <Info className="text-blue-700" />
+          <AlertDescription className="flex flex-wrap items-center justify-between gap-3 text-blue-900">
+            <span>
+              มีรายการจ่ายประจำ active{" "}
+              <span className="font-semibold">{pendingTemplates.length}</span>{" "}
+              รายการ ยังไม่ได้ดึงเข้าเดือนนี้
+            </span>
+            <div className="flex gap-2">
+              <Button variant="ghost" size="sm" onClick={onDismissBanner}>
+                ข้าม
+              </Button>
+              <Button size="sm" onClick={onOpenImport}>
+                ดึงรายการ
+              </Button>
+            </div>
+          </AlertDescription>
+        </Alert>
       )}
 
       {/* Item list */}
