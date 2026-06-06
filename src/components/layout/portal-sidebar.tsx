@@ -90,7 +90,7 @@ export function PortalSidebar() {
           Debt Tracker
         </span>
       </SidebarHeader>
-      <SidebarContent className="px-2">
+      <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel>เมนูหลัก</SidebarGroupLabel>
           <SidebarGroupContent>
