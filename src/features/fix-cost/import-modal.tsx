@@ -13,6 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { formatMoney, formatYearMonth } from "@/lib/format";
 
 import { CategoryBadge } from "./category-badge";
@@ -71,7 +72,8 @@ export function ImportModal({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex max-h-[50vh] flex-col gap-2 overflow-y-auto">
+        <ScrollArea className="max-h-[50vh] pr-2">
+          <div className="flex flex-col gap-2">
           {pendingTemplates.map((t) => {
             const checked = selected.has(t.id);
             return (
@@ -93,7 +95,8 @@ export function ImportModal({
               </Label>
             );
           })}
-        </div>
+          </div>
+        </ScrollArea>
 
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>

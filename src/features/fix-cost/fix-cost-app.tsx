@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, useTransition } from "react";
+import { toast } from "sonner";
 
 import {
   AlertDialog,
@@ -128,6 +129,7 @@ export function FixCostApp({
       try {
         await toggleLedgerEntryPaid(id, next);
       } catch (err) {
+        toast.error("บันทึกไม่สำเร็จ");
         console.error("toggleLedgerEntryPaid failed", err);
         setEntries((p) =>
           p.map((e) =>
@@ -148,6 +150,7 @@ export function FixCostApp({
       try {
         await updateLedgerEntryAmount(id, amount);
       } catch (err) {
+        toast.error("บันทึกไม่สำเร็จ");
         console.error("updateLedgerEntryAmount failed", err);
         setEntries((p) =>
           p.map((e) => (e.id === id ? { ...e, amount: prev.amount } : e))
@@ -163,6 +166,7 @@ export function FixCostApp({
       try {
         await deleteLedgerEntry(id);
       } catch (err) {
+        toast.error("บันทึกไม่สำเร็จ");
         console.error("deleteLedgerEntry failed", err);
         if (prev) setEntries((p) => [...p, prev]);
       }
@@ -203,6 +207,7 @@ export function FixCostApp({
         });
         setEntries((p) => p.map((e) => (e.id === tempId ? row : e)));
       } catch (err) {
+        toast.error("บันทึกไม่สำเร็จ");
         console.error("createLedgerEntry failed", err);
         setEntries((p) => p.filter((e) => e.id !== tempId));
       }
@@ -234,6 +239,7 @@ export function FixCostApp({
         );
         setEntries((p) => [...p, ...added]);
       } catch (err) {
+        toast.error("บันทึกไม่สำเร็จ");
         console.error("importFixCostTemplatesToMonth failed", err);
       }
     });
@@ -263,6 +269,7 @@ export function FixCostApp({
         const row = await createTemplate(input);
         setTemplates((p) => p.map((t) => (t.id === tempId ? row : t)));
       } catch (e) {
+        toast.error("บันทึกไม่สำเร็จ");
         console.error("createTemplate failed", e);
         setTemplates((p) => p.filter((t) => t.id !== tempId));
       }
@@ -289,6 +296,7 @@ export function FixCostApp({
       try {
         await toggleTemplateActive(id, next);
       } catch (e) {
+        toast.error("บันทึกไม่สำเร็จ");
         console.error("toggleTemplateActive failed", e);
         setTemplates((p) =>
           p.map((t) => (t.id === id ? { ...t, active: !next } : t))
@@ -314,6 +322,7 @@ export function FixCostApp({
       try {
         await updateTemplateDefaultAmount(id, amount);
       } catch (e) {
+        toast.error("บันทึกไม่สำเร็จ");
         console.error("updateTemplateDefaultAmount failed", e);
         setTemplates((p) =>
           p.map((t) =>
@@ -334,6 +343,7 @@ export function FixCostApp({
       try {
         await deleteTemplate(id);
       } catch (e) {
+        toast.error("บันทึกไม่สำเร็จ");
         console.error("deleteTemplate failed", e);
         if (prev) setTemplates((p) => [...p, prev]);
       }
