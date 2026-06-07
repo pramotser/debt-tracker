@@ -373,7 +373,7 @@ export function MonthlyCostApp({
             value="tpl"
             className="-mb-px flex-none rounded-none border-0 border-b-2 border-transparent bg-transparent px-0 pt-2 pb-3 text-sm font-medium text-muted-foreground after:hidden data-active:border-primary! data-active:bg-transparent! data-active:font-semibold data-active:text-primary!"
           >
-            รายการจ่ายประจำ
+            ตั้งค่ารายการประจำ
           </TabsTrigger>
         </TabsList>
         <TabsContent value="month" className="mt-4">

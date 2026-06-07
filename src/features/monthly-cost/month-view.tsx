@@ -110,7 +110,7 @@ export function MonthView({
           className="text-orange-600"
         />
         <div className="text-sm text-muted-foreground">
-          {paidCount} รายการ / {items.length}
+          จ่ายแล้ว {paidCount}/{items.length} รายการ
         </div>
       </Card>
 
