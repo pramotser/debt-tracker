@@ -58,7 +58,7 @@ design/
     credit.md                    # logic ผ่อนชำระ (0%/มีดอก/ปิดยอด)
     monthly-cost.md
     subscription.md
-    tab/                         # spec รายแท็บของ /cards
+    tab/                         # spec รายแท็บของ /credit-cards
   prototype.jsx mock.html      # UI mock
 ```
 
