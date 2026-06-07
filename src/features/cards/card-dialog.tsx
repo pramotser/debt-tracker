@@ -21,39 +21,69 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-import type { Bank } from "./types";
+import type { Bank, CreditCard } from "./types";
 
 export type CardDraft = {
   name: string;
   bankId: string;
   lastFourDigits: string | null;
+  statementDate: number | null;
+  dueDate: number | null;
 };
+
+function parseDay(raw: string): number | null {
+  const t = raw.trim();
+  if (t === "") return null;
+  const n = Number(t);
+  return Number.isInteger(n) && n >= 1 && n <= 31 ? n : null;
+}
 
 export function CardDialog({
   open,
   onOpenChange,
   banks,
+  initial,
   onSubmit,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   banks: Bank[];
+  initial?: CreditCard | null;
   onSubmit: (draft: CardDraft) => void;
 }) {
   const [name, setName] = useState("");
   const [bankId, setBankId] = useState(banks[0]?.id ?? "");
   const [digits, setDigits] = useState("");
+  const [statementDay, setStatementDay] = useState("");
+  const [dueDay, setDueDay] = useState("");
 
   useEffect(() => {
-    if (open) {
+    if (!open) return;
+    if (initial) {
+      setName(initial.name);
+      setBankId(initial.bankId);
+      setDigits(initial.lastFourDigits ?? "");
+      setStatementDay(
+        initial.statementDate ? String(initial.statementDate) : ""
+      );
+      setDueDay(initial.dueDate ? String(initial.dueDate) : "");
+    } else {
       setName("");
       setBankId(banks[0]?.id ?? "");
       setDigits("");
+      setStatementDay("");
+      setDueDay("");
     }
-  }, [open, banks]);
+  }, [open, initial, banks]);
 
   const digitsOk = digits === "" || /^\d{4}$/.test(digits);
-  const canSubmit = name.trim().length > 0 && bankId.length > 0 && digitsOk;
+  const sd = parseDay(statementDay);
+  const dd = parseDay(dueDay);
+  const sdOk = statementDay === "" || sd !== null;
+  const ddOk = dueDay === "" || dd !== null;
+
+  const canSubmit =
+    name.trim().length > 0 && bankId.length > 0 && digitsOk && sdOk && ddOk;
 
   const handleSubmit = () => {
     if (!canSubmit) return;
@@ -61,6 +91,8 @@ export function CardDialog({
       name: name.trim(),
       bankId,
       lastFourDigits: digits === "" ? null : digits,
+      statementDate: sd,
+      dueDate: dd,
     });
     onOpenChange(false);
   };
@@ -69,9 +101,11 @@ export function CardDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>เพิ่มบัตรเครดิต</DialogTitle>
+          <DialogTitle>
+            {initial ? "แก้ไขบัตรเครดิต" : "เพิ่มบัตรเครดิต"}
+          </DialogTitle>
           <DialogDescription>
-            บัตรที่ใช้ผูกกับแผนผ่อนชำระ — last 4 digits ใส่/ไม่ใส่ก็ได้
+            บัตรนี้จะใช้ผูกกับยอดรูดและแผนผ่อนชำระ
           </DialogDescription>
         </DialogHeader>
         <div className="flex flex-col gap-4">
@@ -117,6 +151,34 @@ export function CardDialog({
               value={digits}
               onChange={(e) => setDigits(e.target.value.replace(/\D/g, ""))}
             />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="card-stmt">วันตัดรอบบิล</Label>
+              <Input
+                id="card-stmt"
+                type="number"
+                inputMode="numeric"
+                min={1}
+                max={31}
+                placeholder="10"
+                value={statementDay}
+                onChange={(e) => setStatementDay(e.target.value)}
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="card-due">วันครบกำหนดชำระ</Label>
+              <Input
+                id="card-due"
+                type="number"
+                inputMode="numeric"
+                min={1}
+                max={31}
+                placeholder="28"
+                value={dueDay}
+                onChange={(e) => setDueDay(e.target.value)}
+              />
+            </div>
           </div>
         </div>
         <DialogFooter>

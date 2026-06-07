@@ -1,6 +1,7 @@
 import { sql } from "drizzle-orm";
 import {
   boolean,
+  integer,
   pgTable,
   text,
   timestamp,
@@ -20,6 +21,8 @@ export const creditCards = pgTable("credit_cards", {
   bankId: text("bank_id").notNull(),
   name: text("name").notNull(),
   lastFourDigits: text("last_four_digits"),
+  statementDate: integer("statement_date"),
+  dueDate: integer("due_date"),
   active: boolean("active").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
