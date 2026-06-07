@@ -54,12 +54,16 @@ src/
   messages/th.json             # i18n
 
 design/
-  specs/                       # specs ของแต่ละ module — อ่านก่อนลงมือ
-    credit.md                    # logic ผ่อนชำระ (0%/มีดอก/ปิดยอด)
+  README.md                    # index — เริ่มจากตรงนี้
+  specs/                       # spec ของแต่ละ module — อ่านก่อนลงมือ
     monthly-cost.md
     subscription.md
-    tab/                         # spec รายแท็บของ /credit-cards
-  prototype.jsx mock.html      # UI mock
+    credit-cards/                # /credit-cards 3 tabs
+      README.md                    # overview + data model
+      tab1-statement.md
+      tab2-installment.md
+      tab3-cards.md
+  archive/                     # UI mock เก่า (mock.html + prototype.jsx)
 ```
 
 ## Features

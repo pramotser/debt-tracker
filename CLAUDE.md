@@ -39,4 +39,6 @@ Next.js App Router + TS · shadcn/ui + Tailwind v4 (UI เดียว ห้า
 
 Routes layout: route `/installment` เดิม ถูกย้ายเป็น tab ของ `/credit-cards` แล้ว — server actions ใน `credit-card-installments.ts` revalidate `/credit-cards`
 
-Credit Cost/Installment = module ซับซ้อนสุด (ผ่อน 0%/มีดอก/ปิดยอด) — spec ที่ `design/specs/credit.md` + `design/specs/tab/tab2_installment.md` ห้ามเดา logic
+Credit Cost/Installment = module ซับซ้อนสุด (ผ่อน 0%/มีดอก/ปิดยอด) — spec ที่ `design/specs/credit-cards/` (อ่าน `README.md` ก่อน แล้วต่อด้วย `tab2-installment.md` สำหรับ logic ผ่อน) ห้ามเดา logic
+
+ดู `design/README.md` สำหรับ map spec → route และ convention ของ spec
