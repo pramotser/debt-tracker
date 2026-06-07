@@ -60,7 +60,7 @@ function shiftMonth(ym: YearMonth, delta: number): YearMonth {
   return { year: y, month: m };
 }
 
-export function CardsApp({
+export function CreditCardsApp({
   initialCards,
   initialPlans,
   initialEntries,

@@ -29,14 +29,14 @@ Next.js App Router + TS · shadcn/ui + Tailwind v4 (UI เดียว ห้า
 
 ## สถานะตอนนี้
 ต่อ Supabase Postgres + Drizzle เรียบร้อย — features หลักทำงาน end-to-end:
-- `/fix-cost` — ค่าใช้จ่ายรายเดือน (เพิ่ม/แก้/import template)
+- `/monthly-cost` — ค่าใช้จ่ายรายเดือน (เพิ่ม/แก้/import template)
 - `/subscription` — รายเดือน/รายปี (auto-renew, import)
-- `/cards` — 3 tabs:
+- `/credit-cards` — 3 tabs:
   - "รายการชำระบัตรเครดิต" — statement รายเดือน + add charge
   - "รายการผ่อนชำระ" — แผนผ่อนทั้งหมด (active / near-end / completed / early-settled) + drilldown รายงวด + ปิดก่อนกำหนด
   - "บัตรของฉัน" — CRUD บัตร
 - ยังไม่ทำ: `/dashboard`, `/ledger`, `/settings`, admin pages (`/banks`, `/categories`, `/users`) เป็น stub
 
-Routes layout: route `/installment` เดิม ถูกย้ายเป็น tab ของ `/cards` แล้ว — server actions ใน `credit-card-installments.ts` revalidate `/cards`
+Routes layout: route `/installment` เดิม ถูกย้ายเป็น tab ของ `/credit-cards` แล้ว — server actions ใน `credit-card-installments.ts` revalidate `/credit-cards`
 
 Credit Cost/Installment = module ซับซ้อนสุด (ผ่อน 0%/มีดอก/ปิดยอด) — spec ที่ `design/specs/credit.md` + `design/specs/tab/tab2_installment.md` ห้ามเดา logic

@@ -8,7 +8,7 @@ import { db } from "@/db";
 import { fixedCostTemplates, type FixedCostTemplate } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
 
-const PAGE_PATH = "/fix-cost";
+const PAGE_PATH = "/monthly-cost";
 
 // เงิน Decimal(12,2) → string ตรงกับ pg numeric
 const amountSchema = z

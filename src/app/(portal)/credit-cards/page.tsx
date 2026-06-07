@@ -1,6 +1,10 @@
-import { FixCostApp } from "@/features/fix-cost/fix-cost-app";
-import { listTemplates } from "@/server/queries/fixed-cost-templates";
-import { listFixCostEntriesByMonth } from "@/server/queries/ledger-entries";
+import { CreditCardsApp } from "@/features/credit-cards/credit-cards-app";
+import {
+  listAllInstallmentEntries,
+  listInstallmentPlans,
+} from "@/server/queries/credit-card-installments";
+import { listCreditCardLedgerByMonth } from "@/server/queries/credit-card-charges";
+import { listCreditCards } from "@/server/queries/credit-cards";
 
 function parseYm(searchParams: Record<string, string | string[] | undefined>) {
   const yRaw = Array.isArray(searchParams.y) ? searchParams.y[0] : searchParams.y;
@@ -19,21 +23,25 @@ function parseYm(searchParams: Record<string, string | string[] | undefined>) {
   return { year, month };
 }
 
-export default async function FixCostPage({
+export default async function CreditCardsPage({
   searchParams,
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const sp = await searchParams;
   const ym = parseYm(sp);
-  const [templates, entries] = await Promise.all([
-    listTemplates(),
-    listFixCostEntriesByMonth(ym.year, ym.month),
+  const [cards, plans, entries, installmentEntries] = await Promise.all([
+    listCreditCards(),
+    listInstallmentPlans(),
+    listCreditCardLedgerByMonth(ym.year, ym.month),
+    listAllInstallmentEntries(),
   ]);
   return (
-    <FixCostApp
-      initialTemplates={templates}
+    <CreditCardsApp
+      initialCards={cards}
+      initialPlans={plans}
       initialEntries={entries}
+      initialInstallmentEntries={installmentEntries}
       ym={ym}
     />
   );
