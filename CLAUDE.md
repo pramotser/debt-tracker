@@ -22,11 +22,21 @@ Next.js App Router + TS · shadcn/ui + Tailwind v4 (UI เดียว ห้า
 ## Layout
 `src/app/(portal)/<page>` · `components/ui` (shadcn) + `components/layout` · `features/<domain>` · `server/actions` + `server/queries` · `db/schema` + `db/index` · `lib/{auth,format}` · `messages/th.json`
 
-## Env (ตอนต่อ DB — ยังไม่ทำตอนนี้)
+## Env
 - เก็บใน `.env.local` ที่เดียว; `drizzle.config.ts` โหลด `.env.local` เอง (drizzle-kit ไม่อ่านอัตโนมัติ)
 - runtime = transaction pooler **6543** (`pgbouncer=true`) · migrate = session pooler **5432**
 - อย่าใช้ Direct Connection (`db.xxx.supabase.co`) = IPv6 ต่อจากบ้านไม่ได้
 
 ## สถานะตอนนี้
-greenfield — กำลัง scaffold โครง ยังไม่ต่อ DB (ทุกอย่างเกี่ยว DB เป็น stub/comment)
-Credit Cost/Installment = module ซับซ้อนสุด (ผ่อน 0%/มีดอก/ปิดยอด) มี spec แยกตอนถึงคิว ห้ามเดา logic
+ต่อ Supabase Postgres + Drizzle เรียบร้อย — features หลักทำงาน end-to-end:
+- `/fix-cost` — ค่าใช้จ่ายรายเดือน (เพิ่ม/แก้/import template)
+- `/subscription` — รายเดือน/รายปี (auto-renew, import)
+- `/cards` — 3 tabs:
+  - "รายการชำระบัตรเครดิต" — statement รายเดือน + add charge
+  - "รายการผ่อนชำระ" — แผนผ่อนทั้งหมด (active / near-end / completed / early-settled) + drilldown รายงวด + ปิดก่อนกำหนด
+  - "บัตรของฉัน" — CRUD บัตร
+- ยังไม่ทำ: `/dashboard`, `/ledger`, `/settings`, admin pages (`/banks`, `/categories`, `/users`) เป็น stub
+
+Routes layout: route `/installment` เดิม ถูกย้ายเป็น tab ของ `/cards` แล้ว — server actions ใน `credit-card-installments.ts` revalidate `/cards`
+
+Credit Cost/Installment = module ซับซ้อนสุด (ผ่อน 0%/มีดอก/ปิดยอด) — spec ที่ `design/specs/credit.md` + `design/specs/tab/tab2_installment.md` ห้ามเดา logic
