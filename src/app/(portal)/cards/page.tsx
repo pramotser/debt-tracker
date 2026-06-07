@@ -1,5 +1,8 @@
 import { CardsApp } from "@/features/cards/cards-app";
-import { listInstallmentPlans } from "@/server/queries/credit-card-installments";
+import {
+  listAllInstallmentEntries,
+  listInstallmentPlans,
+} from "@/server/queries/credit-card-installments";
 import { listCreditCardLedgerByMonth } from "@/server/queries/credit-card-charges";
 import { listCreditCards } from "@/server/queries/credit-cards";
 
@@ -27,16 +30,18 @@ export default async function CardsPage({
 }) {
   const sp = await searchParams;
   const ym = parseYm(sp);
-  const [cards, plans, entries] = await Promise.all([
+  const [cards, plans, entries, installmentEntries] = await Promise.all([
     listCreditCards(),
     listInstallmentPlans(),
     listCreditCardLedgerByMonth(ym.year, ym.month),
+    listAllInstallmentEntries(),
   ]);
   return (
     <CardsApp
       initialCards={cards}
       initialPlans={plans}
       initialEntries={entries}
+      initialInstallmentEntries={installmentEntries}
       ym={ym}
     />
   );

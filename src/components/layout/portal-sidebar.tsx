@@ -13,7 +13,6 @@ import {
   Settings,
   Tags,
   Users,
-  Wallet,
 } from "lucide-react";
 
 import {
@@ -34,7 +33,6 @@ const mainLinks: NavLink[] = [
   { href: "/dashboard", label: "ภาพรวม", icon: LayoutGrid },
   { href: "/fix-cost", label: "ค่าใช้จ่ายรายเดือน", icon: ReceiptText },
   { href: "/subscription", label: "สมาชิก/บริการ", icon: Repeat },
-  { href: "/installment", label: "ผ่อนชำระ", icon: Wallet },
   { href: "/cards", label: "บัตรเครดิต", icon: CreditCard },
   { href: "/ledger", label: "รายการทั้งหมด", icon: ListChecks },
   { href: "/settings", label: "ตั้งค่า", icon: Settings },

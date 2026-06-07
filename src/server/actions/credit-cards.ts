@@ -8,7 +8,7 @@ import { db } from "@/db";
 import { creditCards, type CreditCard } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
 
-const PAGE_PATHS = ["/installment", "/cards"];
+const PAGE_PATH = "/cards";
 
 const idSchema = z.string().uuid();
 
@@ -27,7 +27,7 @@ const upsertSchema = z.object({
 });
 
 function revalidate() {
-  for (const p of PAGE_PATHS) revalidatePath(p);
+  revalidatePath(PAGE_PATH);
 }
 
 export async function createCreditCard(
