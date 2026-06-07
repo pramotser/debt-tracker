@@ -8,7 +8,7 @@ import { db } from "@/db";
 import { creditCards, type CreditCard } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
 
-const PAGE_PATH = "/cards";
+const PAGE_PATH = "/credit-cards";
 
 const idSchema = z.string().uuid();
 

@@ -31,9 +31,9 @@ type NavLink = { href: string; label: string; icon: LucideIcon };
 
 const mainLinks: NavLink[] = [
   { href: "/dashboard", label: "ภาพรวม", icon: LayoutGrid },
-  { href: "/fix-cost", label: "ค่าใช้จ่ายรายเดือน", icon: ReceiptText },
+  { href: "/monthly-cost", label: "ค่าใช้จ่ายรายเดือน", icon: ReceiptText },
   { href: "/subscription", label: "สมาชิก/บริการ", icon: Repeat },
-  { href: "/cards", label: "บัตรเครดิต", icon: CreditCard },
+  { href: "/credit-cards", label: "บัตรเครดิต", icon: CreditCard },
   { href: "/ledger", label: "รายการทั้งหมด", icon: ListChecks },
   { href: "/settings", label: "ตั้งค่า", icon: Settings },
 ];

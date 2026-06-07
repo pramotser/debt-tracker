@@ -12,7 +12,7 @@ import {
 } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
 
-const PAGE_PATH = "/fix-cost";
+const PAGE_PATH = "/monthly-cost";
 
 const amountSchema = z
   .string()

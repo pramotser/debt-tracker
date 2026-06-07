@@ -59,7 +59,7 @@ function ymKey(year: number, month: number): string {
   return `${year}-${month}`;
 }
 
-export function FixCostApp({
+export function MonthlyCostApp({
   initialTemplates,
   initialEntries,
   ym,

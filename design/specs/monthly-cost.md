@@ -1,6 +1,6 @@
 # Spec: ค่าใช้จ่ายรายเดือน — v1
 
-หน้าแรกของจริง · route `/fix-cost` (route ไม่เปลี่ยน เปลี่ยนแค่ที่แสดง)
+หน้าแรกของจริง · route `/monthly-cost`
 รอบนี้ **mock data ตาม shape ของ Drizzle schema** (ยังไม่ต่อ DB จริง — ทุกอย่างเก็บใน client state)
 **ไม่มี concept "ปิดรอบ" / "ล็อกเดือน"** — ทุก action เขียนตรงลง row ทันที
 

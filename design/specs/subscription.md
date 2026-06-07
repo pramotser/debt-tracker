@@ -40,7 +40,7 @@ subscription_templates
 └── Tab 2: "รายการสมัคร"          ← template management
 ```
 
-Tab style: underline เหมือน `/fix-cost` (active = navy bold + เส้นใต้หนา, inactive = gray)
+Tab style: underline เหมือน `/monthly-cost` (active = navy bold + เส้นใต้หนา, inactive = gray)
 
 ---
 
@@ -173,7 +173,7 @@ getSubscriptionTemplates(userId)
 ---
 
 ## UI/UX notes
-- เดือนเก็บเป็น `year` + `month` เหมือนหน้า fix-cost (ไม่ใช้ Date object ตรงๆ)
+- เดือนเก็บเป็น `year` + `month` เหมือนหน้า monthly-cost (ไม่ใช้ Date object ตรงๆ)
 - ทุก mutation ผ่าน Server Action + zod validate ก่อน
 - ไม่มี "ปิดรอบ" — แก้/ลบ ledger ได้ตลอด
 - import banner dismiss = เก็บ state ใน component (ไม่ต้อง persist ใน DB)

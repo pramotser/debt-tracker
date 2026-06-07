@@ -31,9 +31,9 @@ Scripts: `dev` · `build` · `start` · `lint`
 src/
   app/(portal)/              # routes ทั้งหมด
     dashboard/                 # (stub) ภาพรวม
-    fix-cost/                  # ค่าใช้จ่ายรายเดือน — ทำงานครบ
+    monthly-cost/              # ค่าใช้จ่ายรายเดือน — ทำงานครบ
     subscription/              # สมาชิก/บริการรายเดือน-ปี — ทำงานครบ
-    cards/                     # บัตรเครดิต 3 tabs — ทำงานครบ
+    credit-cards/              # บัตรเครดิต 3 tabs — ทำงานครบ
     ledger/                    # (stub) รายการทั้งหมด
     settings/                  # (stub) ตั้งค่า
     banks/ categories/ users/  # (stub) admin pages
@@ -41,7 +41,7 @@ src/
     ui/                        # shadcn primitives
     layout/                    # portal-sidebar, etc
   features/<domain>/           # client components + dialogs per page
-    cards/  fix-cost/  subscription/
+    credit-cards/  monthly-cost/  subscription/
   server/
     actions/                   # Server Actions (mutations + revalidatePath)
     queries/                   # ดึงข้อมูล (server-only)
@@ -66,13 +66,13 @@ design/
 
 | Route | สถานะ | คำอธิบาย |
 |---|---|---|
-| `/fix-cost` | ✅ | ค่าใช้จ่ายรายเดือน — template + month ledger + import |
+| `/monthly-cost` | ✅ | ค่าใช้จ่ายรายเดือน — template + month ledger + import |
 | `/subscription` | ✅ | สมาชิกรายเดือน/ปี — auto-renew + import |
-| `/cards` | ✅ | บัตรเครดิต 3 tabs (statement / installment / mine) |
+| `/credit-cards` | ✅ | บัตรเครดิต 3 tabs (statement / installment / mine) |
 | `/dashboard` `/ledger` `/settings` | 🚧 stub | ยังไม่ทำ |
 | `/banks` `/categories` `/users` | 🚧 stub | admin pages — ยังไม่ทำ |
 
-### `/cards` 3 tabs
+### `/credit-cards` 3 tabs
 
 1. **รายการชำระบัตรเครดิต** — statement รายเดือน + เพิ่มรายการรูด + mark paid + auto-pull งวดผ่อนที่ตกในเดือนนั้น
 2. **รายการผ่อนชำระ** — แผนผ่อนทั้งหมด แบ่ง active / near-end / completed / early-settled พร้อม drilldown รายงวด + ปิดก่อนกำหนด + รองรับผ่อน 0%/มีดอกแบบรู้-และไม่รู้-split
