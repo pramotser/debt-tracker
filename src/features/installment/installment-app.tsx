@@ -17,7 +17,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { createCreditCard } from "@/server/actions/credit-cards";
 import {
   createInstallmentPlan,
   deleteInstallmentPlan,
@@ -27,8 +26,7 @@ import {
 } from "@/server/actions/credit-card-installments";
 import type { InstallmentPlanWithProgress } from "@/server/queries/credit-card-installments";
 
-import { CardDialog, type CardDraft } from "./card-dialog";
-import { MOCK_BANKS, MOCK_CATEGORIES } from "./mock";
+import { MOCK_CATEGORIES } from "./mock";
 import { PlanCard } from "./plan-card";
 import { PlanDialog, type PlanDraft } from "./plan-dialog";
 import { RemainingBalanceCard } from "./remaining-balance-card";
@@ -80,7 +78,6 @@ export function InstallmentApp({
     setEntries(initialEntries);
   }, [initialEntries]);
 
-  const [cardDialogOpen, setCardDialogOpen] = useState(false);
   const [planDialogOpen, setPlanDialogOpen] = useState(false);
   const [settlingPlan, setSettlingPlan] =
     useState<InstallmentPlanWithProgress | null>(null);
@@ -156,18 +153,6 @@ export function InstallmentApp({
     .slice(0, 5);
 
   // ========= mutations =========
-  const handleAddCard = (d: CardDraft) => {
-    startMutation(async () => {
-      try {
-        const row = await createCreditCard(d);
-        setCards((p) => [...p, row]);
-      } catch (err) {
-        toast.error("เพิ่มบัตรไม่สำเร็จ");
-        console.error("createCreditCard failed", err);
-      }
-    });
-  };
-
   const handleCreatePlan = (d: PlanDraft) => {
     startMutation(async () => {
       try {
@@ -325,41 +310,15 @@ export function InstallmentApp({
         </Button>
       </div>
 
-      {/* บัตรเครดิตของฉัน */}
-      <Card className="gap-3 px-5 py-4">
-        <div className="flex items-center justify-between">
-          <div className="text-sm font-semibold">บัตรเครดิตของฉัน</div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setCardDialogOpen(true)}
-          >
-            <Plus />
-            เพิ่มบัตร
-          </Button>
-        </div>
-        {cards.length === 0 ? (
-          <div className="text-sm text-muted-foreground">
-            ยังไม่มีบัตร — กด &quot;เพิ่มบัตร&quot; เพื่อสร้างบัตรก่อนสร้างแผนผ่อน
-          </div>
-        ) : (
-          <div className="flex flex-wrap gap-2">
-            {cards.map((c) => (
-              <div
-                key={c.id}
-                className="rounded-md border border-border bg-card px-3 py-1.5 text-sm"
-              >
-                {c.name}
-                {c.lastFourDigits && (
-                  <span className="ml-1 text-muted-foreground">
-                    ****{c.lastFourDigits}
-                  </span>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-      </Card>
+      {cards.length === 0 && (
+        <Card className="gap-2 border-blue-200 bg-blue-50/60 px-5 py-4 text-sm text-blue-900">
+          ยังไม่มีบัตรเครดิต — เพิ่มบัตรที่หน้า{" "}
+          <a href="/cards" className="font-semibold underline">
+            บัตรเครดิต
+          </a>{" "}
+          ก่อนสร้างแผนผ่อน
+        </Card>
+      )}
 
       <SummaryCard
         dueThisMonth={dueThisMonth}
@@ -465,13 +424,6 @@ export function InstallmentApp({
           </div>
         </Section>
       )}
-
-      <CardDialog
-        open={cardDialogOpen}
-        onOpenChange={setCardDialogOpen}
-        banks={MOCK_BANKS}
-        onSubmit={handleAddCard}
-      />
 
       <PlanDialog
         open={planDialogOpen}

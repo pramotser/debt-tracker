@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Credit Card Dashboard Preview</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+Thai:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', 'Noto Sans Thai', sans-serif; }
+    </style>
+</head>
+<body class="bg-[#0f172a] text-slate-100 min-h-screen flex">
+
+    <div class="w-64 bg-[#1e293b] p-6 flex flex-col gap-6 border-r border-slate-800">
+        <h1 class="text-xl font-bold tracking-wider text-white flex items-center gap-2">
+            <span>📊</span> Debt Tracker
+        </h1>
+        <nav class="flex flex-col gap-1 text-sm text-slate-400">
+            <div class="p-3 rounded-lg hover:bg-slate-800/50 cursor-pointer flex items-center gap-3"><span>🏠</span> ภาพรวม</div>
+            <div class="p-3 rounded-lg hover:bg-slate-800/50 cursor-pointer flex items-center gap-3"><span>💵</span> ค่าใช้จ่ายประจำ</div>
+            <div class="p-3 rounded-lg hover:bg-slate-800/50 cursor-pointer flex items-center gap-3"><span>🔄</span> สมาชิก/บริการ</div>
+            <div class="p-3 rounded-lg bg-blue-600/20 text-blue-400 font-semibold border-l-4 border-blue-500 flex items-center gap-3"><span>💳</span> บัตรเครดิต</div>
+            <div class="p-3 rounded-lg hover:bg-slate-800/50 cursor-pointer flex items-center gap-3"><span>⚙️</span> ตั้งค่า</div>
+        </nav>
+    </div>
+
+    <div class="flex-1 p-8 overflow-y-auto">
+        
+        <div class="flex justify-between items-center mb-8">
+            <div>
+                <h2 class="text-2xl font-bold text-white">จัดการบัตรเครดิต</h2>
+                <p class="text-slate-400 text-sm mt-1">วางแผนระบบการรูดเต็มจำนวนและการผ่อนชำระแยกรายเดือน</p>
+            </div>
+            <button class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl text-sm font-medium transition-all shadow-lg shadow-blue-600/20">
+                + เพิ่มรายการใช้จ่าย
+              </button>
+        </div>
+
+        <div class="flex border-b border-slate-800 mb-8">
+            <button onclick="switchTab(1)" id="tab-btn-1" class="px-6 py-3.5 text-sm font-medium border-b-2 border-blue-500 text-blue-400 transition-all">
+                📑 รายการชำระบัตรเครดิต
+            </button>
+            <button onclick="switchTab(2)" id="tab-btn-2" class="px-6 py-3.5 text-sm font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-200 transition-all">
+                📊 รายการผ่อนชำระ
+            </button>
+            <button onclick="switchTab(3)" id="tab-btn-3" class="px-6 py-3.5 text-sm font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-200 transition-all">
+                💳 เพิ่มบัตรเครดิตของคุณ
+            </button>
+        </div>
+
+        <div id="tab-content-1" class="space-y-6">
+            <div class="flex items-center gap-4 bg-slate-800/40 border border-slate-800 p-2 rounded-xl w-fit">
+                <button class="p-2 hover:bg-slate-700 rounded-lg text-slate-400 hover:text-white transition-colors">◀</button>
+                <span class="font-bold text-sm px-2 text-blue-400">มิถุนายน 2026</span>
+                <button class="p-2 hover:bg-slate-700 rounded-lg text-slate-400 hover:text-white transition-colors">▶</button>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="bg-gradient-to-br from-indigo-600 to-slate-900 p-6 rounded-2xl border border-indigo-500/30 shadow-xl relative overflow-hidden group">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full translate-x-8 -translate-y-8 pointer-events-none"></div>
+                    <div class="flex justify-between items-start mb-6">
+                        <span class="text-sm font-bold tracking-widest bg-white/10 px-3 py-1 rounded-md">UOB PREMIER</span>
+                        <span class="text-xs text-indigo-200">ดีลจ่าย: ทุกวันที่ 28</span>
+                    </div>
+                    <p class="text-xs text-indigo-200/70 uppercase tracking-wider">ยอดบิลเดือนนี้</p>
+                    <p class="text-3xl font-bold text-white mt-1">฿3,996.00</p>
+                    <div class="mt-4 pt-4 border-t border-white/10 flex justify-between text-[11px] text-indigo-200/60">
+                        <span>วงเงินคงเหลือ: ฿96,004.00</span>
+                        <span class="text-emerald-400 font-medium">● มียอดต้องชำระ</span>
+                    </div>
+                </div>
+
+                <div class="bg-gradient-to-br from-purple-700 to-slate-900 p-6 rounded-2xl border border-purple-500/30 shadow-xl relative overflow-hidden">
+                    <div class="flex justify-between items-start mb-6">
+                        <span class="text-sm font-bold tracking-widest bg-white/10 px-3 py-1 rounded-md">TTB SO SMART</span>
+                        <span class="text-xs text-purple-200">ดีลจ่าย: ทุกวันที่ 02</span>
+                    </div>
+                    <p class="text-xs text-purple-200/70 uppercase tracking-wider">ยอดบิลเดือนนี้</p>
+                    <p class="text-3xl font-bold text-white mt-1">฿1,498.35</p>
+                    <div class="mt-4 pt-4 border-t border-white/10 flex justify-between text-[11px] text-purple-200/60">
+                        <span>วงเงินคงเหลือ: ฿48,501.65</span>
+                        <span class="text-emerald-400 font-medium">● มียอดต้องชำระ</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-[#1e293b] rounded-2xl border border-slate-800 overflow-hidden shadow-lg mt-6">
+                <div class="p-5 bg-slate-800/50 border-b border-slate-800 flex justify-between items-center">
+                    <span class="font-bold text-sm text-slate-200">รายการเรียกเก็บเงินเดือน มิถุนายน 2026</span>
+                    <span class="text-xs text-slate-400">รวมทั้งหมด 2 รายการ</span>
+                </div>
+                <div class="divide-y divide-slate-800/60">
+                    <div class="p-5 flex justify-between items-center hover:bg-slate-800/20 transition-colors">
+                        <div class="flex items-center gap-4">
+                            <span class="text-[11px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2.5 py-1 rounded-md uppercase">รูดเต็ม</span>
+                            <div>
+                                <p class="font-semibold text-sm text-white">ค่าน้ำมันรถ (ปั๊ม Caltex)</p>
+                                <p class="text-xs text-slate-400 mt-1">💳 ผ่านบัตร: UOB Premier • กำหนดจ่าย 28 มิ.ย. 2026</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-6">
+                            <span class="font-bold text-base text-white">฿610.00</span>
+                            <button class="bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-white text-xs px-3 py-1.5 rounded-lg transition-all">Mark as Paid</button>
+                            <button class="text-slate-500 hover:text-red-400 transition-colors text-sm">🗑️</button>
+                        </div>
+                    </div>
+
+                    <div class="p-5 flex justify-between items-center hover:bg-slate-800/20 transition-colors">
+                        <div class="flex items-center gap-4">
+                            <span class="text-[11px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20 px-2.5 py-1 rounded-md uppercase">ผ่อนชำระ</span>
+                            <div>
+                                <p class="font-semibold text-sm text-white">iPad Pro 13" <span class="text-slate-400 font-normal text-xs">(งวดที่ 5/10)</span></p>
+                                <p class="text-xs text-slate-400 mt-1">💳 ผ่านบัตร: UOB Premier • ระบบดึงยอดผ่อนรายเดือนมาให้อัตโนมัติ</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-6">
+                            <span class="font-bold text-base text-white">฿3,386.00</span>
+                            <button class="bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-white text-xs px-3 py-1.5 rounded-lg transition-all">Mark as Paid</button>
+                            <button class="text-slate-500 hover:text-red-400 transition-colors text-sm">🗑️</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-content-2" class="space-y-6 hidden">
+            <div class="bg-slate-800/30 border border-slate-800 p-4 rounded-xl text-sm text-slate-400">
+                💡 แท็บนี้แสดงแผนผ่อนระยะยาวทั้งหมดที่คุณมี ไม่ขึ้นตรงกับการเลื่อนดูรายเดือน เพื่อมอนิเตอร์ภาพรวมของหนี้
+            </div>
+
+            <div class="grid grid-cols-1 gap-4">
+                <div class="bg-[#1e293b] p-6 rounded-2xl border border-slate-800 space-y-4 shadow-md">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h4 class="font-bold text-white text-lg">iPad Pro 13" M4</h4>
+                            <p class="text-xs text-slate-400 mt-1">💳 บัตรที่ใช้: UOB Premier • หมวดหมู่: ไอที/ทำงาน</p>
+                        </div>
+                        <span class="text-xs bg-blue-500/10 text-blue-400 border border-blue-500/20 px-3 py-1 rounded-full font-medium">กำลังผ่อนชำระ</span>
+                    </div>
+                    
+                    <div class="grid grid-cols-3 text-sm bg-slate-900/40 p-4 rounded-xl border border-slate-800/50">
+                        <div>
+                            <p class="text-slate-400 text-xs">ยอดวงเงินเต็ม</p>
+                            <p class="font-bold mt-1 text-white">฿33,860.00</p>
+                        </div>
+                        <div>
+                            <p class="text-slate-400 text-xs">ยอดผ่อนต่อเดือน</p>
+                            <p class="font-bold mt-1 text-amber-400">฿3,386.00</p>
+                        </div>
+                        <div class="text-right">
+                          <p className="text-slate-400 text-xs">ความคืบหน้างวด</p>
+                          <p className="font-bold mt-1 text-slate-200">5 / 10 งวด</p>
+                        </div>
+                    </div>
+
+                    <div class="space-y-1.5">
+                        <div class="flex justify-between text-xs text-slate-400">
+                            <span>ผ่อนไปแล้ว 50%</span>
+                            <span>เหลืออีก 5 งวด (฿16,930.00)</span>
+                        </div>
+                        <div class="w-full bg-slate-800 h-2.5 rounded-full overflow-hidden border border-slate-700">
+                            <div class="bg-gradient-to-r from-blue-500 to-indigo-500 h-full w-1/2 rounded-full"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-[#1e293b] p-6 rounded-2xl border border-slate-800 space-y-4 shadow-md">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <h4 class="font-bold text-white text-lg">ลำโพง Marshall Acton III</h4>
+                            <p class="text-xs text-slate-400 mt-1">💳 บัตรที่ใช้: TTB So Smart • หมวดหมู่: ความบันเทิง</p>
+                        </div>
+                        <span class="text-xs bg-blue-500/10 text-blue-400 border border-blue-500/20 px-3 py-1 rounded-full font-medium">กำลังผ่อนชำระ</span>
+                    </div>
+                    
+                    <div class="grid grid-cols-3 text-sm bg-slate-900/40 p-4 rounded-xl border border-slate-800/50">
+                        <div>
+                            <p class="text-slate-400 text-xs">ยอดวงเงินเต็ม</p>
+                            <p class="font-bold mt-1 text-white">฿8,990.10</p>
+                        </div>
+                        <div>
+                            <p class="text-slate-400 text-xs">ยอดผ่อนต่อเดือน</p>
+                            <p class="font-bold mt-1 text-amber-400">฿1,498.35</p>
+                        </div>
+                        <div class="text-right">
+                          <p className="text-slate-400 text-xs">ความคืบหน้างวด</p>
+                          <p className="font-bold mt-1 text-slate-200">2 / 6 งวด</p>
+                        </div>
+                    </div>
+
+                    <div class="space-y-1.5">
+                        <div class="flex justify-between text-xs text-slate-400">
+                            <span>ผ่อนไปแล้ว 33.3%</span>
+                            <span>เหลืออีก 4 งวด (฿5,993.40)</span>
+                        </div>
+                        <div class="w-full bg-slate-800 h-2.5 rounded-full overflow-hidden border border-slate-700">
+                            <div class="bg-gradient-to-r from-blue-500 to-indigo-500 h-full w-1/3 rounded-full"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-content-3" class="max-w-xl bg-[#1e293b] p-6 rounded-2xl border border-slate-800 shadow-xl hidden">
+            <h3 class="text-lg font-bold text-white mb-2 flex items-center gap-2">💳 ลงทะเบียนบัตรเครดิตใบใหม่</h3>
+            <p class="text-xs text-slate-400 mb-6">เพิ่มข้อมูลบัตรของคุณเพื่อนำระบบไปใช้จัดสรรยอดรูดในแต่ละเดือน</p>
+            
+            <form class="space-y-5 text-sm" onsubmit="event.preventDefault(); alert('จำลองสถานะบันทึกข้อมูลเรียบร้อย!');">
+                <div>
+                    <label class="block text-slate-300 font-medium mb-2">ชื่อบัตร / ชื่อธนาคาร</label>
+                    <input type="text" placeholder="เช่น UOB Premier, TTB So Smart, KTC Platinum" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all" required />
+                </div>
+                <div>
+                    <label class="block text-slate-300 font-medium mb-2">วงเงินสูงสุดของบัตร (Credit Limit)</label>
+                    <div class="relative">
+                        <span class="absolute left-4 top-3 text-slate-500 font-medium">฿</span>
+                        <input type="number" placeholder="เช่น 100000" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 pl-8 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all" required />
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-slate-300 font-medium mb-2">วันตัดรอบบิล (Statement Date)</label>
+                        <input type="number" min="1" max="31" placeholder="เช่น ทุกวันที่ 10" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all" required />
+                    </div>
+                    <div>
+                        <label class="block text-slate-300 font-medium mb-2">วันครบกำหนดชำระ (Due Date)</label>
+                        <input type="number" min="1" max="31" placeholder="เช่น ทุกวันที่ 28" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all" required />
+                    </div>
+                </div>
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white p-3.5 rounded-xl font-semibold transition-all mt-6 shadow-lg shadow-blue-600/10">
+                    💾 บันทึกและลงทะเบียนบัตรเครดิต
+                </button>
+            </form>
+        </div>
+
+    </div>
+
+    <script>
+        function switchTab(tabIndex) {
+            // ซ่อนคอนเทนต์ทุกแท็บก่อน
+            document.getElementById('tab-content-1').classList.add('hidden');
+            document.getElementById('tab-content-2').classList.add('hidden');
+            document.getElementById('tab-content-3').classList.add('hidden');
+            
+            // ล้างสไตล์ปุ่มแท็บทั้งหมดให้เป็นสถานะปกติ
+            for(let i=1; i<=3; i++) {
+                let btn = document.getElementById('tab-btn-' + i);
+                btn.classList.remove('border-blue-500', 'text-blue-400');
+                btn.classList.add('border-transparent', 'text-slate-400');
+            }
+
+            // เปิดแสดงคอนเทนต์แท็บที่ถูกคลิก
+            document.getElementById('tab-content-' + tabIndex).classList.remove('hidden');
+            
+            // ไฮไลท์ปุ่มแท็บที่ถูกคลิก
+            let activeBtn = document.getElementById('tab-btn-' + tabIndex);
+            activeBtn.classList.remove('border-transparent', 'text-slate-400');
+            activeBtn.classList.add('border-blue-500', 'text-blue-400');
+        }
+    </script>
+</body>
+</html>
