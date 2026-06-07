@@ -94,7 +94,7 @@ export function ChargeDialog({
         <DialogHeader>
           <DialogTitle>เพิ่มรายการรูด</DialogTitle>
           <DialogDescription>
-            รายการที่รูดบัตรเครดิตในเดือนนี้ — เพิ่มได้ทันที (ผ่อนชำระสร้างจากหน้า /installment)
+            รายการที่รูดบัตรเครดิตในเดือนนี้ — เพิ่มได้ทันที (ผ่อนชำระสร้างจากแท็บ &quot;รายการผ่อนชำระ&quot;)
           </DialogDescription>
         </DialogHeader>
         <div className="flex flex-col gap-4">

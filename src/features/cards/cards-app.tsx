@@ -22,26 +22,29 @@ import {
   updateCreditCardChargeAmount,
 } from "@/server/actions/credit-card-charges";
 import {
+  createInstallmentPlan,
+  deleteInstallmentPlan,
+  settleInstallmentEarly,
+  toggleInstallmentLedgerPaid,
+  updateLedgerInterestSplit,
+} from "@/server/actions/credit-card-installments";
+import {
   createCreditCard,
   deleteCreditCard,
   toggleCreditCardActive,
   updateCreditCard,
 } from "@/server/actions/credit-cards";
-import {
-  toggleInstallmentLedgerPaid,
-} from "@/server/actions/credit-card-installments";
+import type { InstallmentPlanWithProgress } from "@/server/queries/credit-card-installments";
 
 import { CardDialog, type CardDraft } from "./card-dialog";
 import { CardListView } from "./card-list-view";
 import { ChargeDialog, type ChargeDraft } from "./charge-dialog";
+import { InstallmentView } from "./installment-view";
 import { MOCK_BANKS, MOCK_CATEGORIES } from "./mock";
+import { PlanDialog, type PlanDraft } from "./plan-dialog";
+import { SettleDialog, type SettleDraft } from "./settle-dialog";
 import { StatementView } from "./statement-view";
-import type {
-  CreditCard,
-  CreditCardInstallment,
-  LedgerEntry,
-  YearMonth,
-} from "./types";
+import type { CreditCard, LedgerEntry, YearMonth } from "./types";
 
 function shiftMonth(ym: YearMonth, delta: number): YearMonth {
   let m = ym.month + delta;
@@ -61,29 +64,46 @@ export function CardsApp({
   initialCards,
   initialPlans,
   initialEntries,
+  initialInstallmentEntries,
   ym,
 }: {
   initialCards: CreditCard[];
-  initialPlans: CreditCardInstallment[];
+  initialPlans: InstallmentPlanWithProgress[];
   initialEntries: LedgerEntry[];
+  initialInstallmentEntries: LedgerEntry[];
   ym: YearMonth;
 }) {
   const router = useRouter();
   const [cards, setCards] = useState<CreditCard[]>(initialCards);
+  const [plans, setPlans] =
+    useState<InstallmentPlanWithProgress[]>(initialPlans);
   const [entries, setEntries] = useState<LedgerEntry[]>(initialEntries);
+  const [installmentEntries, setInstallmentEntries] = useState<LedgerEntry[]>(
+    initialInstallmentEntries
+  );
   const [, startMutation] = useTransition();
 
   useEffect(() => {
     setCards(initialCards);
   }, [initialCards]);
   useEffect(() => {
+    setPlans(initialPlans);
+  }, [initialPlans]);
+  useEffect(() => {
     setEntries(initialEntries);
   }, [initialEntries]);
+  useEffect(() => {
+    setInstallmentEntries(initialInstallmentEntries);
+  }, [initialInstallmentEntries]);
 
   const [cardDialogOpen, setCardDialogOpen] = useState(false);
   const [editingCard, setEditingCard] = useState<CreditCard | null>(null);
   const [chargeDialogOpen, setChargeDialogOpen] = useState(false);
   const [deletingCardId, setDeletingCardId] = useState<string | null>(null);
+  const [planDialogOpen, setPlanDialogOpen] = useState(false);
+  const [settlingPlan, setSettlingPlan] =
+    useState<InstallmentPlanWithProgress | null>(null);
+  const [deletingPlanId, setDeletingPlanId] = useState<string | null>(null);
 
   const navigateMonth = (delta: number) => {
     const next = shiftMonth(ym, delta);
@@ -180,7 +200,7 @@ export function CardsApp({
     });
   };
 
-  const handleTogglePaid = (entry: LedgerEntry) => {
+  const handleTogglePaidCharge = (entry: LedgerEntry) => {
     const next = !entry.paid;
     setEntries((p) =>
       p.map((e) =>
@@ -227,7 +247,7 @@ export function CardsApp({
     });
   };
 
-  const handleDelete = (entry: LedgerEntry) => {
+  const handleDeleteCharge = (entry: LedgerEntry) => {
     if (entry.type !== "CREDIT_CARD") return;
     const prev = entry;
     setEntries((p) => p.filter((e) => e.id !== entry.id));
@@ -242,7 +262,148 @@ export function CardsApp({
     });
   };
 
+  // === installment mutations ===
+  const handleCreatePlan = (d: PlanDraft) => {
+    startMutation(async () => {
+      try {
+        const { plan, entries: added } = await createInstallmentPlan(d);
+        setPlans((p) => [{ ...plan, paidCount: 0 }, ...p]);
+        setInstallmentEntries((p) => [...p, ...added]);
+        toast.success(`สร้างแผน "${plan.name}" + ${added.length} งวด`);
+      } catch (err) {
+        toast.error("สร้างแผนไม่สำเร็จ");
+        console.error("createInstallmentPlan failed", err);
+      }
+    });
+  };
+
+  const handleToggleInstallmentPaid = (entryId: string) => {
+    const target = installmentEntries.find((e) => e.id === entryId);
+    if (!target) return;
+    const next = !target.paid;
+    setInstallmentEntries((p) =>
+      p.map((e) =>
+        e.id === entryId
+          ? { ...e, paid: next, paidAt: next ? new Date() : null }
+          : e
+      )
+    );
+    if (target.sourceId) {
+      const planId = target.sourceId;
+      setPlans((p) =>
+        p.map((pl) =>
+          pl.id === planId
+            ? { ...pl, paidCount: pl.paidCount + (next ? 1 : -1) }
+            : pl
+        )
+      );
+    }
+    startMutation(async () => {
+      try {
+        await toggleInstallmentLedgerPaid(entryId, next);
+      } catch (err) {
+        toast.error("บันทึกไม่สำเร็จ");
+        console.error("toggleInstallmentLedgerPaid failed", err);
+        setInstallmentEntries((p) =>
+          p.map((e) =>
+            e.id === entryId
+              ? { ...e, paid: !next, paidAt: !next ? new Date() : null }
+              : e
+          )
+        );
+        if (target.sourceId) {
+          const planId = target.sourceId;
+          setPlans((p) =>
+            p.map((pl) =>
+              pl.id === planId
+                ? { ...pl, paidCount: pl.paidCount + (next ? -1 : 1) }
+                : pl
+            )
+          );
+        }
+      }
+    });
+  };
+
+  const handleUpdateInterestSplit = (
+    entryId: string,
+    principal: string,
+    interest: string
+  ) => {
+    const prev = installmentEntries.find((e) => e.id === entryId);
+    if (!prev) return;
+    const total = (Number(principal) + Number(interest)).toFixed(2);
+    setInstallmentEntries((p) =>
+      p.map((e) =>
+        e.id === entryId
+          ? {
+              ...e,
+              principalAmount: principal,
+              interestAmount: interest,
+              amount: total,
+            }
+          : e
+      )
+    );
+    startMutation(async () => {
+      try {
+        await updateLedgerInterestSplit(entryId, principal, interest);
+      } catch (err) {
+        toast.error("บันทึกไม่สำเร็จ");
+        console.error("updateLedgerInterestSplit failed", err);
+        setInstallmentEntries((p) =>
+          p.map((e) => (e.id === entryId ? prev : e))
+        );
+      }
+    });
+  };
+
+  const handleSettle = (d: SettleDraft) => {
+    if (!settlingPlan) return;
+    const planId = settlingPlan.id;
+    setSettlingPlan(null);
+    startMutation(async () => {
+      try {
+        await settleInstallmentEarly(
+          planId,
+          d.settlementAmount,
+          d.closeYear,
+          d.closeMonth
+        );
+        toast.success("ปิดยอดก่อนกำหนดเรียบร้อย");
+        router.refresh();
+      } catch (err) {
+        toast.error("ปิดยอดไม่สำเร็จ");
+        console.error("settleInstallmentEarly failed", err);
+      }
+    });
+  };
+
+  const confirmDeletePlan = () => {
+    if (!deletingPlanId) return;
+    const id = deletingPlanId;
+    setDeletingPlanId(null);
+    const removed = plans.find((p) => p.id === id);
+    setPlans((p) => p.filter((pl) => pl.id !== id));
+    setInstallmentEntries((p) => p.filter((e) => !(e.sourceId === id && !e.paid)));
+    startMutation(async () => {
+      try {
+        await deleteInstallmentPlan(id);
+        toast.success(`ลบแผน "${removed?.name ?? ""}" แล้ว`);
+      } catch (err) {
+        toast.error("ลบแผนไม่สำเร็จ");
+        console.error("deleteInstallmentPlan failed", err);
+        router.refresh();
+      }
+    });
+  };
+
   const deletingCard = cards.find((c) => c.id === deletingCardId);
+  const deletingPlan = plans.find((p) => p.id === deletingPlanId);
+  const currentYm: YearMonth = {
+    year: new Date().getFullYear(),
+    month: new Date().getMonth() + 1,
+  };
 
   return (
     <div className="flex flex-col gap-4">
@@ -260,6 +421,12 @@ export function CardsApp({
             รายการชำระบัตรเครดิต
           </TabsTrigger>
           <TabsTrigger
+            value="installment"
+            className="-mb-px flex-none rounded-none border-0 border-b-2 border-transparent bg-transparent px-0 pt-2 pb-3 text-sm font-medium text-muted-foreground after:hidden data-active:border-primary! data-active:bg-transparent! data-active:font-semibold data-active:text-primary!"
+          >
+            รายการผ่อนชำระ
+          </TabsTrigger>
+          <TabsTrigger
             value="mine"
             className="-mb-px flex-none rounded-none border-0 border-b-2 border-transparent bg-transparent px-0 pt-2 pb-3 text-sm font-medium text-muted-foreground after:hidden data-active:border-primary! data-active:bg-transparent! data-active:font-semibold data-active:text-primary!"
           >
@@ -271,14 +438,28 @@ export function CardsApp({
           <StatementView
             ym={ym}
             cards={cards}
-            plans={initialPlans}
+            plans={plans}
             entries={entries}
             onPrev={() => navigateMonth(-1)}
             onNext={() => navigateMonth(1)}
             onAddCharge={() => setChargeDialogOpen(true)}
-            onTogglePaid={handleTogglePaid}
+            onTogglePaid={handleTogglePaidCharge}
             onUpdateAmount={handleUpdateAmount}
-            onDelete={handleDelete}
+            onDelete={handleDeleteCharge}
+          />
+        </TabsContent>
+
+        <TabsContent value="installment" className="mt-4">
+          <InstallmentView
+            cards={cards}
+            plans={plans}
+            entries={installmentEntries}
+            categories={MOCK_CATEGORIES}
+            onAddPlan={() => setPlanDialogOpen(true)}
+            onTogglePaid={handleToggleInstallmentPaid}
+            onUpdateInterestSplit={handleUpdateInterestSplit}
+            onSettle={(p) => setSettlingPlan(p)}
+            onDelete={(id) => setDeletingPlanId(id)}
           />
         </TabsContent>
 
@@ -322,6 +503,23 @@ export function CardsApp({
         onSubmit={handleSubmitCharge}
       />
 
+      <PlanDialog
+        open={planDialogOpen}
+        onOpenChange={setPlanDialogOpen}
+        cards={cards.filter((c) => c.active)}
+        categories={MOCK_CATEGORIES}
+        defaultYm={currentYm}
+        onSubmit={handleCreatePlan}
+      />
+
+      <SettleDialog
+        open={settlingPlan !== null}
+        onOpenChange={(o) => !o && setSettlingPlan(null)}
+        planName={settlingPlan?.name ?? ""}
+        defaultYm={currentYm}
+        onSubmit={handleSettle}
+      />
+
       <AlertDialog
         open={deletingCardId !== null}
         onOpenChange={(o) => !o && setDeletingCardId(null)}
@@ -338,6 +536,24 @@ export function CardsApp({
             <AlertDialogAction onClick={confirmDeleteCard}>
               ลบ
             </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={deletingPlanId !== null}
+        onOpenChange={(o) => !o && setDeletingPlanId(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>ลบแผน?</AlertDialogTitle>
+            <AlertDialogDescription>
+              ลบ &quot;{deletingPlan?.name}&quot; และทุกงวดที่ยังไม่จ่าย — งวดที่จ่ายแล้วจะเก็บไว้ใน ledger
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeletePlan}>ลบ</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

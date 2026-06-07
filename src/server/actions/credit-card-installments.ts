@@ -13,7 +13,7 @@ import {
 } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
 
-const PAGE_PATH = "/installment";
+const PAGE_PATH = "/cards";
 
 const idSchema = z.string().uuid();
 const amountSchema = z

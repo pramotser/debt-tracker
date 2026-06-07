@@ -13,6 +13,8 @@ export const MOCK_CATEGORIES: Category[] = [
   { id: "c-food", name: "อาหาร" },
   { id: "c-fuel", name: "น้ำมัน" },
   { id: "c-shopping", name: "ช้อปปิ้ง" },
+  { id: "c-electronics", name: "อิเล็กทรอนิกส์" },
+  { id: "c-furniture", name: "เฟอร์นิเจอร์" },
   { id: "c-travel", name: "ท่องเที่ยว" },
   { id: "c-other", name: "อื่นๆ" },
 ];
