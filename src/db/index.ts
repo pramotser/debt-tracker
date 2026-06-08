@@ -13,14 +13,12 @@ if (!url) {
 }
 
 // pooler = transaction mode → prepare ต้องเป็น false
-// pool params: ขนาด conservative สำหรับ Next.js serverless/long-running mix
-// max=5 (เผื่อ parallel queries ต่อ request), idle_timeout=20s, max_lifetime=30 นาที (rotate ก่อน pgbouncer drop)
+// Vercel serverless: max=1 (1 instance handle 1 request), idle_timeout สั้น (function freeze → pgbouncer drop)
 const client = postgres(url, {
   prepare: false,
-  max: 5,
+  max: 1,
   idle_timeout: 20,
   connect_timeout: 10,
-  max_lifetime: 60 * 30,
 });
 
 export const db = drizzle(client, { schema });
