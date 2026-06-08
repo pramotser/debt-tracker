@@ -22,3 +22,23 @@ export function formatYearMonth(year: number, month: number): string {
 export function yearMonthKey(year: number, month: number): number {
   return year * 100 + month;
 }
+
+const TH_MONTH_SHORT = [
+  "ม.ค.",
+  "ก.พ.",
+  "มี.ค.",
+  "เม.ย.",
+  "พ.ค.",
+  "มิ.ย.",
+  "ก.ค.",
+  "ส.ค.",
+  "ก.ย.",
+  "ต.ค.",
+  "พ.ย.",
+  "ธ.ค.",
+];
+
+/** ชื่อเดือนแบบย่อภาษาไทย เช่น "มิ.ย." */
+export function formatMonthShortTh(month: number): string {
+  return TH_MONTH_SHORT[month - 1] ?? "";
+}
