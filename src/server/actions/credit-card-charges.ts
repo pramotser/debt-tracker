@@ -1,6 +1,6 @@
 "use server";
 
-import { and, eq } from "drizzle-orm";
+import { and, asc, eq, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
@@ -11,6 +11,8 @@ import { getCurrentUser } from "@/lib/auth";
 const PAGE_PATH = "/credit-cards";
 
 const idSchema = z.string().uuid();
+const yearSchema = z.number().int().min(1970).max(9999);
+const monthSchema = z.number().int().min(1).max(12);
 const amountSchema = z
   .string()
   .regex(/^\d+(\.\d{1,2})?$/, "amount must be a number with up to 2 decimals");
@@ -20,9 +22,31 @@ const createChargeSchema = z.object({
   categoryId: z.string().trim().min(1),
   name: z.string().trim().min(1).max(120),
   amount: amountSchema,
-  year: z.number().int().min(1970).max(9999),
-  month: z.number().int().min(1).max(12),
+  year: yearSchema,
+  month: monthSchema,
 });
+
+// client เรียกผ่าน server action ตอนเปลี่ยนเดือน — ไม่ revalidate (client เก็บ cache เอง)
+export async function fetchCreditCardLedgerByMonth(
+  year: number,
+  month: number
+): Promise<LedgerEntry[]> {
+  const parsedYear = yearSchema.parse(year);
+  const parsedMonth = monthSchema.parse(month);
+  const user = await getCurrentUser();
+  return db
+    .select()
+    .from(ledgerEntries)
+    .where(
+      and(
+        eq(ledgerEntries.userId, user.id),
+        eq(ledgerEntries.year, parsedYear),
+        eq(ledgerEntries.month, parsedMonth),
+        inArray(ledgerEntries.type, ["CREDIT_CARD", "CREDIT_CARD_INSTALLMENT"])
+      )
+    )
+    .orderBy(asc(ledgerEntries.createdAt));
+}
 
 // one-time charge ลงบัตรเครดิต (type=CREDIT_CARD)
 // source_type='credit_card', source_id=card.id

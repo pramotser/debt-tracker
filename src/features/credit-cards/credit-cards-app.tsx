@@ -1,7 +1,13 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState, useTransition } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
 import { toast } from "sonner";
 
 import {
@@ -18,6 +24,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   createCreditCardCharge,
   deleteCreditCardCharge,
+  fetchCreditCardLedgerByMonth,
   toggleCreditCardChargePaid,
   updateCreditCardChargeAmount,
 } from "@/server/actions/credit-card-charges";
@@ -60,12 +67,29 @@ function shiftMonth(ym: YearMonth, delta: number): YearMonth {
   return { year: y, month: m };
 }
 
+function ymKey(year: number, month: number): string {
+  return `${year}-${month}`;
+}
+
+// best-effort idle scheduler (Safari ไม่มี requestIdleCallback)
+function scheduleIdle(fn: () => void): void {
+  type W = Window & {
+    requestIdleCallback?: (cb: () => void) => number;
+  };
+  const w = window as W;
+  if (typeof w.requestIdleCallback === "function") {
+    w.requestIdleCallback(fn);
+  } else {
+    setTimeout(fn, 200);
+  }
+}
+
 export function CreditCardsApp({
   initialCards,
   initialPlans,
   initialEntries,
   initialInstallmentEntries,
-  ym,
+  ym: initialYm,
 }: {
   initialCards: CreditCard[];
   initialPlans: InstallmentPlanWithProgress[];
@@ -74,6 +98,7 @@ export function CreditCardsApp({
   ym: YearMonth;
 }) {
   const router = useRouter();
+  const [ym, setYm] = useState<YearMonth>(initialYm);
   const [cards, setCards] = useState<CreditCard[]>(initialCards);
   const [plans, setPlans] =
     useState<InstallmentPlanWithProgress[]>(initialPlans);
@@ -82,19 +107,33 @@ export function CreditCardsApp({
     initialInstallmentEntries
   );
   const [, startMutation] = useTransition();
+  const [, startMonthChange] = useTransition();
 
-  useEffect(() => {
-    setCards(initialCards);
-  }, [initialCards]);
-  useEffect(() => {
-    setPlans(initialPlans);
-  }, [initialPlans]);
-  useEffect(() => {
-    setEntries(initialEntries);
-  }, [initialEntries]);
-  useEffect(() => {
-    setInstallmentEntries(initialInstallmentEntries);
-  }, [initialInstallmentEntries]);
+  // cache รายเดือนสำหรับ statement entries — key = "year-month" · seed จาก initial
+  const monthCacheRef = useRef<Map<string, LedgerEntry[]>>(
+    new Map([[ymKey(initialYm.year, initialYm.month), initialEntries]])
+  );
+
+  const setEntriesForMonth = useCallback(
+    (year: number, month: number, next: LedgerEntry[]) => {
+      monthCacheRef.current.set(ymKey(year, month), next);
+      if (year === ym.year && month === ym.month) {
+        setEntries(next);
+      }
+    },
+    [ym.year, ym.month]
+  );
+
+  const mutateCurrentMonth = useCallback(
+    (updater: (prev: LedgerEntry[]) => LedgerEntry[]) => {
+      setEntries((prev) => {
+        const next = updater(prev);
+        monthCacheRef.current.set(ymKey(ym.year, ym.month), next);
+        return next;
+      });
+    },
+    [ym.year, ym.month]
+  );
 
   const [cardDialogOpen, setCardDialogOpen] = useState(false);
   const [editingCard, setEditingCard] = useState<CreditCard | null>(null);
@@ -107,8 +146,76 @@ export function CreditCardsApp({
 
   const navigateMonth = (delta: number) => {
     const next = shiftMonth(ym, delta);
-    router.push(`?y=${next.year}&m=${next.month}`);
+    const key = ymKey(next.year, next.month);
+    const cached = monthCacheRef.current.get(key);
+
+    setYm(next);
+    router.replace(`?y=${next.year}&m=${next.month}`, { scroll: false });
+
+    if (cached) {
+      setEntries(cached);
+      return;
+    }
+
+    setEntries([]);
+    startMonthChange(async () => {
+      try {
+        const rows = await fetchCreditCardLedgerByMonth(next.year, next.month);
+        setEntriesForMonth(next.year, next.month, rows);
+      } catch (err) {
+        toast.error("โหลดเดือนไม่สำเร็จ");
+        console.error("fetchCreditCardLedgerByMonth failed", err);
+      }
+    });
   };
+
+  // sync non-month props ตอน router.refresh (settle/delete plan ใช้)
+  useEffect(() => {
+    setCards(initialCards);
+  }, [initialCards]);
+  useEffect(() => {
+    setPlans(initialPlans);
+  }, [initialPlans]);
+  useEffect(() => {
+    setInstallmentEntries(initialInstallmentEntries);
+  }, [initialInstallmentEntries]);
+  // entries: server เพิ่งส่งข้อมูลเดือน initialYm มาใหม่ (router.refresh) → อัปเดต cache
+  // และ replace state ถ้า user ยังอยู่เดือนเดียวกัน
+  useEffect(() => {
+    monthCacheRef.current.set(
+      ymKey(initialYm.year, initialYm.month),
+      initialEntries
+    );
+    if (initialYm.year === ym.year && initialYm.month === ym.month) {
+      setEntries(initialEntries);
+    }
+    // ตั้งใจไม่ใส่ ym ใน deps — sync เฉพาะตอน server ส่ง props ใหม่
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialEntries, initialYm.year, initialYm.month]);
+
+  // prefetch prev/next month เมื่อ idle
+  useEffect(() => {
+    const targets = [shiftMonth(ym, -1), shiftMonth(ym, 1)];
+    let cancelled = false;
+    scheduleIdle(() => {
+      if (cancelled) return;
+      for (const t of targets) {
+        const key = ymKey(t.year, t.month);
+        if (monthCacheRef.current.has(key)) continue;
+        fetchCreditCardLedgerByMonth(t.year, t.month)
+          .then((rows) => {
+            if (cancelled) return;
+            monthCacheRef.current.set(key, rows);
+          })
+          .catch(() => {
+            // prefetch ล้มเหลวเงียบๆ — ค่อย fetch จริงตอนนาวิเกตเอง
+          });
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [ym]);
 
   // === card mutations ===
   const handleSubmitCard = (d: CardDraft) => {
@@ -192,7 +299,13 @@ export function CreditCardsApp({
     startMutation(async () => {
       try {
         const row = await createCreditCardCharge(d);
-        setEntries((p) => [...p, row]);
+        // ลงใน cache ของเดือนที่ user เลือกใส่ (อาจไม่ใช่เดือนปัจจุบัน)
+        const key = ymKey(d.year, d.month);
+        const prev = monthCacheRef.current.get(key) ?? [];
+        monthCacheRef.current.set(key, [...prev, row]);
+        if (d.year === ym.year && d.month === ym.month) {
+          setEntries((p) => [...p, row]);
+        }
       } catch (err) {
         toast.error("เพิ่มรายการไม่สำเร็จ");
         console.error("createCreditCardCharge failed", err);
@@ -202,7 +315,7 @@ export function CreditCardsApp({
 
   const handleTogglePaidCharge = (entry: LedgerEntry) => {
     const next = !entry.paid;
-    setEntries((p) =>
+    mutateCurrentMonth((p) =>
       p.map((e) =>
         e.id === entry.id
           ? { ...e, paid: next, paidAt: next ? new Date() : null }
@@ -219,7 +332,7 @@ export function CreditCardsApp({
       } catch (err) {
         toast.error("บันทึกไม่สำเร็จ");
         console.error("togglePaid failed", err);
-        setEntries((p) =>
+        mutateCurrentMonth((p) =>
           p.map((e) =>
             e.id === entry.id
               ? { ...e, paid: !next, paidAt: !next ? new Date() : null }
@@ -233,7 +346,7 @@ export function CreditCardsApp({
   const handleUpdateAmount = (entry: LedgerEntry, amount: string) => {
     if (entry.type !== "CREDIT_CARD") return;
     const prev = entry;
-    setEntries((p) =>
+    mutateCurrentMonth((p) =>
       p.map((e) => (e.id === entry.id ? { ...e, amount } : e))
     );
     startMutation(async () => {
@@ -242,7 +355,9 @@ export function CreditCardsApp({
       } catch (err) {
         toast.error("บันทึกไม่สำเร็จ");
         console.error("updateCreditCardChargeAmount failed", err);
-        setEntries((p) => p.map((e) => (e.id === entry.id ? prev : e)));
+        mutateCurrentMonth((p) =>
+          p.map((e) => (e.id === entry.id ? prev : e))
+        );
       }
     });
   };
@@ -250,14 +365,14 @@ export function CreditCardsApp({
   const handleDeleteCharge = (entry: LedgerEntry) => {
     if (entry.type !== "CREDIT_CARD") return;
     const prev = entry;
-    setEntries((p) => p.filter((e) => e.id !== entry.id));
+    mutateCurrentMonth((p) => p.filter((e) => e.id !== entry.id));
     startMutation(async () => {
       try {
         await deleteCreditCardCharge(entry.id);
       } catch (err) {
         toast.error("ลบไม่สำเร็จ");
         console.error("deleteCreditCardCharge failed", err);
-        setEntries((p) => [...p, prev]);
+        mutateCurrentMonth((p) => [...p, prev]);
       }
     });
   };
