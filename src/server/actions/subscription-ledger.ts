@@ -1,6 +1,6 @@
 "use server";
 
-import { and, eq, inArray } from "drizzle-orm";
+import { and, asc, eq, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
@@ -69,6 +69,28 @@ export async function updateSubscriptionAmount(
   if (!row) throw new Error("entry not found");
   revalidatePath(PAGE_PATH);
   return row;
+}
+
+// client เรียกผ่าน server action ตอนเปลี่ยนเดือน — ไม่ revalidate (client เก็บ cache เอง)
+export async function fetchSubscriptionEntriesByMonth(
+  year: number,
+  month: number
+): Promise<LedgerEntry[]> {
+  const parsedYear = yearSchema.parse(year);
+  const parsedMonth = monthSchema.parse(month);
+  const user = await getCurrentUser();
+  return db
+    .select()
+    .from(ledgerEntries)
+    .where(
+      and(
+        eq(ledgerEntries.userId, user.id),
+        eq(ledgerEntries.year, parsedYear),
+        eq(ledgerEntries.month, parsedMonth),
+        eq(ledgerEntries.type, "SUBSCRIPTION")
+      )
+    )
+    .orderBy(asc(ledgerEntries.createdAt));
 }
 
 export async function deleteSubscriptionLedger(id: string): Promise<void> {

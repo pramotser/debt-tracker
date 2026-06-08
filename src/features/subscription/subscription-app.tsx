@@ -1,7 +1,14 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState, useTransition } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
 import { toast } from "sonner";
 
 import {
@@ -17,6 +24,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   deleteSubscriptionLedger,
+  fetchSubscriptionEntriesByMonth,
   importSubscriptionsToMonth,
   toggleSubscriptionPaid,
   updateSubscriptionAmount,
@@ -53,27 +61,61 @@ function ymKey(year: number, month: number): string {
   return `${year}-${month}`;
 }
 
+// best-effort idle scheduler (Safari ไม่มี requestIdleCallback)
+function scheduleIdle(fn: () => void): void {
+  type W = Window & {
+    requestIdleCallback?: (cb: () => void) => number;
+  };
+  const w = window as W;
+  if (typeof w.requestIdleCallback === "function") {
+    w.requestIdleCallback(fn);
+  } else {
+    setTimeout(fn, 200);
+  }
+}
+
 export function SubscriptionApp({
   initialTemplates,
   initialEntries,
-  ym,
+  ym: initialYm,
 }: {
   initialTemplates: SubscriptionTemplate[];
   initialEntries: LedgerEntry[];
   ym: YearMonth;
 }) {
   const router = useRouter();
+  const [ym, setYm] = useState<YearMonth>(initialYm);
   const [templates, setTemplates] =
     useState<SubscriptionTemplate[]>(initialTemplates);
   const [entries, setEntries] = useState<LedgerEntry[]>(initialEntries);
   const [, startMutation] = useTransition();
+  const [, startMonthChange] = useTransition();
 
-  useEffect(() => {
-    setTemplates(initialTemplates);
-  }, [initialTemplates]);
-  useEffect(() => {
-    setEntries(initialEntries);
-  }, [initialEntries]);
+  // cache รายเดือน — key = "year-month" · seed ด้วย initial server load
+  const monthCacheRef = useRef<Map<string, LedgerEntry[]>>(
+    new Map([[ymKey(initialYm.year, initialYm.month), initialEntries]])
+  );
+
+  const setEntriesForMonth = useCallback(
+    (year: number, month: number, next: LedgerEntry[]) => {
+      monthCacheRef.current.set(ymKey(year, month), next);
+      if (year === ym.year && month === ym.month) {
+        setEntries(next);
+      }
+    },
+    [ym.year, ym.month]
+  );
+
+  const mutateCurrentMonth = useCallback(
+    (updater: (prev: LedgerEntry[]) => LedgerEntry[]) => {
+      setEntries((prev) => {
+        const next = updater(prev);
+        monthCacheRef.current.set(ymKey(ym.year, ym.month), next);
+        return next;
+      });
+    },
+    [ym.year, ym.month]
+  );
 
   const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
   const [editingTemplate, setEditingTemplate] =
@@ -91,8 +133,55 @@ export function SubscriptionApp({
 
   const navigateMonth = (delta: number) => {
     const next = shiftMonth(ym, delta);
-    router.push(`?y=${next.year}&m=${next.month}`);
+    const key = ymKey(next.year, next.month);
+    const cached = monthCacheRef.current.get(key);
+
+    setYm(next);
+    router.replace(`?y=${next.year}&m=${next.month}`, { scroll: false });
+
+    if (cached) {
+      setEntries(cached);
+      return;
+    }
+
+    setEntries([]);
+    startMonthChange(async () => {
+      try {
+        const rows = await fetchSubscriptionEntriesByMonth(
+          next.year,
+          next.month
+        );
+        setEntriesForMonth(next.year, next.month, rows);
+      } catch (err) {
+        toast.error("โหลดเดือนไม่สำเร็จ");
+        console.error("fetchSubscriptionEntriesByMonth failed", err);
+      }
+    });
   };
+
+  // prefetch prev/next month เมื่อ idle
+  useEffect(() => {
+    const targets = [shiftMonth(ym, -1), shiftMonth(ym, 1)];
+    let cancelled = false;
+    scheduleIdle(() => {
+      if (cancelled) return;
+      for (const t of targets) {
+        const key = ymKey(t.year, t.month);
+        if (monthCacheRef.current.has(key)) continue;
+        fetchSubscriptionEntriesByMonth(t.year, t.month)
+          .then((rows) => {
+            if (cancelled) return;
+            monthCacheRef.current.set(key, rows);
+          })
+          .catch(() => {
+            // prefetch ล้มเหลวเงียบๆ — ค่อย fetch จริงตอนนาวิเกตเอง
+          });
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [ym]);
 
   const templatesById = useMemo(
     () => new Map(templates.map((t) => [t.id, t])),
@@ -126,7 +215,7 @@ export function SubscriptionApp({
     const target = entries.find((e) => e.id === id);
     if (!target) return;
     const next = !target.paid;
-    setEntries((p) =>
+    mutateCurrentMonth((p) =>
       p.map((e) =>
         e.id === id
           ? { ...e, paid: next, paidAt: next ? new Date() : null }
@@ -139,7 +228,7 @@ export function SubscriptionApp({
       } catch (err) {
         toast.error("บันทึกไม่สำเร็จ");
         console.error("toggleSubscriptionPaid failed", err);
-        setEntries((p) =>
+        mutateCurrentMonth((p) =>
           p.map((e) =>
             e.id === id
               ? { ...e, paid: !next, paidAt: !next ? new Date() : null }
@@ -153,14 +242,16 @@ export function SubscriptionApp({
   const handleUpdateAmount = (id: string, amount: string) => {
     const prev = entries.find((e) => e.id === id);
     if (!prev) return;
-    setEntries((p) => p.map((e) => (e.id === id ? { ...e, amount } : e)));
+    mutateCurrentMonth((p) =>
+      p.map((e) => (e.id === id ? { ...e, amount } : e))
+    );
     startMutation(async () => {
       try {
         await updateSubscriptionAmount(id, amount);
       } catch (err) {
         toast.error("บันทึกไม่สำเร็จ");
         console.error("updateSubscriptionAmount failed", err);
-        setEntries((p) =>
+        mutateCurrentMonth((p) =>
           p.map((e) => (e.id === id ? { ...e, amount: prev.amount } : e))
         );
       }
@@ -171,7 +262,7 @@ export function SubscriptionApp({
     const id = pendingDeleteLedgerId;
     if (!id) return;
     const prev = entries.find((e) => e.id === id);
-    setEntries((p) => p.filter((e) => e.id !== id));
+    mutateCurrentMonth((p) => p.filter((e) => e.id !== id));
     setPendingDeleteLedgerId(null);
     startMutation(async () => {
       try {
@@ -179,7 +270,7 @@ export function SubscriptionApp({
       } catch (err) {
         toast.error("บันทึกไม่สำเร็จ");
         console.error("deleteSubscriptionLedger failed", err);
-        if (prev) setEntries((p) => [...p, prev]);
+        if (prev) mutateCurrentMonth((p) => [...p, prev]);
       }
     });
   };
@@ -194,7 +285,7 @@ export function SubscriptionApp({
           ym.year,
           ym.month
         );
-        setEntries((p) => [...p, ...added]);
+        mutateCurrentMonth((p) => [...p, ...added]);
       } catch (err) {
         toast.error("บันทึกไม่สำเร็จ");
         console.error("importSubscriptionsToMonth failed", err);
