@@ -1,10 +1,6 @@
 import { DashboardApp } from "@/features/dashboard/dashboard-app";
+import { fetchDashboardDataByMonth } from "@/server/actions/dashboard";
 import { listInstallmentPlans } from "@/server/queries/credit-card-installments";
-import {
-  getDashboardKpis,
-  getMonthlyTrend,
-  getTypeBreakdown,
-} from "@/server/queries/dashboard";
 
 function parseYm(searchParams: Record<string, string | string[] | undefined>) {
   const yRaw = Array.isArray(searchParams.y) ? searchParams.y[0] : searchParams.y;
@@ -30,19 +26,11 @@ export default async function DashboardPage({
 }) {
   const sp = await searchParams;
   const ym = parseYm(sp);
-  const [kpis, trend, breakdown, plans] = await Promise.all([
-    getDashboardKpis(ym.year, ym.month),
-    getMonthlyTrend(ym.year, ym.month, 6),
-    getTypeBreakdown(ym.year, ym.month),
+  const [initialData, plans] = await Promise.all([
+    fetchDashboardDataByMonth(ym.year, ym.month),
     listInstallmentPlans(),
   ]);
   return (
-    <DashboardApp
-      ym={ym}
-      kpis={kpis}
-      trend={trend}
-      breakdown={breakdown}
-      plans={plans}
-    />
+    <DashboardApp initialYm={ym} initialData={initialData} plans={plans} />
   );
 }
