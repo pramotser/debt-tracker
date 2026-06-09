@@ -99,6 +99,8 @@ design/
 - Migrate: session pooler **port 5432**
 - อย่าใช้ Direct Connection (`db.xxx.supabase.co`) — IPv6 ต่อจากบ้านไม่ได้
 
+Production deployment (Vercel env / Supabase / Google OAuth) → `docs/deployment.md`
+
 ## Workflow
 
 - Branch ใหม่: `chore/<x>` · `feat/<x>` · `fix/<x>` — ห้ามแตะ `main`
