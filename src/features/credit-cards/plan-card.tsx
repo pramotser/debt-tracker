@@ -18,7 +18,7 @@ import { Progress } from "@/components/ui/progress";
 import { formatMoney, formatYearMonth } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
-import { CategoryBadge } from "./category-badge";
+import { CategoryBadge } from "@/components/shared/category-badge";
 import type {
   Category,
   CreditCard,

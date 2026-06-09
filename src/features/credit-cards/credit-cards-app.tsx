@@ -42,6 +42,7 @@ import {
   updateCreditCard,
 } from "@/server/actions/credit-cards";
 import type { InstallmentPlanWithProgress } from "@/server/queries/credit-card-installments";
+import { shiftMonth, ymKey } from "@/lib/month";
 
 import { CardDialog, type CardDraft } from "./card-dialog";
 import { CardListView } from "./card-list-view";
@@ -52,24 +53,6 @@ import { PlanDialog, type PlanDraft } from "./plan-dialog";
 import { SettleDialog, type SettleDraft } from "./settle-dialog";
 import { StatementView } from "./statement-view";
 import type { CreditCard, LedgerEntry, YearMonth } from "./types";
-
-function shiftMonth(ym: YearMonth, delta: number): YearMonth {
-  let m = ym.month + delta;
-  let y = ym.year;
-  while (m > 12) {
-    m -= 12;
-    y += 1;
-  }
-  while (m < 1) {
-    m += 12;
-    y -= 1;
-  }
-  return { year: y, month: m };
-}
-
-function ymKey(year: number, month: number): string {
-  return `${year}-${month}`;
-}
 
 // best-effort idle scheduler (Safari ไม่มี requestIdleCallback)
 function scheduleIdle(fn: () => void): void {

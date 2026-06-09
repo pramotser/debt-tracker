@@ -4,15 +4,16 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { formatYearMonth } from "@/lib/format";
-import type { YearMonth } from "./types";
 
 export function MonthNav({
-  ym,
+  year,
+  month,
   onPrev,
   onNext,
   disabled,
 }: {
-  ym: YearMonth;
+  year: number;
+  month: number;
   onPrev: () => void;
   onNext: () => void;
   disabled?: boolean;
@@ -29,7 +30,7 @@ export function MonthNav({
         <ChevronLeft />
       </Button>
       <span className="text-xl font-bold tabular-nums">
-        {formatYearMonth(ym.year, ym.month)}
+        {formatYearMonth(year, month)}
       </span>
       <Button
         variant="ghost"
