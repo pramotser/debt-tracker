@@ -21,7 +21,7 @@ export default function RegisterPage() {
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="text-center">
         <CardTitle>สมัครสมาชิก</CardTitle>
         <CardDescription>สร้างบัญชีใหม่ด้วย email</CardDescription>
       </CardHeader>
@@ -98,10 +98,13 @@ export default function RegisterPage() {
           </Button>
         </CardContent>
       </form>
-      <CardFooter>
+      <CardFooter className="justify-center">
         <p className="text-sm text-muted-foreground">
           มีบัญชีอยู่แล้ว?{" "}
-          <Link href="/login" className="underline">
+          <Link
+            href="/login"
+            className="font-medium text-foreground underline-offset-4 hover:underline"
+          >
             เข้าสู่ระบบ
           </Link>
         </p>
