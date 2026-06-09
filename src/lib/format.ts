@@ -42,3 +42,16 @@ const TH_MONTH_SHORT = [
 export function formatMonthShortTh(month: number): string {
   return TH_MONTH_SHORT[month - 1] ?? "";
 }
+
+/** ชื่อเต็ม: รวม first + middle + last (ข้ามตัวว่าง) — fallback "ผู้ใช้งาน" */
+export function formatFullName(parts: {
+  firstName: string;
+  middleName: string | null;
+  lastName: string;
+}): string {
+  const joined = [parts.firstName, parts.middleName, parts.lastName]
+    .map((s) => s?.trim() ?? "")
+    .filter(Boolean)
+    .join(" ");
+  return joined || "ผู้ใช้งาน";
+}

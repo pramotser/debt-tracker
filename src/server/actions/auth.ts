@@ -5,10 +5,27 @@ import { z } from "zod";
 
 import { createClient } from "@/lib/supabase/server";
 
-const credentialsSchema = z.object({
+const signInSchema = z.object({
   email: z.string().email("รูปแบบ email ไม่ถูกต้อง"),
   password: z.string().min(6, "รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร"),
 });
+
+const signUpSchema = signInSchema
+  .extend({
+    confirmPassword: z.string(),
+    firstName: z.string().trim().min(1, "กรุณากรอกชื่อ").max(50),
+    middleName: z
+      .string()
+      .trim()
+      .max(50)
+      .optional()
+      .transform((v) => (v ? v : undefined)),
+    lastName: z.string().trim().min(1, "กรุณากรอกนามสกุล").max(50),
+  })
+  .refine((d) => d.password === d.confirmPassword, {
+    path: ["confirmPassword"],
+    message: "รหัสผ่านไม่ตรงกัน",
+  });
 
 export type AuthState = { error?: string } | undefined;
 
@@ -16,7 +33,7 @@ export async function signInWithPassword(
   _prev: AuthState,
   formData: FormData
 ): Promise<AuthState> {
-  const parsed = credentialsSchema.safeParse({
+  const parsed = signInSchema.safeParse({
     email: formData.get("email"),
     password: formData.get("password"),
   });
@@ -37,16 +54,31 @@ export async function signUpWithPassword(
   _prev: AuthState,
   formData: FormData
 ): Promise<AuthState> {
-  const parsed = credentialsSchema.safeParse({
+  const parsed = signUpSchema.safeParse({
     email: formData.get("email"),
     password: formData.get("password"),
+    confirmPassword: formData.get("confirmPassword"),
+    firstName: formData.get("firstName"),
+    middleName: formData.get("middleName") ?? undefined,
+    lastName: formData.get("lastName"),
   });
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "ข้อมูลไม่ถูกต้อง" };
   }
 
+  const { email, password, firstName, middleName, lastName } = parsed.data;
   const supabase = await createClient();
-  const { error } = await supabase.auth.signUp(parsed.data);
+  const { error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      data: {
+        first_name: firstName,
+        middle_name: middleName ?? null,
+        last_name: lastName,
+      },
+    },
+  });
   if (error) {
     return { error: error.message };
   }

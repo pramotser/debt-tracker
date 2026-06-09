@@ -29,7 +29,7 @@ export default function LoginPage() {
     <>
       <AuthBrand />
       <Card>
-        <CardHeader>
+        <CardHeader className="text-center">
           <CardTitle>เข้าสู่ระบบ</CardTitle>
           <CardDescription>ใช้บัญชีของคุณเพื่อเข้าใช้งาน</CardDescription>
         </CardHeader>
