@@ -35,6 +35,7 @@ import {
   toggleSubscriptionTemplateActive,
   updateSubscriptionTemplate,
 } from "@/server/actions/subscription-templates";
+import { shiftMonth, ymKey } from "@/lib/month";
 
 import { ImportModal } from "./import-modal";
 import { MOCK_CATEGORIES } from "./mock";
@@ -42,24 +43,6 @@ import { MonthView } from "./month-view";
 import { TemplateDialog, type TemplateDraft } from "./template-dialog";
 import { TemplateView } from "./template-view";
 import type { LedgerEntry, SubscriptionTemplate, YearMonth } from "./types";
-
-function shiftMonth(ym: YearMonth, delta: number): YearMonth {
-  let m = ym.month + delta;
-  let y = ym.year;
-  while (m > 12) {
-    m -= 12;
-    y += 1;
-  }
-  while (m < 1) {
-    m += 12;
-    y -= 1;
-  }
-  return { year: y, month: m };
-}
-
-function ymKey(year: number, month: number): string {
-  return `${year}-${month}`;
-}
 
 // best-effort idle scheduler (Safari ไม่มี requestIdleCallback)
 function scheduleIdle(fn: () => void): void {

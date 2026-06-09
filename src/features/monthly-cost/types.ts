@@ -13,7 +13,4 @@ export type Category = {
   name: string;
 };
 
-export type YearMonth = {
-  year: number;
-  month: number;
-};
+export type { YearMonth } from "@/lib/month";

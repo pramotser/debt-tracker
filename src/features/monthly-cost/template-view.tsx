@@ -10,7 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
-import { CategoryBadge } from "./category-badge";
+import { CategoryBadge } from "@/components/shared/category-badge";
 import type { Category, FixedCostTemplate } from "./types";
 
 export function TemplateView({

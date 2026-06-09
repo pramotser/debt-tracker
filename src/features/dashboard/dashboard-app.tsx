@@ -9,31 +9,14 @@ import {
   type DashboardMonthData,
 } from "@/server/actions/dashboard";
 import type { InstallmentPlanWithProgress } from "@/server/queries/credit-card-installments";
+import { MonthNav } from "@/components/layout/month-nav";
+import { shiftMonth, ymKey } from "@/lib/month";
 
 import { InstallmentRunway } from "./installment-runway";
 import { KpiCards } from "./kpi-cards";
-import { MonthNav } from "./month-nav";
 import { TrendChart } from "./trend-chart";
 import { TypeBreakdownChart } from "./type-breakdown-chart";
 import type { YearMonth } from "./types";
-
-function shiftMonth(ym: YearMonth, delta: number): YearMonth {
-  let m = ym.month + delta;
-  let y = ym.year;
-  while (m > 12) {
-    m -= 12;
-    y += 1;
-  }
-  while (m < 1) {
-    m += 12;
-    y -= 1;
-  }
-  return { year: y, month: m };
-}
-
-function ymKey(year: number, month: number): string {
-  return `${year}-${month}`;
-}
 
 // best-effort idle scheduler (Safari ไม่มี requestIdleCallback)
 function scheduleIdle(fn: () => void): void {
@@ -131,7 +114,8 @@ export function DashboardApp({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-bold">ภาพรวม</h1>
         <MonthNav
-          ym={ym}
+          year={ym.year}
+          month={ym.month}
           onPrev={() => navigateMonth(-1)}
           onNext={() => navigateMonth(1)}
         />

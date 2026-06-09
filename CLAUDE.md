@@ -6,9 +6,9 @@
 Next.js App Router + TS · shadcn/ui + Tailwind v4 (UI เดียว ห้าม MUI) · Drizzle ORM (+drizzle-kit, drizzle-zod) · zod · date-fns · next-intl (TH ก่อน) · Supabase Postgres · Vercel
 
 ## กฎเหล็ก (สำคัญสุด)
-1. ทำบน branch `chore/feat/fix-<x>` เท่านั้น ห้ามแตะ `main`
+1. Git flow: `main` = production · `develop` = integration · feature branches `chore/feat/fix/perf/docs-<x>` แตกจาก `develop` แล้ว merge กลับ `develop` · `develop` → `main` ทำเมื่อเจ้าของยืนยัน — **ห้ามแตะ `main` ตรง ๆ**
 2. เขียนเสร็จ → `npm run dev` ให้ขึ้น + `tsc` ผ่าน → commit ได้เลย (Conventional Commits) → สรุปสิ่งที่ทำ
-3. **ห้าม push / เปิด PR เอง** จนกว่าเจ้าของยืนยัน (commit local ได้ แต่ของห้ามออก remote)
+3. **ห้าม push / เปิด PR เอง** จนกว่าเจ้าของยืนยัน (commit/merge local ได้ แต่ของห้ามออก remote)
 4. ตรวจก่อน commit: ไม่มี `.env*`/secret หลุด
 
 ## Conventions

@@ -1,13 +1,42 @@
-// dev stub — รอบนี้ยังไม่ต่อ auth จริง
-// ทุก query ราย user ต้องกรองผ่าน getCurrentUser() เพื่อความสม่ำเสมอ
-// id = uuid ของ dev user ที่ seed ไว้ (src/db/seed.ts) เพื่อให้ query DB จริงได้
-// ต่อ DB/auth จริงค่อยมาแทน internals ที่นี่
+// Auth source = Supabase Auth (cookie session)
+// public.users.id = auth.users.id (FK + trigger sync)
+// role อ่านจาก public.users.role
+// ทุก server query/action ต้องเรียก getCurrentUser() เพื่อกัน orphan / cross-user read
+
+import { eq } from "drizzle-orm";
+import { cache } from "react";
+
+import { db } from "@/db";
+import { users } from "@/db/schema";
+
+import { createClient } from "./supabase/server";
 
 export type CurrentUser = {
   id: string;
   role: "admin" | "user";
 };
 
-export async function getCurrentUser(): Promise<CurrentUser> {
-  return { id: "00000000-0000-0000-0000-000000000001", role: "user" };
-}
+// cache ต่อ request — ลดการ join role ซ้ำ
+export const getCurrentUser = cache(async (): Promise<CurrentUser> => {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    throw new Error("Not authenticated");
+  }
+
+  const [row] = await db
+    .select({ id: users.id, role: users.role })
+    .from(users)
+    .where(eq(users.id, user.id))
+    .limit(1);
+
+  if (!row) {
+    // trigger ควรสร้าง row อัตโนมัติ — ถ้าไม่มี = state เพี้ยน
+    throw new Error(`Profile not found for auth user ${user.id}`);
+  }
+
+  return { id: row.id, role: row.role };
+});
