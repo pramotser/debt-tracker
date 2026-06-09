@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useActionState } from "react";
 
+import { AuthBrand } from "@/components/layout/auth-brand";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -20,7 +21,9 @@ export default function RegisterPage() {
   const [state, action, pending] = useActionState(signUpWithPassword, undefined);
 
   return (
-    <Card>
+    <>
+      <AuthBrand />
+      <Card>
       <CardHeader className="text-center">
         <CardTitle>สมัครสมาชิก</CardTitle>
         <CardDescription>สร้างบัญชีใหม่ด้วย email</CardDescription>
@@ -110,5 +113,6 @@ export default function RegisterPage() {
         </p>
       </CardFooter>
     </Card>
+    </>
   );
 }
