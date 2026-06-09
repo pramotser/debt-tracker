@@ -16,7 +16,7 @@ import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { formatMoney, formatYearMonth } from "@/lib/format";
 
-import { CategoryBadge } from "./category-badge";
+import { CategoryBadge } from "@/components/shared/category-badge";
 import type { Category, FixedCostTemplate, YearMonth } from "./types";
 
 export function ImportModal({

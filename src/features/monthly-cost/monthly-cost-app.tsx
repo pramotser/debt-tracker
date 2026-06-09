@@ -37,6 +37,8 @@ import {
   updateLedgerEntryAmount,
 } from "@/server/actions/ledger-entries";
 
+import { shiftMonth, ymKey } from "@/lib/month";
+
 import { ImportModal } from "./import-modal";
 import { AddItemDialog, type ItemDraft } from "./item-dialog";
 import { DEV_USER_ID, MOCK_CATEGORIES } from "./mock";
@@ -45,26 +47,8 @@ import { AddTemplateDialog, type TemplateDraft } from "./template-dialog";
 import { TemplateView } from "./template-view";
 import type { FixedCostTemplate, LedgerEntry, YearMonth } from "./types";
 
-function shiftMonth(ym: YearMonth, delta: number): YearMonth {
-  let m = ym.month + delta;
-  let y = ym.year;
-  while (m > 12) {
-    m -= 12;
-    y += 1;
-  }
-  while (m < 1) {
-    m += 12;
-    y -= 1;
-  }
-  return { year: y, month: m };
-}
-
 function normalizeName(s: string) {
   return s.trim().toLocaleLowerCase("th");
-}
-
-function ymKey(year: number, month: number): string {
-  return `${year}-${month}`;
 }
 
 // best-effort idle scheduler (Safari ไม่มี requestIdleCallback)

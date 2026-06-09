@@ -15,10 +15,7 @@ export type Bank = {
   name: string;
 };
 
-export type YearMonth = {
-  year: number;
-  month: number;
-};
+export type { YearMonth } from "@/lib/month";
 
 export type UiStatus =
   | "active"

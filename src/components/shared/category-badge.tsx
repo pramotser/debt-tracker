@@ -1,8 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 
-import type { Category } from "./types";
-
-export function CategoryBadge({ category }: { category?: Category }) {
+export function CategoryBadge({ category }: { category?: { name: string } }) {
   if (!category) {
     return (
       <Badge variant="outline" className="text-muted-foreground">
