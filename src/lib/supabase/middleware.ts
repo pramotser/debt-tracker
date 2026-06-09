@@ -34,6 +34,8 @@ export async function updateSession(request: NextRequest) {
   const isAuthRoute =
     pathname.startsWith("/login") ||
     pathname.startsWith("/register") ||
+    pathname.startsWith("/forgot-password") ||
+    pathname.startsWith("/reset-password") ||
     pathname.startsWith("/auth");
 
   if (!user && !isAuthRoute) {
@@ -42,7 +44,13 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  if (user && isAuthRoute && !pathname.startsWith("/auth")) {
+  // /reset-password ยกเว้น redirect — recovery link ใส่ session แล้วมา set password ใหม่
+  if (
+    user &&
+    isAuthRoute &&
+    !pathname.startsWith("/auth") &&
+    !pathname.startsWith("/reset-password")
+  ) {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";
     return NextResponse.redirect(url);

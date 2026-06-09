@@ -14,9 +14,12 @@ import { createClient } from "./supabase/server";
 export type CurrentUser = {
   id: string;
   role: "admin" | "user";
+  firstName: string;
+  middleName: string | null;
+  lastName: string;
 };
 
-// cache ต่อ request — ลดการ join role ซ้ำ
+// cache ต่อ request — ลดการ join role/name ซ้ำ
 export const getCurrentUser = cache(async (): Promise<CurrentUser> => {
   const supabase = await createClient();
   const {
@@ -28,7 +31,13 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser> => {
   }
 
   const [row] = await db
-    .select({ id: users.id, role: users.role })
+    .select({
+      id: users.id,
+      role: users.role,
+      firstName: users.firstName,
+      middleName: users.middleName,
+      lastName: users.lastName,
+    })
     .from(users)
     .where(eq(users.id, user.id))
     .limit(1);
@@ -38,5 +47,5 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser> => {
     throw new Error(`Profile not found for auth user ${user.id}`);
   }
 
-  return { id: row.id, role: row.role };
+  return row;
 });
