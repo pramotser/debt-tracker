@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { signInWithGoogle, signUpWithPassword } from "@/server/actions/auth";
+import { signUpWithPassword } from "@/server/actions/auth";
 
 export default function RegisterPage() {
   const [state, action, pending] = useActionState(signUpWithPassword, undefined);
@@ -23,7 +23,7 @@ export default function RegisterPage() {
     <Card>
       <CardHeader>
         <CardTitle>สมัครสมาชิก</CardTitle>
-        <CardDescription>สร้างบัญชีใหม่ด้วย email หรือ Google</CardDescription>
+        <CardDescription>สร้างบัญชีใหม่ด้วย email</CardDescription>
       </CardHeader>
       <form action={action}>
         <CardContent className="flex flex-col gap-4">
@@ -98,12 +98,7 @@ export default function RegisterPage() {
           </Button>
         </CardContent>
       </form>
-      <CardFooter className="flex flex-col gap-3">
-        <form action={signInWithGoogle} className="w-full">
-          <Button type="submit" variant="outline" className="w-full">
-            สมัครด้วย Google
-          </Button>
-        </form>
+      <CardFooter>
         <p className="text-sm text-muted-foreground">
           มีบัญชีอยู่แล้ว?{" "}
           <Link href="/login" className="underline">
