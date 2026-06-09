@@ -27,6 +27,37 @@ export default function RegisterPage() {
       </CardHeader>
       <form action={action}>
         <CardContent className="flex flex-col gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="firstName">ชื่อ</Label>
+              <Input
+                id="firstName"
+                name="firstName"
+                required
+                maxLength={50}
+                autoComplete="given-name"
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="lastName">นามสกุล</Label>
+              <Input
+                id="lastName"
+                name="lastName"
+                required
+                maxLength={50}
+                autoComplete="family-name"
+              />
+            </div>
+          </div>
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="middleName">ชื่อกลาง (ถ้ามี)</Label>
+            <Input
+              id="middleName"
+              name="middleName"
+              maxLength={50}
+              autoComplete="additional-name"
+            />
+          </div>
           <div className="flex flex-col gap-2">
             <Label htmlFor="email">Email</Label>
             <Input
@@ -42,6 +73,17 @@ export default function RegisterPage() {
             <Input
               id="password"
               name="password"
+              type="password"
+              required
+              minLength={6}
+              autoComplete="new-password"
+            />
+          </div>
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="confirmPassword">ยืนยันรหัสผ่าน</Label>
+            <Input
+              id="confirmPassword"
+              name="confirmPassword"
               type="password"
               required
               minLength={6}
