@@ -29,3 +29,9 @@ export const installmentStatus = pgEnum(
   "installment_status",
   INSTALLMENT_STATUSES
 );
+
+export const USER_ROLES = ["admin", "user"] as const;
+
+export type UserRole = (typeof USER_ROLES)[number];
+
+export const userRole = pgEnum("user_role", USER_ROLES);
