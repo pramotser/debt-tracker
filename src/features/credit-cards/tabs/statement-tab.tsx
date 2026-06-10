@@ -26,19 +26,6 @@ import { MOCK_CATEGORIES } from "../mock";
 import { StatementView } from "../statement-view";
 import type { CreditCard, LedgerEntry, YearMonth } from "../types";
 
-// best-effort idle scheduler (Safari ไม่มี requestIdleCallback)
-function scheduleIdle(fn: () => void): void {
-  type W = Window & {
-    requestIdleCallback?: (cb: () => void) => number;
-  };
-  const w = window as W;
-  if (typeof w.requestIdleCallback === "function") {
-    w.requestIdleCallback(fn);
-  } else {
-    setTimeout(fn, 200);
-  }
-}
-
 export function StatementTab({
   initialYm,
   initialEntries,
@@ -120,30 +107,6 @@ export function StatementTab({
     // ตั้งใจไม่ใส่ ym ใน deps — sync เฉพาะตอน server ส่ง props ใหม่
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialEntries, initialYm.year, initialYm.month]);
-
-  // prefetch prev/next month เมื่อ idle
-  useEffect(() => {
-    const targets = [shiftMonth(ym, -1), shiftMonth(ym, 1)];
-    let cancelled = false;
-    scheduleIdle(() => {
-      if (cancelled) return;
-      for (const t of targets) {
-        const key = ymKey(t.year, t.month);
-        if (monthCacheRef.current.has(key)) continue;
-        fetchCreditCardLedgerByMonth(t.year, t.month)
-          .then((rows) => {
-            if (cancelled) return;
-            monthCacheRef.current.set(key, rows);
-          })
-          .catch(() => {
-            // prefetch ล้มเหลวเงียบๆ — ค่อย fetch จริงตอนนาวิเกตเอง
-          });
-      }
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [ym]);
 
   const handleSubmitCharge = (d: ChargeDraft) => {
     startMutation(async () => {

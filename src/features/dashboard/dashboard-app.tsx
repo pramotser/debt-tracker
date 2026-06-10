@@ -18,19 +18,6 @@ import { TrendChart } from "./trend-chart";
 import { TypeBreakdownChart } from "./type-breakdown-chart";
 import type { YearMonth } from "./types";
 
-// best-effort idle scheduler (Safari ไม่มี requestIdleCallback)
-function scheduleIdle(fn: () => void): void {
-  type W = Window & {
-    requestIdleCallback?: (cb: () => void) => number;
-  };
-  const w = window as W;
-  if (typeof w.requestIdleCallback === "function") {
-    w.requestIdleCallback(fn);
-  } else {
-    setTimeout(fn, 200);
-  }
-}
-
 export function DashboardApp({
   initialYm,
   initialData,
@@ -84,30 +71,6 @@ export function DashboardApp({
       }
     });
   };
-
-  // prefetch prev/next month ตอน idle
-  useEffect(() => {
-    const targets = [shiftMonth(ym, -1), shiftMonth(ym, 1)];
-    let cancelled = false;
-    scheduleIdle(() => {
-      if (cancelled) return;
-      for (const t of targets) {
-        const key = ymKey(t.year, t.month);
-        if (cacheRef.current.has(key)) continue;
-        fetchDashboardDataByMonth(t.year, t.month)
-          .then((d) => {
-            if (cancelled) return;
-            cacheRef.current.set(key, d);
-          })
-          .catch(() => {
-            // prefetch fail เงียบๆ — ค่อย fetch จริงตอนนาวิเกตเอง
-          });
-      }
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [ym]);
 
   return (
     <div className="flex flex-col gap-5">

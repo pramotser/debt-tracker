@@ -3,7 +3,6 @@
 import { useRouter } from "next/navigation";
 import {
   useCallback,
-  useEffect,
   useMemo,
   useRef,
   useState,
@@ -49,19 +48,6 @@ import type { FixedCostTemplate, LedgerEntry, YearMonth } from "./types";
 
 function normalizeName(s: string) {
   return s.trim().toLocaleLowerCase("th");
-}
-
-// best-effort idle scheduler (Safari ไม่มี requestIdleCallback)
-function scheduleIdle(fn: () => void): void {
-  type W = Window & {
-    requestIdleCallback?: (cb: () => void) => number;
-  };
-  const w = window as W;
-  if (typeof w.requestIdleCallback === "function") {
-    w.requestIdleCallback(fn);
-  } else {
-    setTimeout(fn, 200);
-  }
 }
 
 export function MonthlyCostApp({
@@ -142,30 +128,6 @@ export function MonthlyCostApp({
       }
     });
   };
-
-  // prefetch prev/next month เมื่อ idle
-  useEffect(() => {
-    const targets = [shiftMonth(ym, -1), shiftMonth(ym, 1)];
-    let cancelled = false;
-    scheduleIdle(() => {
-      if (cancelled) return;
-      for (const t of targets) {
-        const key = ymKey(t.year, t.month);
-        if (monthCacheRef.current.has(key)) continue;
-        fetchFixCostEntriesByMonth(t.year, t.month)
-          .then((rows) => {
-            if (cancelled) return;
-            monthCacheRef.current.set(key, rows);
-          })
-          .catch(() => {
-            // prefetch ล้มเหลวเงียบๆ — ค่อย fetch จริงตอนนาวิเกตเอง
-          });
-      }
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [ym]);
 
   // pending = active template ที่ยังไม่มี ledger row sourceId ตรงในเดือนนี้
   const pendingTemplates = useMemo(() => {
