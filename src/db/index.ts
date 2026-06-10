@@ -13,10 +13,12 @@ if (!url) {
 }
 
 // pooler = transaction mode → prepare ต้องเป็น false
-// Vercel serverless: max=1 (1 instance handle 1 request), idle_timeout สั้น (function freeze → pgbouncer drop)
+// max=10: ให้ Promise.all ของหลาย queries ใน page render วิ่งขนานจริง + รับ concurrent GET/POST ได้
+// (เดิม max=1 ทำให้ Promise.all queue serial — 4 queries × ~200ms กลายเป็น ~800ms)
+// Supabase transaction pooler 6543 รับ connections เยอะอยู่แล้ว, bottleneck คือฝั่ง app pool ไม่ใช่ pooler
 const client = postgres(url, {
   prepare: false,
-  max: 1,
+  max: 10,
   idle_timeout: 20,
   connect_timeout: 10,
 });
