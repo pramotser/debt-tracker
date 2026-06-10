@@ -3,7 +3,9 @@
 แอปติดตามหนี้/รายจ่ายส่วนตัว (ใช้คนเดียวก่อน เผื่อขยาย) — แทน Notion tracker
 
 ## Stack (ล็อก ห้ามเปลี่ยนเอง)
-Next.js App Router + TS · shadcn/ui + Tailwind v4 (UI เดียว ห้าม MUI) · Drizzle ORM (+drizzle-kit, drizzle-zod) · zod · date-fns · next-intl (TH ก่อน) · Supabase Postgres · Vercel
+Next.js 16 App Router + TS · shadcn/ui + Tailwind v4 (UI เดียว ห้าม MUI) · Drizzle ORM (+drizzle-kit, drizzle-zod) · zod · date-fns · next-intl (TH ก่อน) · Supabase Postgres · Vercel
+
+> Next.js 16 มี breaking changes จาก training data — อ่าน `node_modules/next/dist/docs/` ก่อนเขียน API/convention ใหม่ ห้ามเดา
 
 ## กฎเหล็ก (สำคัญสุด)
 1. Git flow: `main` = production · `develop` = integration · feature branches `chore/feat/fix/perf/docs-<x>` แตกจาก `develop` แล้ว merge กลับ `develop` · `develop` → `main` ทำเมื่อเจ้าของยืนยัน — **ห้ามแตะ `main` ตรง ๆ**
@@ -39,6 +41,9 @@ Next.js App Router + TS · shadcn/ui + Tailwind v4 (UI เดียว ห้า
 
 Routes layout: route `/installment` เดิม ถูกย้ายเป็น tab ของ `/credit-cards` แล้ว — server actions ใน `credit-card-installments.ts` revalidate `/credit-cards`
 
-Credit Cost/Installment = module ซับซ้อนสุด (ผ่อน 0%/มีดอก/ปิดยอด) — spec ที่ `design/specs/credit-cards/` (อ่าน `README.md` ก่อน แล้วต่อด้วย `tab2-installment.md` สำหรับ logic ผ่อน) ห้ามเดา logic
+Credit Cost/Installment = module ซับซ้อนสุด (ผ่อน 0%/มีดอก/ปิดยอด) — spec ที่ `docs/specs/credit-cards/` (อ่าน `README.md` ก่อน แล้วต่อด้วย `tab2-installment.md` สำหรับ logic ผ่อน) ห้ามเดา logic
 
-ดู `design/README.md` สำหรับ map spec → route และ convention ของ spec
+## Docs
+- `docs/README.md` — index รวม (runbook + spec + archive)
+- `docs/specs/` — spec รายโมดูล (อ่านก่อนทำ feature ซับซ้อน)
+- `docs/deployment.md` — production runbook (Vercel + Supabase + OAuth)
