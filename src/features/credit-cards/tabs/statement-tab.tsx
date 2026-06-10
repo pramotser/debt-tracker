@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import {
   useCallback,
   useEffect,
@@ -37,7 +36,6 @@ export function StatementTab({
   cards: CreditCard[];
   plans: InstallmentPlanWithProgress[];
 }) {
-  const router = useRouter();
   const [ym, setYm] = useState<YearMonth>(initialYm);
   const [entries, setEntries] = useState<LedgerEntry[]>(initialEntries);
   const [, startMutation] = useTransition();
@@ -49,15 +47,11 @@ export function StatementTab({
     new Map([[ymKey(initialYm.year, initialYm.month), initialEntries]])
   );
 
-  const setEntriesForMonth = useCallback(
-    (year: number, month: number, next: LedgerEntry[]) => {
-      monthCacheRef.current.set(ymKey(year, month), next);
-      if (year === ym.year && month === ym.month) {
-        setEntries(next);
-      }
-    },
-    [ym.year, ym.month]
-  );
+  // ymRef = ค่าล่าสุดเสมอ ใช้เช็คใน async ว่ายังอยู่เดือนเดียวกันมั้ย
+  const ymRef = useRef(ym);
+  useEffect(() => {
+    ymRef.current = ym;
+  }, [ym]);
 
   const mutateCurrentMonth = useCallback(
     (updater: (prev: LedgerEntry[]) => LedgerEntry[]) => {
@@ -76,7 +70,7 @@ export function StatementTab({
     const cached = monthCacheRef.current.get(key);
 
     setYm(next);
-    router.replace(`?y=${next.year}&m=${next.month}`, { scroll: false });
+    window.history.replaceState(null, "", `?y=${next.year}&m=${next.month}`);
 
     if (cached) {
       setEntries(cached);
@@ -87,7 +81,13 @@ export function StatementTab({
     startMonthChange(async () => {
       try {
         const rows = await fetchCreditCardLedgerByMonth(next.year, next.month);
-        setEntriesForMonth(next.year, next.month, rows);
+        monthCacheRef.current.set(key, rows);
+        if (
+          ymRef.current.year === next.year &&
+          ymRef.current.month === next.month
+        ) {
+          setEntries(rows);
+        }
       } catch (err) {
         toast.error("โหลดเดือนไม่สำเร็จ");
         console.error("fetchCreditCardLedgerByMonth failed", err);
