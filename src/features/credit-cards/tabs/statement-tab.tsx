@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import {
   useCallback,
   useEffect,
@@ -37,7 +36,6 @@ export function StatementTab({
   cards: CreditCard[];
   plans: InstallmentPlanWithProgress[];
 }) {
-  const router = useRouter();
   const [ym, setYm] = useState<YearMonth>(initialYm);
   const [entries, setEntries] = useState<LedgerEntry[]>(initialEntries);
   const [, startMutation] = useTransition();
@@ -76,7 +74,7 @@ export function StatementTab({
     const cached = monthCacheRef.current.get(key);
 
     setYm(next);
-    router.replace(`?y=${next.year}&m=${next.month}`, { scroll: false });
+    window.history.replaceState(null, "", `?y=${next.year}&m=${next.month}`);
 
     if (cached) {
       setEntries(cached);

@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import {
   useCallback,
   useMemo,
@@ -59,7 +58,6 @@ export function MonthlyCostApp({
   initialEntries: LedgerEntry[];
   ym: YearMonth;
 }) {
-  const router = useRouter();
   const [ym, setYm] = useState<YearMonth>(initialYm);
   const [entries, setEntries] = useState<LedgerEntry[]>(initialEntries);
   const [templates, setTemplates] =
@@ -110,7 +108,7 @@ export function MonthlyCostApp({
     const cached = monthCacheRef.current.get(key);
 
     setYm(next);
-    router.replace(`?y=${next.year}&m=${next.month}`, { scroll: false });
+    window.history.replaceState(null, "", `?y=${next.year}&m=${next.month}`);
 
     if (cached) {
       setEntries(cached);

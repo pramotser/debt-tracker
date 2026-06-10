@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { toast } from "sonner";
 
@@ -27,7 +26,6 @@ export function DashboardApp({
   initialData: DashboardMonthData;
   plans: InstallmentPlanWithProgress[];
 }) {
-  const router = useRouter();
   const [ym, setYm] = useState<YearMonth>(initialYm);
   const [data, setData] = useState<DashboardMonthData>(initialData);
   const [pending, startMonthChange] = useTransition();
@@ -48,7 +46,7 @@ export function DashboardApp({
     const cached = cacheRef.current.get(key);
 
     setYm(next);
-    router.replace(`?y=${next.year}&m=${next.month}`, { scroll: false });
+    window.history.replaceState(null, "", `?y=${next.year}&m=${next.month}`);
 
     if (cached) {
       setData(cached);

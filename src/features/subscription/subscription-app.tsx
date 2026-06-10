@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import {
   useCallback,
   useMemo,
@@ -52,7 +51,6 @@ export function SubscriptionApp({
   initialEntries: LedgerEntry[];
   ym: YearMonth;
 }) {
-  const router = useRouter();
   const [ym, setYm] = useState<YearMonth>(initialYm);
   const [templates, setTemplates] =
     useState<SubscriptionTemplate[]>(initialTemplates);
@@ -106,7 +104,7 @@ export function SubscriptionApp({
     const cached = monthCacheRef.current.get(key);
 
     setYm(next);
-    router.replace(`?y=${next.year}&m=${next.month}`, { scroll: false });
+    window.history.replaceState(null, "", `?y=${next.year}&m=${next.month}`);
 
     if (cached) {
       setEntries(cached);
