@@ -3,7 +3,6 @@
 import { useRouter } from "next/navigation";
 import {
   useCallback,
-  useEffect,
   useMemo,
   useRef,
   useState,
@@ -43,19 +42,6 @@ import { MonthView } from "./month-view";
 import { TemplateDialog, type TemplateDraft } from "./template-dialog";
 import { TemplateView } from "./template-view";
 import type { LedgerEntry, SubscriptionTemplate, YearMonth } from "./types";
-
-// best-effort idle scheduler (Safari ไม่มี requestIdleCallback)
-function scheduleIdle(fn: () => void): void {
-  type W = Window & {
-    requestIdleCallback?: (cb: () => void) => number;
-  };
-  const w = window as W;
-  if (typeof w.requestIdleCallback === "function") {
-    w.requestIdleCallback(fn);
-  } else {
-    setTimeout(fn, 200);
-  }
-}
 
 export function SubscriptionApp({
   initialTemplates,
@@ -141,30 +127,6 @@ export function SubscriptionApp({
       }
     });
   };
-
-  // prefetch prev/next month เมื่อ idle
-  useEffect(() => {
-    const targets = [shiftMonth(ym, -1), shiftMonth(ym, 1)];
-    let cancelled = false;
-    scheduleIdle(() => {
-      if (cancelled) return;
-      for (const t of targets) {
-        const key = ymKey(t.year, t.month);
-        if (monthCacheRef.current.has(key)) continue;
-        fetchSubscriptionEntriesByMonth(t.year, t.month)
-          .then((rows) => {
-            if (cancelled) return;
-            monthCacheRef.current.set(key, rows);
-          })
-          .catch(() => {
-            // prefetch ล้มเหลวเงียบๆ — ค่อย fetch จริงตอนนาวิเกตเอง
-          });
-      }
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [ym]);
 
   const templatesById = useMemo(
     () => new Map(templates.map((t) => [t.id, t])),
