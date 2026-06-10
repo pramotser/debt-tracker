@@ -2,6 +2,15 @@
 
 แอปติดตามหนี้/รายจ่ายส่วนตัวที่สร้างมาแทน Notion tracker — ใช้คนเดียวก่อน เผื่อขยาย
 
+## Doc map
+
+| File | ใช้ตอนไหน |
+|---|---|
+| [`CLAUDE.md`](./CLAUDE.md) | กฎ + convention — อ่านก่อนเขียน code |
+| [`docs/README.md`](./docs/README.md) | index ของ doc ทั้งหมด (spec / runbook / archive) |
+| [`docs/specs/`](./docs/specs/) | spec รายโมดูล — อ่านก่อนทำ feature ที่มี business logic ซับซ้อน |
+| [`docs/deployment.md`](./docs/deployment.md) | production runbook (Vercel + Supabase + OAuth) |
+
 ## Stack
 
 - **Next.js 16** (App Router) + TypeScript + React 19
@@ -53,16 +62,13 @@ src/
     format.ts                  # formatMoney / formatYearMonth
   messages/th.json             # i18n
 
-design/
-  README.md                    # index — เริ่มจากตรงนี้
+docs/
+  README.md                    # index ของ doc ทั้งหมด
+  deployment.md                # production runbook
   specs/                       # spec ของแต่ละ module — อ่านก่อนลงมือ
-    monthly-cost.md
-    subscription.md
-    credit-cards/                # /credit-cards 3 tabs
-      README.md                    # overview + data model
-      tab1-statement.md
-      tab2-installment.md
-      tab3-cards.md
+    monthly-cost.md  subscription.md
+    credit-cards/                # /credit-cards 3 tabs (README + tab1/2/3)
+  email-templates/             # Supabase email templates
   archive/                     # UI mock เก่า (mock.html + prototype.jsx)
 ```
 
@@ -99,11 +105,13 @@ design/
 - Migrate: session pooler **port 5432**
 - อย่าใช้ Direct Connection (`db.xxx.supabase.co`) — IPv6 ต่อจากบ้านไม่ได้
 
+Production deployment (Vercel env / Supabase / Google OAuth) → `docs/deployment.md`
+
 ## Workflow
 
 - Branch ใหม่: `chore/<x>` · `feat/<x>` · `fix/<x>` — ห้ามแตะ `main`
 - Commit message: Conventional Commits (`feat(cards): ...`)
 - ไม่ push/PR เองจนกว่าเจ้าของจะอนุมัติ
-- ทุก spec ของ module ซับซ้อนอยู่ที่ `design/specs/` — อ่านก่อนลงมือเสมอ ห้ามเดา logic
+- ทุก spec ของ module ซับซ้อนอยู่ที่ `docs/specs/` — อ่านก่อนลงมือเสมอ ห้ามเดา logic
 
 ดู `CLAUDE.md` สำหรับกฎเฉพาะของ AI agent

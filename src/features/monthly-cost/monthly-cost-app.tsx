@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import {
   useCallback,
   useEffect,
@@ -51,19 +50,6 @@ function normalizeName(s: string) {
   return s.trim().toLocaleLowerCase("th");
 }
 
-// best-effort idle scheduler (Safari ไม่มี requestIdleCallback)
-function scheduleIdle(fn: () => void): void {
-  type W = Window & {
-    requestIdleCallback?: (cb: () => void) => number;
-  };
-  const w = window as W;
-  if (typeof w.requestIdleCallback === "function") {
-    w.requestIdleCallback(fn);
-  } else {
-    setTimeout(fn, 200);
-  }
-}
-
 export function MonthlyCostApp({
   initialTemplates,
   initialEntries,
@@ -73,7 +59,6 @@ export function MonthlyCostApp({
   initialEntries: LedgerEntry[];
   ym: YearMonth;
 }) {
-  const router = useRouter();
   const [ym, setYm] = useState<YearMonth>(initialYm);
   const [entries, setEntries] = useState<LedgerEntry[]>(initialEntries);
   const [templates, setTemplates] =
@@ -87,15 +72,11 @@ export function MonthlyCostApp({
     new Map([[ymKey(initialYm.year, initialYm.month), initialEntries]])
   );
 
-  const setEntriesForMonth = useCallback(
-    (year: number, month: number, next: LedgerEntry[]) => {
-      monthCacheRef.current.set(ymKey(year, month), next);
-      if (year === ym.year && month === ym.month) {
-        setEntries(next);
-      }
-    },
-    [ym.year, ym.month]
-  );
+  // ymRef = ค่าล่าสุดเสมอ ใช้เช็คใน async ว่ายังอยู่เดือนเดียวกันมั้ย
+  const ymRef = useRef(ym);
+  useEffect(() => {
+    ymRef.current = ym;
+  }, [ym]);
 
   const mutateCurrentMonth = useCallback(
     (updater: (prev: LedgerEntry[]) => LedgerEntry[]) => {
@@ -124,7 +105,7 @@ export function MonthlyCostApp({
     const cached = monthCacheRef.current.get(key);
 
     setYm(next);
-    router.replace(`?y=${next.year}&m=${next.month}`, { scroll: false });
+    window.history.replaceState(null, "", `?y=${next.year}&m=${next.month}`);
 
     if (cached) {
       setEntries(cached);
@@ -135,37 +116,19 @@ export function MonthlyCostApp({
     startMonthChange(async () => {
       try {
         const rows = await fetchFixCostEntriesByMonth(next.year, next.month);
-        setEntriesForMonth(next.year, next.month, rows);
+        monthCacheRef.current.set(key, rows);
+        if (
+          ymRef.current.year === next.year &&
+          ymRef.current.month === next.month
+        ) {
+          setEntries(rows);
+        }
       } catch (err) {
         toast.error("โหลดเดือนไม่สำเร็จ");
         console.error("fetchFixCostEntriesByMonth failed", err);
       }
     });
   };
-
-  // prefetch prev/next month เมื่อ idle
-  useEffect(() => {
-    const targets = [shiftMonth(ym, -1), shiftMonth(ym, 1)];
-    let cancelled = false;
-    scheduleIdle(() => {
-      if (cancelled) return;
-      for (const t of targets) {
-        const key = ymKey(t.year, t.month);
-        if (monthCacheRef.current.has(key)) continue;
-        fetchFixCostEntriesByMonth(t.year, t.month)
-          .then((rows) => {
-            if (cancelled) return;
-            monthCacheRef.current.set(key, rows);
-          })
-          .catch(() => {
-            // prefetch ล้มเหลวเงียบๆ — ค่อย fetch จริงตอนนาวิเกตเอง
-          });
-      }
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [ym]);
 
   // pending = active template ที่ยังไม่มี ledger row sourceId ตรงในเดือนนี้
   const pendingTemplates = useMemo(() => {
