@@ -9,13 +9,19 @@ docs/
 ├── README.md                          ← คุณอยู่ที่นี่ (index)
 ├── deployment.md                      ← runbook deploy production (Vercel + Supabase + OAuth)
 ├── specs/                             ← spec รายโมดูล (อ่านก่อนลงมือทำ feature)
-│   ├── monthly-cost.md                  /monthly-cost
-│   ├── subscription.md                  /subscription
+│   ├── monthly-cost/                    /monthly-cost (2 tabs)
+│   │   ├── monthly-cost.md                overview + data flow
+│   │   ├── month-tab.md                   tab "รายการจ่ายรายเดือน"
+│   │   └── template-tab.md                tab "ตั้งค่ารายการประจำ"
+│   ├── subscription/                    /subscription (2 tabs)
+│   │   ├── subscription.md                overview + renewDate semantics
+│   │   ├── month-tab.md                   tab "รายการจ่ายรายเดือน"
+│   │   └── template-tab.md                tab "รายการสมัคร"
 │   └── credit-cards/                    /credit-cards (3 tabs)
-│       ├── README.md                      overview + data model + cross-tab logic
-│       ├── tab1-statement.md              tab "รายการชำระบัตรเครดิต"
-│       ├── tab2-installment.md            tab "รายการผ่อนชำระ"
-│       └── tab3-cards.md                  tab "บัตรของฉัน"
+│       ├── credit-cards.md                overview + data model + cross-tab logic
+│       ├── statement-tab.md               tab "รายการชำระบัตรเครดิต"
+│       ├── installment-tab.md             tab "รายการผ่อนชำระ"
+│       └── cards-tab.md                   tab "บัตรของฉัน"
 ├── email-templates/                   ← เทมเพลตอีเมล (ใช้ที่ Supabase Dashboard)
 │   └── reset-password.md
 └── archive/                           ← UI mock เก่า ไม่ตรงกับของจริงแล้ว
@@ -36,8 +42,8 @@ Spec เขียนตอนตัดสินใจ design ครั้งแ�
 
 | Spec | Route | Code path |
 |---|---|---|
-| `specs/monthly-cost.md` | `/monthly-cost` | `src/app/(portal)/monthly-cost/`, `features/monthly-cost/` |
-| `specs/subscription.md` | `/subscription` | `src/app/(portal)/subscription/`, `features/subscription/` |
+| `specs/monthly-cost/*` | `/monthly-cost` | `src/app/(portal)/monthly-cost/`, `features/monthly-cost/` |
+| `specs/subscription/*` | `/subscription` | `src/app/(portal)/subscription/`, `features/subscription/` |
 | `specs/credit-cards/*` | `/credit-cards` | `src/app/(portal)/credit-cards/`, `features/credit-cards/` |
 
 ยังไม่มี spec: `/dashboard`, `/ledger`, `/settings`, admin (`/banks`, `/categories`, `/users`) — ตอนนี้เป็น stub
