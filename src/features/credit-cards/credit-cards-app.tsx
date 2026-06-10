@@ -1,4 +1,4 @@
-/** Spec: docs/specs/credit-cards/README.md — orchestrator ของ 3 tabs (state ร่วมอยู่ที่นี่, logic ในแต่ละ tab) */
+/** Spec: docs/specs/credit-cards/credit-cards.md — orchestrator ของ 3 tabs (state ร่วมอยู่ที่นี่, logic ในแต่ละ tab) */
 "use client";
 
 import { useEffect, useState } from "react";
