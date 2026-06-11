@@ -20,6 +20,7 @@ Next.js 16 App Router + TS · shadcn/ui + Tailwind v4 (UI เดียว ห้
 - **Read** = Server Component เรียก `server/queries` โดยตรง
 - **Mutation** = Server Action (`server/actions`) + `revalidatePath` + validate ด้วย zod ทุกครั้ง
 - UI: shadcn เท่านั้น โทนมน ขอบโค้ง การ์ดนุ่ม
+- Responsive: mobile-first ทุกหน้า · default stack 1 col → `sm:` (≥640px) ขยายเป็นหลาย col / row · เทสต์ที่ ~375px ก่อน commit · ห้ามเลข/ยอดเงิน wrap แตกบรรทัด · ห้ามพึ่ง `flex-wrap` เป็น mobile layout — ใช้ `flex-col sm:flex-row` ชัดเจน
 - Role: `admin` = Banks/Categories/Users (ไม่มี userId) · `user` = Cards + ตาราง transactional (มี userId)
 
 ## Layout

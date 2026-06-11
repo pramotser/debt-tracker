@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import { Progress } from "@/components/ui/progress";
 import { formatMoney, formatYearMonth } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
@@ -96,34 +97,61 @@ export function MonthView({
         </div>
       </div>
 
-      {/* Summary — แถวเดียวแนวนอน (flex-row! กัน flex-col จาก Card default) */}
-      <Card className="flex-row! flex-wrap items-center gap-x-10 gap-y-3 px-6 py-5">
-        <Stat label="ยอดรวม" value={formatMoney(total)} />
-        <Stat
-          label="จ่ายแล้ว"
-          value={formatMoney(paidSum)}
-          className="text-emerald-600"
-        />
-        <Stat
-          label="ค้างจ่าย"
-          value={formatMoney(total - paidSum)}
-          className="text-orange-600"
-        />
-        <div className="text-sm text-muted-foreground">
-          จ่ายแล้ว {paidCount}/{items.length} รายการ
+      {/* Summary — 3-card grid + progress */}
+      <Card className="gap-4 p-4 sm:p-6">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <div className="rounded-xl border bg-background px-4 py-3">
+            <Stat
+              label="ยอดรวม"
+              value={formatMoney(total)}
+              hint={`${items.length} รายการ`}
+            />
+          </div>
+          <div className="rounded-xl border bg-background px-4 py-3">
+            <Stat
+              label="จ่ายแล้ว"
+              value={formatMoney(paidSum)}
+              hint={`${paidCount} รายการ`}
+              className="text-emerald-600"
+            />
+          </div>
+          <div className="rounded-xl border bg-background px-4 py-3">
+            <Stat
+              label="ค้างจ่าย"
+              value={formatMoney(total - paidSum)}
+              hint={`${items.length - paidCount} รายการ`}
+              className="text-orange-600"
+            />
+          </div>
         </div>
+        {items.length > 0 ? (
+          <div className="flex flex-col gap-2">
+            <Progress
+              value={(paidCount / items.length) * 100}
+              className="block [&_[data-slot=progress-track]]:h-2 [&_[data-slot=progress-indicator]]:bg-emerald-500"
+            />
+            <div className="flex justify-between text-sm text-muted-foreground">
+              <span>
+                จ่ายแล้ว {Math.round((paidCount / items.length) * 100)}%
+              </span>
+              <span>
+                {paidCount} / {items.length} รายการ
+              </span>
+            </div>
+          </div>
+        ) : null}
       </Card>
 
       {showBanner && (
         <Alert className="border-blue-200 bg-blue-50/60 text-blue-900">
           <Info className="text-blue-700" />
-          <AlertDescription className="flex flex-wrap items-center justify-between gap-3 text-blue-900">
+          <AlertDescription className="flex flex-col gap-2 text-blue-900 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
             <span>
               มีรายการจ่ายประจำ active{" "}
               <span className="font-semibold">{pendingTemplates.length}</span>{" "}
               รายการ ยังไม่ได้ดึงเข้าเดือนนี้
             </span>
-            <div className="flex gap-2">
+            <div className="flex justify-end gap-2 sm:flex-none">
               <Button variant="ghost" size="sm" onClick={onDismissBanner}>
                 ข้าม
               </Button>
@@ -164,10 +192,12 @@ export function MonthView({
 function Stat({
   label,
   value,
+  hint,
   className,
 }: {
   label: string;
   value: string;
+  hint?: string;
   className?: string;
 }) {
   return (
@@ -176,6 +206,9 @@ function Stat({
       <div className={cn("text-xl font-semibold tabular-nums", className)}>
         {value}
       </div>
+      {hint ? (
+        <div className="mt-1 text-xs text-muted-foreground">{hint}</div>
+      ) : null}
     </div>
   );
 }
@@ -214,60 +247,64 @@ function ItemRow({
   return (
     <Card
       className={cn(
-        "flex flex-row items-center gap-3 px-4 py-3",
+        "flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:gap-3",
         item.paid && "opacity-60"
       )}
     >
-      <Checkbox checked={item.paid} onCheckedChange={onTogglePaid} />
-      <div className="flex min-w-0 flex-1 flex-col gap-1">
-        <div
-          className={cn(
-            "truncate text-sm font-medium",
-            item.paid && "line-through"
-          )}
-        >
-          {item.name}
-        </div>
-        <div className="flex flex-wrap items-center gap-1.5">
-          <CategoryBadge category={category} />
+      <div className="flex items-center gap-3 sm:contents">
+        <Checkbox checked={item.paid} onCheckedChange={onTogglePaid} />
+        <div className="flex min-w-0 flex-1 flex-col gap-1">
+          <div
+            className={cn(
+              "truncate text-sm font-medium",
+              item.paid && "line-through"
+            )}
+          >
+            {item.name}
+          </div>
+          <div className="flex flex-wrap items-center gap-1.5">
+            <CategoryBadge category={category} />
+          </div>
         </div>
       </div>
-      {editing ? (
-        <Input
-          autoFocus
-          type="number"
-          inputMode="decimal"
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          onBlur={commit}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") commit();
-            else if (e.key === "Escape") setEditing(false);
-          }}
-          className="h-9 w-28 text-right tabular-nums"
-        />
-      ) : (
+      <div className="flex items-center justify-end gap-1 sm:contents">
+        {editing ? (
+          <Input
+            autoFocus
+            type="number"
+            inputMode="decimal"
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onBlur={commit}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") commit();
+              else if (e.key === "Escape") setEditing(false);
+            }}
+            className="h-9 w-28 text-right tabular-nums"
+          />
+        ) : (
+          <Button
+            variant="ghost"
+            onClick={startEdit}
+            className={cn(
+              "h-auto min-w-[7rem] justify-end px-2 py-1 text-base font-semibold tabular-nums",
+              item.paid && "line-through",
+              item.amount === null && "text-orange-600"
+            )}
+          >
+            {item.amount === null ? "แตะเพื่อกรอก" : formatMoney(item.amount)}
+          </Button>
+        )}
         <Button
           variant="ghost"
-          onClick={startEdit}
-          className={cn(
-            "h-auto min-w-[7rem] justify-end px-2 py-1 text-base font-semibold tabular-nums",
-            item.paid && "line-through",
-            item.amount === null && "text-orange-600"
-          )}
+          size="icon"
+          onClick={onDelete}
+          aria-label="ลบรายการ"
+          className="text-muted-foreground hover:text-destructive"
         >
-          {item.amount === null ? "แตะเพื่อกรอก" : formatMoney(item.amount)}
+          <Trash2 />
         </Button>
-      )}
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={onDelete}
-        aria-label="ลบรายการ"
-        className="text-muted-foreground hover:text-destructive"
-      >
-        <Trash2 />
-      </Button>
+      </div>
     </Card>
   );
 }
