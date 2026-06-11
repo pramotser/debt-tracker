@@ -1,21 +1,25 @@
-import { PortalHeader } from "@/components/layout/portal-header";
-import { PortalSidebar } from "@/components/layout/portal-sidebar";
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { BottomNav } from "@/components/layout/bottom-nav";
+import { Sidebar } from "@/components/layout/sidebar";
+import { getCurrentUser } from "@/lib/auth";
+import { formatFullName } from "@/lib/format";
 
-export default function PortalLayout({
+export default async function PortalLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const user = await getCurrentUser();
+  const displayName = formatFullName(user);
+
   return (
-    <SidebarProvider>
-      <PortalSidebar />
-      <SidebarInset>
-        <PortalHeader />
-        <div className="flex-1 px-6 pt-10 pb-8 sm:px-8 sm:pt-12 sm:pb-10">
-          <div className="mx-auto w-full max-w-6xl">{children}</div>
+    <div className="min-h-screen bg-background">
+      <Sidebar displayName={displayName} />
+      <BottomNav />
+      <main className="md:ml-[240px]">
+        <div className="mx-auto w-full max-w-6xl px-6 pt-8 pb-24 sm:px-8 sm:pt-12 md:pb-10">
+          {children}
         </div>
-      </SidebarInset>
-    </SidebarProvider>
+      </main>
+    </div>
   );
 }

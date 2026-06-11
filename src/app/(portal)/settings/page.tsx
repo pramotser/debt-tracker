@@ -1,3 +1,6 @@
+import { LogOut } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -7,6 +10,7 @@ import {
 } from "@/components/ui/card";
 import { ProfileForm } from "@/features/profile/profile-form";
 import { getCurrentUser } from "@/lib/auth";
+import { signOut } from "@/server/actions/auth";
 
 export default async function SettingsPage() {
   const user = await getCurrentUser();
@@ -28,6 +32,23 @@ export default async function SettingsPage() {
               lastName: user.lastName,
             }}
           />
+        </CardContent>
+      </Card>
+
+      <Card className="border-destructive/40">
+        <CardHeader>
+          <CardTitle>ออกจากระบบ</CardTitle>
+          <CardDescription>
+            ออกจากระบบในอุปกรณ์นี้ — ต้องเข้าสู่ระบบใหม่ครั้งถัดไป
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form action={signOut}>
+            <Button type="submit" variant="destructive">
+              <LogOut />
+              ออกจากระบบ
+            </Button>
+          </form>
         </CardContent>
       </Card>
     </div>
