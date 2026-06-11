@@ -465,9 +465,9 @@ export function MonthlyCostApp({
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>ลบ template?</AlertDialogTitle>
+            <AlertDialogTitle>ลบรายการจ่ายประจำ?</AlertDialogTitle>
             <AlertDialogDescription>
-              ลบ &quot;{pendingDeleteTemplate?.name}&quot; ออกจากรายการ template
+              ลบ &quot;{pendingDeleteTemplate?.name}&quot; ออกจากรายการจ่ายประจำ
               รายการที่เคยดึงเข้าเดือนแล้วจะไม่ถูกลบ
             </AlertDialogDescription>
           </AlertDialogHeader>
