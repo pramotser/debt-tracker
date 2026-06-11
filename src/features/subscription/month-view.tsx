@@ -160,8 +160,8 @@ export function MonthView({
         <Card className="px-6 py-10 text-center text-sm text-muted-foreground">
           ยังไม่มีรายการเดือนนี้
           {pendingTemplates.length > 0
-            ? " — กด \"ดึงรายการ\" ด้านบนเพื่อนำเข้าจาก template"
-            : " — เพิ่ม template ในแท็บ \"รายการสมัคร\" ก่อน"}
+            ? " — กด \"ดึงรายการ\" ด้านบนเพื่อนำเข้าจากบริการที่ตั้งไว้"
+            : " — เพิ่มบริการในแท็บ \"รายการสมัคร\" ก่อน"}
         </Card>
       ) : (
         <div className="flex flex-col gap-2.5">
