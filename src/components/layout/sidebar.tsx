@@ -12,6 +12,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
+import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { signOut } from "@/server/actions/auth";
@@ -68,11 +69,14 @@ export function Sidebar({ displayName }: { displayName: string }) {
 
   return (
     <aside className="fixed inset-y-0 left-0 z-20 hidden w-[240px] flex-col border-r border-border bg-background md:flex">
-      <div className="flex flex-col gap-0.5 px-5 pt-5 pb-4">
-        <span className="text-lg font-bold text-primary">Debt Tracker</span>
-        <span className="text-xs text-muted-foreground">
-          ติดตามหนี้/รายจ่าย
-        </span>
+      <div className="flex items-start justify-between gap-2 px-5 pt-5 pb-4">
+        <div className="flex flex-col gap-0.5">
+          <span className="text-lg font-bold text-primary">Debt Tracker</span>
+          <span className="text-xs text-muted-foreground">
+            ติดตามหนี้/รายจ่าย
+          </span>
+        </div>
+        <ThemeToggle />
       </div>
 
       <nav className="flex flex-1 flex-col gap-1 px-3" aria-label="เมนูหลัก">

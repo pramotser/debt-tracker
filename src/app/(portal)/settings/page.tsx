@@ -9,6 +9,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { ProfileForm } from "@/features/profile/profile-form";
+import { ThemeForm } from "@/features/settings/theme-form";
 import { getCurrentUser } from "@/lib/auth";
 import { signOut } from "@/server/actions/auth";
 
@@ -32,6 +33,18 @@ export default async function SettingsPage() {
               lastName: user.lastName,
             }}
           />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>ธีม</CardTitle>
+          <CardDescription>
+            เลือกโทนสว่าง/มืด หรือให้ตามอุปกรณ์
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ThemeForm />
         </CardContent>
       </Card>
 
