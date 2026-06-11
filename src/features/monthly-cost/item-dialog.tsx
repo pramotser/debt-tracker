@@ -143,7 +143,7 @@ function ItemFormFields({
             htmlFor={`${idPrefix}-tpl`}
             className="cursor-pointer text-sm font-medium"
           >
-            บันทึกเป็นรายการค่าประจำ
+            บันทึกเป็นรายการจ่ายประจำ
           </Label>
           <span className="text-xs text-muted-foreground">
             ใช้ดึงเข้าเดือนหน้าได้
