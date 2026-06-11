@@ -45,77 +45,101 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+  /* Verdana semantic tokens — expose to Tailwind utility classes (text-success, bg-warning, etc.) */
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-info: var(--info);
+  --color-subtle-foreground: var(--subtle-foreground);
 }
 
+/* Verdana Health design tokens — light (:root) + dark (.dark)
+   อ้างอิง DESIGN.md + VERDANA_MIGRATION_PLAN.md step 1
+   semantic (success/warning/info) wire เข้า Tailwind ผ่าน @theme inline ด้านบน */
 :root {
-  /* Light theme เท่านั้นในรอบนี้ (dark mode ทำทีหลังตาม CLAUDE.md)
-     สีตาม prototype: appbar/primary navy #1e2a44, page #f6f7f9, card ขาว */
-  --background: #f6f7f9;
-  --foreground: #1f2937;
-  --card: #ffffff;
-  --card-foreground: #1f2937;
+  --background: #f8fafc;            /* page bg */
+  --foreground: #0f172a;            /* navy ink */
+  --card: #ffffff;                  /* surface default */
+  --card-foreground: #0f172a;
   --popover: #ffffff;
-  --popover-foreground: #1f2937;
-  --primary: #1e2a44;
+  --popover-foreground: #0f172a;
+  --primary: #0f172a;               /* navy CTA */
   --primary-foreground: #ffffff;
-  --secondary: #f8fafc;
-  --secondary-foreground: #1f2937;
-  --muted: #f8fafc;
-  --muted-foreground: #6b7280;
-  --accent: #f1f3f6;
-  --accent-foreground: #1f2937;
+  --primary-hover: #020617;
+  --secondary: #f1f5f9;             /* surface-2 */
+  --secondary-foreground: #0f172a;
+  --muted: #f1f5f9;
+  --muted-foreground: #475569;      /* slate body-meta */
+  --subtle-foreground: #64748b;     /* slate subtle */
+  --accent: #059669;                /* sage — links / interactive */
+  --accent-foreground: #ffffff;
   --destructive: #dc2626;
-  --border: #e9ebef;
-  --input: #e9ebef;
-  --ring: #94a3b8;
-  --chart-1: #3b82f6;
-  --chart-2: #8b5cf6;
-  --chart-3: #14b8a6;
-  --chart-4: #ea7317;
-  --chart-5: #ec4899;
-  --radius: 0.875rem;
+  --success: #16a34a;
+  --warning: #ca8a04;
+  --info: #0ea5e9;
+  --border: #e2e8f0;
+  --input: #e2e8f0;
+  --ring: #0f172a;                  /* focus ring = navy (opacity ที่ utility class) */
+  --chart-1: #0f172a;               /* navy */
+  --chart-2: #059669;               /* sage */
+  --chart-3: #0ea5e9;               /* info */
+  --chart-4: #eab308;               /* warning */
+  --chart-5: #ef4444;               /* error */
+  --radius: 0.5rem;                 /* 8px — Verdana DEFAULT (ใช้ทั้งระบบ) */
+  --shadow-sm: 0 1px 3px 0 rgb(15 23 42 / 0.03);
+  --shadow: 0 2px 6px 0 rgb(15 23 42 / 0.05);
+  --shadow-md: 0 4px 16px 0 rgb(15 23 42 / 0.07);
+  --shadow-lg: 0 8px 32px 0 rgb(15 23 42 / 0.10);
   --sidebar: #ffffff;
-  --sidebar-foreground: #1f2937;
-  --sidebar-primary: #1e2a44;
+  --sidebar-foreground: #0f172a;
+  --sidebar-primary: #0f172a;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #f1f3f6;
-  --sidebar-accent-foreground: #1f2937;
-  --sidebar-border: #e9ebef;
-  --sidebar-ring: #94a3b8;
+  --sidebar-accent: #f1f5f9;
+  --sidebar-accent-foreground: #0f172a;
+  --sidebar-border: #e2e8f0;
+  --sidebar-ring: #0f172a;
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --background: #0f172a;            /* navy canvas */
+  --foreground: #f1f5f9;
+  --card: #1e293b;                  /* surface-1 */
+  --card-foreground: #f1f5f9;
+  --popover: #1e293b;
+  --popover-foreground: #f1f5f9;
+  --primary: #34d399;               /* sage CTA (navy เป็นพื้นแล้ว) */
+  --primary-foreground: #052e1c;
+  --primary-hover: #6ee7b7;
+  --secondary: #334155;             /* surface-2 */
+  --secondary-foreground: #f1f5f9;
+  --muted: #334155;
+  --muted-foreground: #cbd5e1;
+  --subtle-foreground: #94a3b8;
+  --accent: #34d399;                /* sage interactive */
+  --accent-foreground: #052e1c;
+  --destructive: #f87171;
+  --success: #4ade80;
+  --warning: #facc15;
+  --info: #38bdf8;
+  --border: #334155;
+  --input: #334155;
+  --ring: #34d399;
+  --chart-1: #34d399;
+  --chart-2: #38bdf8;
+  --chart-3: #facc15;
+  --chart-4: #f87171;
+  --chart-5: #cbd5e1;
+  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.30);
+  --shadow: 0 2px 6px 0 rgb(0 0 0 / 0.40);
+  --shadow-md: 0 4px 16px 0 rgb(0 0 0 / 0.50);
+  --shadow-lg: 0 8px 32px 0 rgb(0 0 0 / 0.60);
+  --sidebar: #1e293b;
+  --sidebar-foreground: #f1f5f9;
+  --sidebar-primary: #34d399;
+  --sidebar-primary-foreground: #052e1c;
+  --sidebar-accent: #334155;
+  --sidebar-accent-foreground: #f1f5f9;
+  --sidebar-border: #334155;
+  --sidebar-ring: #34d399;
 }
 
 @layer base {
