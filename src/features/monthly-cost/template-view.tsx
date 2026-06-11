@@ -144,7 +144,7 @@ function TemplateRow({
         variant="ghost"
         size="icon"
         onClick={onDelete}
-        aria-label="ลบ template"
+        aria-label="ลบรายการจ่ายประจำ"
         className="text-muted-foreground hover:text-destructive"
       >
         <Trash2 />
