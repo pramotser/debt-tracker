@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Check, Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -15,12 +15,16 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import { Switch } from "@/components/ui/switch";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { cn } from "@/lib/utils";
 
 import type { Category } from "./types";
 
@@ -38,6 +42,123 @@ function parseAmount(raw: string): string | null {
   return Number.isFinite(n) ? n.toFixed(2) : null;
 }
 
+type FormProps = {
+  name: string;
+  setName: (v: string) => void;
+  amount: string;
+  setAmount: (v: string) => void;
+  categoryId: string;
+  setCategoryId: (v: string) => void;
+  saveAsTemplate: boolean;
+  setSaveAsTemplate: (v: boolean) => void;
+  categories: Category[];
+  idPrefix: string;
+};
+
+function ItemFormFields({
+  name,
+  setName,
+  amount,
+  setAmount,
+  categoryId,
+  setCategoryId,
+  saveAsTemplate,
+  setSaveAsTemplate,
+  categories,
+  idPrefix,
+}: FormProps) {
+  return (
+    <div className="flex flex-col gap-5">
+      <div className="flex flex-col gap-2">
+        <Label htmlFor={`${idPrefix}-name`}>ชื่อรายการ</Label>
+        <Input
+          id={`${idPrefix}-name`}
+          placeholder="เช่น ค่าเช่าบ้าน"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          autoFocus
+        />
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <Label htmlFor={`${idPrefix}-amount`}>
+          จำนวนเงิน{" "}
+          <span className="text-xs font-normal text-muted-foreground">
+            (ไม่ใส่ก็ได้)
+          </span>
+        </Label>
+        <div className="relative">
+          <span
+            aria-hidden
+            className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-sm text-muted-foreground"
+          >
+            ฿
+          </span>
+          <Input
+            id={`${idPrefix}-amount`}
+            type="number"
+            inputMode="decimal"
+            placeholder="0.00"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            className="pl-7"
+          />
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <Label>หมวดหมู่</Label>
+        <div
+          role="radiogroup"
+          aria-label="หมวดหมู่"
+          className="grid grid-cols-2 gap-2 sm:grid-cols-4"
+        >
+          {categories.map((c) => {
+            const active = c.id === categoryId;
+            return (
+              <button
+                key={c.id}
+                type="button"
+                role="radio"
+                aria-checked={active}
+                onClick={() => setCategoryId(c.id)}
+                className={cn(
+                  "flex h-10 items-center justify-center gap-1.5 rounded-md border px-3 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                  active
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-input bg-background text-foreground hover:bg-muted"
+                )}
+              >
+                {active ? <Check className="size-3.5" aria-hidden /> : null}
+                <span className="truncate">{c.name}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="flex items-start justify-between gap-3 rounded-md border bg-muted/40 p-3">
+        <div className="flex flex-col gap-0.5">
+          <Label
+            htmlFor={`${idPrefix}-tpl`}
+            className="cursor-pointer text-sm font-medium"
+          >
+            บันทึกเป็นรายการจ่ายประจำ
+          </Label>
+          <span className="text-xs text-muted-foreground">
+            ใช้ดึงเข้าเดือนหน้าได้
+          </span>
+        </div>
+        <Switch
+          id={`${idPrefix}-tpl`}
+          checked={saveAsTemplate}
+          onCheckedChange={(v) => setSaveAsTemplate(Boolean(v))}
+        />
+      </div>
+    </div>
+  );
+}
+
 export function AddItemDialog({
   open,
   onOpenChange,
@@ -49,6 +170,7 @@ export function AddItemDialog({
   categories: Category[];
   onSubmit: (draft: ItemDraft) => void;
 }) {
+  const isMobile = useIsMobile();
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
   const [categoryId, setCategoryId] = useState(categories[0]?.id ?? "");
@@ -76,74 +198,79 @@ export function AddItemDialog({
     onOpenChange(false);
   };
 
+  const titleNode = (
+    <span className="flex items-center gap-2">
+      <Plus className="size-4 text-primary" aria-hidden />
+      เพิ่มรายการ
+    </span>
+  );
+  const descriptionText = "กรอกชื่อรายการและหมวดหมู่ จำนวนเงินใส่ทีหลังได้";
+
+  if (isMobile) {
+    return (
+      <Sheet open={open} onOpenChange={onOpenChange}>
+        <SheetContent
+          side="bottom"
+          className="max-h-[90dvh] rounded-t-2xl px-5 pt-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]"
+        >
+          <SheetHeader className="px-0 pt-0">
+            <SheetTitle>{titleNode}</SheetTitle>
+            <SheetDescription>{descriptionText}</SheetDescription>
+          </SheetHeader>
+          <div className="flex-1 overflow-y-auto">
+            <ItemFormFields
+              name={name}
+              setName={setName}
+              amount={amount}
+              setAmount={setAmount}
+              categoryId={categoryId}
+              setCategoryId={setCategoryId}
+              saveAsTemplate={saveAsTemplate}
+              setSaveAsTemplate={setSaveAsTemplate}
+              categories={categories}
+              idPrefix="item-m"
+            />
+          </div>
+          <SheetFooter className="flex-col gap-2 px-0 pb-0">
+            <Button
+              onClick={handleSubmit}
+              disabled={!canSubmit}
+              className="h-11 w-full"
+            >
+              บันทึก
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={() => onOpenChange(false)}
+              className="h-11 w-full"
+            >
+              ยกเลิก
+            </Button>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
+    );
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>เพิ่มรายการ</DialogTitle>
-          <DialogDescription>
-            กรอกชื่อรายการและหมวดหมู่ จำนวนเงินใส่ทีหลังได้
-          </DialogDescription>
+          <DialogTitle>{titleNode}</DialogTitle>
+          <DialogDescription>{descriptionText}</DialogDescription>
         </DialogHeader>
-        <div className="flex flex-col gap-4">
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="item-name">ชื่อรายการ</Label>
-            <Input
-              id="item-name"
-              placeholder="เช่น ค่าเช่าบ้าน"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              autoFocus
-            />
-          </div>
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="item-amount">
-              จำนวนเงิน{" "}
-              <span className="text-xs text-muted-foreground">
-                (ไม่ใส่ก็ได้)
-              </span>
-            </Label>
-            <Input
-              id="item-amount"
-              type="number"
-              inputMode="decimal"
-              placeholder="0.00"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-            />
-          </div>
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="item-category">หมวดหมู่</Label>
-            <Select
-              value={categoryId}
-              onValueChange={(v) => v && setCategoryId(v)}
-            >
-              <SelectTrigger id="item-category" className="w-full">
-                <SelectValue placeholder="เลือกหมวดหมู่">
-                  {(value: string | null) =>
-                    value
-                      ? categories.find((c) => c.id === value)?.name ?? value
-                      : ""
-                  }
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                {categories.map((c) => (
-                  <SelectItem key={c.id} value={c.id} label={c.name}>
-                    {c.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <Label className="flex cursor-pointer items-center gap-2 text-sm font-normal">
-            <Checkbox
-              checked={saveAsTemplate}
-              onCheckedChange={(v) => setSaveAsTemplate(Boolean(v))}
-            />
-            <span>บันทึกเป็น template ด้วย</span>
-          </Label>
-        </div>
+        <ItemFormFields
+          name={name}
+          setName={setName}
+          amount={amount}
+          setAmount={setAmount}
+          categoryId={categoryId}
+          setCategoryId={setCategoryId}
+          saveAsTemplate={saveAsTemplate}
+          setSaveAsTemplate={setSaveAsTemplate}
+          categories={categories}
+          idPrefix="item-d"
+        />
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
             ยกเลิก
