@@ -40,11 +40,15 @@ import { shiftMonth, ymKey } from "@/lib/month";
 
 import { ImportModal } from "./import-modal";
 import { AddItemDialog, type ItemDraft } from "./item-dialog";
-import { DEV_USER_ID, MOCK_CATEGORIES } from "./mock";
 import { MonthView } from "./month-view";
 import { AddTemplateDialog, type TemplateDraft } from "./template-dialog";
 import { TemplateView } from "./template-view";
-import type { FixedCostTemplate, LedgerEntry, YearMonth } from "./types";
+import type {
+  Category,
+  FixedCostTemplate,
+  LedgerEntry,
+  YearMonth,
+} from "./types";
 
 function normalizeName(s: string) {
   return s.trim().toLocaleLowerCase("th");
@@ -53,10 +57,12 @@ function normalizeName(s: string) {
 export function MonthlyCostApp({
   initialTemplates,
   initialEntries,
+  categories,
   ym: initialYm,
 }: {
   initialTemplates: FixedCostTemplate[];
   initialEntries: LedgerEntry[];
+  categories: Category[];
   ym: YearMonth;
 }) {
   const [ym, setYm] = useState<YearMonth>(initialYm);
@@ -212,7 +218,7 @@ export function MonthlyCostApp({
     const tempId = `tmp-${Date.now()}`;
     const optimistic: LedgerEntry = {
       id: tempId,
-      userId: DEV_USER_ID,
+      userId: "",
       categoryId: d.categoryId,
       sourceType: null,
       sourceId: null,
@@ -289,7 +295,7 @@ export function MonthlyCostApp({
     const tempId = `tmp-${Date.now()}`;
     const optimistic: FixedCostTemplate = {
       id: tempId,
-      userId: DEV_USER_ID,
+      userId: "",
       categoryId: input.categoryId,
       name: input.name,
       defaultAmount: input.defaultAmount,
@@ -415,7 +421,7 @@ export function MonthlyCostApp({
             ym={ym}
             items={entries}
             loading={isMonthLoading}
-            categories={MOCK_CATEGORIES}
+            categories={categories}
             pendingTemplates={pendingTemplates}
             bannerDismissed={bannerDismissed}
             onPrev={() => navigateMonth(-1)}
@@ -437,7 +443,7 @@ export function MonthlyCostApp({
         <TabsContent value="tpl" className="mt-4">
           <TemplateView
             templates={templates}
-            categories={MOCK_CATEGORIES}
+            categories={categories}
             onAdd={() => setAddTemplateOpen(true)}
             onToggleActive={handleToggleTemplateActive}
             onUpdateDefaultAmount={handleUpdateTemplateDefaultAmount}
@@ -449,14 +455,14 @@ export function MonthlyCostApp({
       <AddItemDialog
         open={addItemOpen}
         onOpenChange={setAddItemOpen}
-        categories={MOCK_CATEGORIES}
+        categories={categories}
         onSubmit={submitItem}
       />
 
       <AddTemplateDialog
         open={addTemplateOpen}
         onOpenChange={setAddTemplateOpen}
-        categories={MOCK_CATEGORIES}
+        categories={categories}
         onSubmit={submitTemplate}
       />
 
@@ -486,7 +492,7 @@ export function MonthlyCostApp({
         onOpenChange={setImportOpen}
         ym={ym}
         pendingTemplates={pendingTemplates}
-        categories={MOCK_CATEGORIES}
+        categories={categories}
         onSubmit={handleImport}
       />
     </div>

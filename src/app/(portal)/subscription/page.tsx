@@ -1,4 +1,5 @@
 import { SubscriptionApp } from "@/features/subscription/subscription-app";
+import { getCategories } from "@/server/queries/categories";
 import { listSubscriptionEntriesByMonth } from "@/server/queries/ledger-entries";
 import { listSubscriptionTemplates } from "@/server/queries/subscription-templates";
 
@@ -26,14 +27,16 @@ export default async function SubscriptionPage({
 }) {
   const sp = await searchParams;
   const ym = parseYm(sp);
-  const [templates, entries] = await Promise.all([
+  const [templates, entries, categories] = await Promise.all([
     listSubscriptionTemplates(),
     listSubscriptionEntriesByMonth(ym.year, ym.month),
+    getCategories(),
   ]);
   return (
     <SubscriptionApp
       initialTemplates={templates}
       initialEntries={entries}
+      categories={categories}
       ym={ym}
     />
   );

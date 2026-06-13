@@ -9,7 +9,7 @@ import type { InstallmentPlanWithProgress } from "@/server/queries/credit-card-i
 import { CardsTab } from "./tabs/cards-tab";
 import { InstallmentTab } from "./tabs/installment-tab";
 import { StatementTab } from "./tabs/statement-tab";
-import type { CreditCard, LedgerEntry, YearMonth } from "./types";
+import type { Category, CreditCard, LedgerEntry, YearMonth } from "./types";
 
 type TabValue = "statement" | "installment" | "mine";
 
@@ -21,12 +21,14 @@ export function CreditCardsApp({
   initialPlans,
   initialEntries,
   initialInstallmentEntries,
+  categories,
   ym: initialYm,
 }: {
   initialCards: CreditCard[];
   initialPlans: InstallmentPlanWithProgress[];
   initialEntries: LedgerEntry[];
   initialInstallmentEntries: LedgerEntry[];
+  categories: Category[];
   ym: YearMonth;
 }) {
   const [cards, setCards] = useState<CreditCard[]>(initialCards);
@@ -81,6 +83,7 @@ export function CreditCardsApp({
             initialEntries={initialEntries}
             cards={cards}
             plans={plans}
+            categories={categories}
             onJumpToPlan={jumpToPlan}
           />
         </TabsContent>
@@ -92,6 +95,7 @@ export function CreditCardsApp({
             setPlans={setPlans}
             entries={installmentEntries}
             setEntries={setInstallmentEntries}
+            categories={categories}
             scrollToPlanId={scrollToPlanId}
             onScrolled={() => setScrollToPlanId(null)}
           />

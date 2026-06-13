@@ -152,4 +152,19 @@
   html {
     @apply font-sans;
   }
+
+  /* ซ่อน scrollbar ภายใน Dialog/Sheet popup ทุกที่ในแอป (ยังคง scroll ได้ปกติ)
+     Radix ScrollArea ใช้ custom scrollbar ไม่กระทบ */
+  [data-slot="dialog-content"],
+  [data-slot="dialog-content"] *,
+  [data-slot="sheet-content"],
+  [data-slot="sheet-content"] * {
+    scrollbar-width: none;
+  }
+  [data-slot="dialog-content"] ::-webkit-scrollbar,
+  [data-slot="dialog-content"]::-webkit-scrollbar,
+  [data-slot="sheet-content"] ::-webkit-scrollbar,
+  [data-slot="sheet-content"]::-webkit-scrollbar {
+    display: none;
+  }
 }
