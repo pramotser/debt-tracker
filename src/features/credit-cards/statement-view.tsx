@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useOptimistic, useState, useTransition } from "react";
 import { ChevronLeft, ChevronRight, Plus, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,6 @@ import { getCardColorTheme } from "@/lib/banks";
 import { cn } from "@/lib/utils";
 import type { InstallmentPlanWithProgress } from "@/server/queries/credit-card-installments";
 
-import { Segments } from "./components/segments";
 import { StatusBadge } from "./components/status-badge";
 import { STATUS } from "./components/status-tokens";
 import { SummaryStrip } from "./components/summary-strip";
@@ -76,12 +75,40 @@ export function StatementView({
   onPrev: () => void;
   onNext: () => void;
   onAddCharge: () => void;
-  onTogglePaid: (entry: LedgerEntry) => void;
+  onTogglePaid: (entry: LedgerEntry, next: boolean) => Promise<void>;
   onUpdateAmount: (entry: LedgerEntry, amount: string) => void;
   onDelete: (entry: LedgerEntry) => void;
   onJumpToPlan: (planId: string) => void;
 }) {
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
+
+  // baseline = entries (server-controlled); optimistic = พลิก paid ทันทีระหว่าง transition
+  const [optimisticEntries, applyOptimisticToggle] = useOptimistic(
+    entries,
+    (current, payload: { id: string; paid: boolean }) =>
+      current.map((e) =>
+        e.id === payload.id
+          ? {
+              ...e,
+              paid: payload.paid,
+              paidAt: payload.paid ? new Date() : null,
+            }
+          : e
+      )
+  );
+  const [, startToggleTransition] = useTransition();
+
+  const handleTogglePaid = (entry: LedgerEntry) => {
+    const next = !entry.paid;
+    startToggleTransition(async () => {
+      applyOptimisticToggle({ id: entry.id, paid: next });
+      try {
+        await onTogglePaid(entry, next);
+      } catch {
+        // useOptimistic rolls back อัตโนมัติเมื่อ transition จบ
+      }
+    });
+  };
 
   const cardById = useMemo(() => new Map(cards.map((c) => [c.id, c])), [cards]);
   const planMap = useMemo(() => planById(plans), [plans]);
@@ -90,7 +117,7 @@ export function StatementView({
   // group entries by card (ใช้สรุปยอดในการ์ดเล็ก)
   const groupedByCard = useMemo(() => {
     const m = new Map<string, LedgerEntry[]>();
-    for (const e of entries) {
+    for (const e of optimisticEntries) {
       const card = cardOfEntry(e, cardById, planMap);
       if (!card) continue;
       const arr = m.get(card.id) ?? [];
@@ -98,15 +125,15 @@ export function StatementView({
       m.set(card.id, arr);
     }
     return m;
-  }, [entries, cardById, planMap]);
+  }, [optimisticEntries, cardById, planMap]);
 
   const visibleEntries = useMemo(() => {
-    if (!selectedCardId) return entries;
-    return entries.filter((e) => {
+    if (!selectedCardId) return optimisticEntries;
+    return optimisticEntries.filter((e) => {
       const card = cardOfEntry(e, cardById, planMap);
       return card?.id === selectedCardId;
     });
-  }, [entries, selectedCardId, cardById, planMap]);
+  }, [optimisticEntries, selectedCardId, cardById, planMap]);
 
   const summary = useMemo(() => {
     let total = 0;
@@ -238,7 +265,7 @@ export function StatementView({
                 entry={e}
                 cardName={card?.name ?? "—"}
                 plan={plan}
-                onTogglePaid={() => onTogglePaid(e)}
+                onTogglePaid={() => handleTogglePaid(e)}
                 onUpdateAmount={(amt) => onUpdateAmount(e, amt)}
                 onDelete={() => onDelete(e)}
                 onJumpToPlan={onJumpToPlan}
@@ -271,7 +298,8 @@ function StatusRailRow({
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("");
   const isInstallment = entry.type === "CREDIT_CARD_INSTALLMENT";
-  const rail = entry.paid ? STATUS.paid.bar : STATUS.due.bar;
+  // accent เดียวคุม rail / amount / progress current — flip ตาม paid (optimistic)
+  const accent = entry.paid ? STATUS.paid.bar : STATUS.due.bar;
 
   const startEdit = () => {
     setDraft(entry.amount ?? "");
@@ -288,7 +316,6 @@ function StatusRailRow({
 
   const cur = plan ? installmentIndex(entry, plan) : 0;
   const total = plan?.totalInstallments ?? 0;
-  const paidCount = plan?.paidCount ?? 0;
 
   return (
     <Card
@@ -300,7 +327,7 @@ function StatusRailRow({
       <span
         aria-hidden
         className="absolute inset-y-0 left-0 w-1"
-        style={{ backgroundColor: rail }}
+        style={{ backgroundColor: accent }}
       />
       <div className="flex items-center gap-3">
         <Checkbox checked={entry.paid} onCheckedChange={onTogglePaid} />
@@ -358,6 +385,7 @@ function StatusRailRow({
                 "min-w-[6rem] text-right text-base font-semibold tabular-nums",
                 entry.paid && "line-through"
               )}
+              style={{ color: accent }}
             >
               {formatMoney(entry.amount ?? "0")}
             </div>
@@ -370,6 +398,7 @@ function StatusRailRow({
               "h-auto min-w-[6rem] justify-end px-2 py-1 text-base font-semibold tabular-nums",
               entry.paid && "line-through"
             )}
+            style={{ color: accent }}
           >
             {formatMoney(entry.amount ?? "0")}
           </Button>
@@ -385,16 +414,6 @@ function StatusRailRow({
           <Trash2 />
         </Button>
       </div>
-
-      {isInstallment && plan && (
-        <div className="px-2 pb-1">
-          <Segments
-            total={total}
-            paidCount={paidCount}
-            current={entry.paid ? undefined : cur}
-          />
-        </div>
-      )}
     </Card>
   );
 }
