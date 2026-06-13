@@ -65,7 +65,7 @@ export function MonthlyCostApp({
     useState<FixedCostTemplate[]>(initialTemplates);
   const [, startTemplateMutation] = useTransition();
   const [, startEntryMutation] = useTransition();
-  const [, startMonthChange] = useTransition();
+  const [isMonthLoading, startMonthChange] = useTransition();
 
   // cache รายเดือน — key = "year-month" · seed ด้วย initial server load
   const monthCacheRef = useRef<Map<string, LedgerEntry[]>>(
@@ -414,6 +414,7 @@ export function MonthlyCostApp({
           <MonthView
             ym={ym}
             items={entries}
+            loading={isMonthLoading}
             categories={MOCK_CATEGORIES}
             pendingTemplates={pendingTemplates}
             bannerDismissed={bannerDismissed}

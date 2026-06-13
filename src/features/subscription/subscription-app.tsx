@@ -57,7 +57,7 @@ export function SubscriptionApp({
     useState<SubscriptionTemplate[]>(initialTemplates);
   const [entries, setEntries] = useState<LedgerEntry[]>(initialEntries);
   const [, startMutation] = useTransition();
-  const [, startMonthChange] = useTransition();
+  const [isMonthLoading, startMonthChange] = useTransition();
 
   // cache รายเดือน — key = "year-month" · seed ด้วย initial server load
   const monthCacheRef = useRef<Map<string, LedgerEntry[]>>(
@@ -374,6 +374,7 @@ export function SubscriptionApp({
           <MonthView
             ym={ym}
             items={entries}
+            loading={isMonthLoading}
             templatesById={templatesById}
             categories={MOCK_CATEGORIES}
             pendingTemplates={pendingTemplates}
