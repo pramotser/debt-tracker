@@ -55,7 +55,7 @@ export function TypeBreakdownDonut({
       </CardHeader>
       <CardContent>
         {grandTotal > 0 ? (
-          <div className="grid gap-4 sm:grid-cols-[180px_1fr] sm:items-center">
+          <div className="grid gap-4 lg:grid-cols-[180px_minmax(0,1fr)] lg:items-center">
             <ChartContainer config={config} className="mx-auto h-[180px] w-[180px]">
               <PieChart>
                 <ChartTooltip
@@ -87,7 +87,7 @@ export function TypeBreakdownDonut({
                 </Pie>
               </PieChart>
             </ChartContainer>
-            <ul className="flex flex-col gap-2 text-sm">
+            <ul className="flex min-w-0 flex-col gap-2 text-sm">
               {chartData.map((d) => {
                 const pct = grandTotal > 0
                   ? Math.round((d.total / grandTotal) * 100)
@@ -99,7 +99,9 @@ export function TypeBreakdownDonut({
                       className="size-2.5 shrink-0 rounded-full"
                       style={{ backgroundColor: d.color }}
                     />
-                    <span className="flex-1 truncate">{d.label}</span>
+                    <span className="min-w-0 flex-1 truncate" title={d.label}>
+                      {d.label}
+                    </span>
                     <span className="whitespace-nowrap tabular-nums text-muted-foreground">
                       {formatMoney(d.total)} ({pct}%)
                     </span>
