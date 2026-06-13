@@ -30,7 +30,15 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { CARD_NETWORKS, getNetworkLabel, type CardNetwork } from "@/lib/banks";
+import {
+  CARD_COLOR_THEMES,
+  CARD_COLORS,
+  CARD_NETWORKS,
+  getNetworkLabel,
+  type CardColor,
+  type CardNetwork,
+} from "@/lib/banks";
+import { cn } from "@/lib/utils";
 
 import type { Bank, CreditCard } from "./types";
 
@@ -41,6 +49,7 @@ export type CardDraft = {
   cardNetwork: CardNetwork | null;
   statementDate: number | null;
   dueDate: number | null;
+  color: CardColor;
 };
 
 const NETWORK_NONE = "__none";
@@ -66,6 +75,8 @@ type FormProps = {
   setStatementDay: (v: string) => void;
   dueDay: string;
   setDueDay: (v: string) => void;
+  color: CardColor;
+  setColor: (v: CardColor) => void;
   idPrefix: string;
 };
 
@@ -83,6 +94,8 @@ function CardFormFields({
   setStatementDay,
   dueDay,
   setDueDay,
+  color,
+  setColor,
   idPrefix,
 }: FormProps) {
   return (
@@ -167,6 +180,34 @@ function CardFormFields({
         </div>
       </div>
 
+      <div className="flex flex-col gap-2">
+        <Label>สีการ์ด</Label>
+        <div className="flex flex-wrap gap-2">
+          {CARD_COLORS.map((c) => {
+            const theme = CARD_COLOR_THEMES[c];
+            const selected = color === c;
+            return (
+              <button
+                key={c}
+                type="button"
+                onClick={() => setColor(c)}
+                aria-label={theme.label}
+                aria-pressed={selected}
+                className={cn(
+                  "size-9 rounded-full border-2 transition-all",
+                  selected
+                    ? "border-foreground ring-2 ring-offset-2 ring-foreground/30"
+                    : "border-transparent hover:scale-105"
+                )}
+                style={{
+                  backgroundImage: `linear-gradient(135deg, ${theme.from}, ${theme.to})`,
+                }}
+              />
+            );
+          })}
+        </div>
+      </div>
+
       <div className="grid grid-cols-2 gap-3">
         <div className="flex flex-col gap-2">
           <Label htmlFor={`${idPrefix}-stmt`}>วันตัดรอบบิล</Label>
@@ -221,6 +262,7 @@ export function CardDialog({
   const [network, setNetwork] = useState<string>(NETWORK_NONE);
   const [statementDay, setStatementDay] = useState("");
   const [dueDay, setDueDay] = useState("");
+  const [color, setColor] = useState<CardColor>("blue");
 
   useEffect(() => {
     if (!open) return;
@@ -233,6 +275,7 @@ export function CardDialog({
         initial.statementDate ? String(initial.statementDate) : ""
       );
       setDueDay(initial.dueDate ? String(initial.dueDate) : "");
+      setColor((initial.color as CardColor) ?? "blue");
     } else {
       setName("");
       setBankId(banks[0]?.id ?? "");
@@ -240,6 +283,7 @@ export function CardDialog({
       setNetwork(NETWORK_NONE);
       setStatementDay("");
       setDueDay("");
+      setColor("blue");
     }
   }, [open, initial, banks]);
 
@@ -262,6 +306,7 @@ export function CardDialog({
         network === NETWORK_NONE ? null : (network as CardNetwork),
       statementDate: sd,
       dueDate: dd,
+      color,
     });
     onOpenChange(false);
   };
@@ -304,6 +349,8 @@ export function CardDialog({
               setStatementDay={setStatementDay}
               dueDay={dueDay}
               setDueDay={setDueDay}
+              color={color}
+              setColor={setColor}
               idPrefix="card-m"
             />
           </div>
@@ -349,6 +396,8 @@ export function CardDialog({
           setStatementDay={setStatementDay}
           dueDay={dueDay}
           setDueDay={setDueDay}
+          color={color}
+          setColor={setColor}
           idPrefix="card-d"
         />
         <DialogFooter>
