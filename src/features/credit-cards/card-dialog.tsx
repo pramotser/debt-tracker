@@ -30,6 +30,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { CARD_NETWORKS, getNetworkLabel, type CardNetwork } from "@/lib/banks";
 
 import type { Bank, CreditCard } from "./types";
 
@@ -37,9 +38,12 @@ export type CardDraft = {
   name: string;
   bankId: string;
   lastFourDigits: string | null;
+  cardNetwork: CardNetwork | null;
   statementDate: number | null;
   dueDate: number | null;
 };
+
+const NETWORK_NONE = "__none";
 
 function parseDay(raw: string): number | null {
   const t = raw.trim();
@@ -56,6 +60,8 @@ type FormProps = {
   setBankId: (v: string) => void;
   digits: string;
   setDigits: (v: string) => void;
+  network: string;
+  setNetwork: (v: string) => void;
   statementDay: string;
   setStatementDay: (v: string) => void;
   dueDay: string;
@@ -71,6 +77,8 @@ function CardFormFields({
   setBankId,
   digits,
   setDigits,
+  network,
+  setNetwork,
   statementDay,
   setStatementDay,
   dueDay,
@@ -110,22 +118,53 @@ function CardFormFields({
         />
       </div>
 
-      <div className="flex flex-col gap-2">
-        <Label htmlFor={`${idPrefix}-digits`}>
-          4 ตัวท้าย{" "}
-          <span className="text-xs font-normal text-muted-foreground">
-            (ไม่ใส่ก็ได้)
-          </span>
-        </Label>
-        <Input
-          id={`${idPrefix}-digits`}
-          inputMode="numeric"
-          maxLength={4}
-          placeholder="••••"
-          value={digits}
-          onChange={(e) => setDigits(e.target.value.replace(/\D/g, ""))}
-          className="font-mono tracking-[0.5em] text-center"
-        />
+      <div className="grid grid-cols-2 gap-3">
+        <div className="flex flex-col gap-2">
+          <Label htmlFor={`${idPrefix}-digits`}>
+            4 ตัวท้าย{" "}
+            <span className="text-xs font-normal text-muted-foreground">
+              (ไม่ใส่ก็ได้)
+            </span>
+          </Label>
+          <Input
+            id={`${idPrefix}-digits`}
+            inputMode="numeric"
+            maxLength={4}
+            placeholder="••••"
+            value={digits}
+            onChange={(e) => setDigits(e.target.value.replace(/\D/g, ""))}
+            className="font-mono tracking-[0.5em] text-center"
+          />
+        </div>
+        <div className="flex flex-col gap-2">
+          <Label htmlFor={`${idPrefix}-network`}>
+            เครือข่าย{" "}
+            <span className="text-xs font-normal text-muted-foreground">
+              (ไม่ใส่ก็ได้)
+            </span>
+          </Label>
+          <Select value={network} onValueChange={(v) => v && setNetwork(v)}>
+            <SelectTrigger id={`${idPrefix}-network`} className="w-full">
+              <SelectValue>
+                {(value: string | null) =>
+                  !value || value === NETWORK_NONE
+                    ? "ไม่ระบุ"
+                    : getNetworkLabel(value) ?? value
+                }
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={NETWORK_NONE} label="ไม่ระบุ">
+                ไม่ระบุ
+              </SelectItem>
+              {CARD_NETWORKS.map((n) => (
+                <SelectItem key={n} value={n} label={getNetworkLabel(n) ?? n}>
+                  {getNetworkLabel(n)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
@@ -179,6 +218,7 @@ export function CardDialog({
   const [name, setName] = useState("");
   const [bankId, setBankId] = useState(banks[0]?.id ?? "");
   const [digits, setDigits] = useState("");
+  const [network, setNetwork] = useState<string>(NETWORK_NONE);
   const [statementDay, setStatementDay] = useState("");
   const [dueDay, setDueDay] = useState("");
 
@@ -188,6 +228,7 @@ export function CardDialog({
       setName(initial.name);
       setBankId(initial.bankId);
       setDigits(initial.lastFourDigits ?? "");
+      setNetwork(initial.cardNetwork ?? NETWORK_NONE);
       setStatementDay(
         initial.statementDate ? String(initial.statementDate) : ""
       );
@@ -196,6 +237,7 @@ export function CardDialog({
       setName("");
       setBankId(banks[0]?.id ?? "");
       setDigits("");
+      setNetwork(NETWORK_NONE);
       setStatementDay("");
       setDueDay("");
     }
@@ -216,6 +258,8 @@ export function CardDialog({
       name: name.trim(),
       bankId,
       lastFourDigits: digits === "" ? null : digits,
+      cardNetwork:
+        network === NETWORK_NONE ? null : (network as CardNetwork),
       statementDate: sd,
       dueDate: dd,
     });
@@ -254,6 +298,8 @@ export function CardDialog({
               setBankId={setBankId}
               digits={digits}
               setDigits={setDigits}
+              network={network}
+              setNetwork={setNetwork}
               statementDay={statementDay}
               setStatementDay={setStatementDay}
               dueDay={dueDay}
@@ -297,6 +343,8 @@ export function CardDialog({
           setBankId={setBankId}
           digits={digits}
           setDigits={setDigits}
+          network={network}
+          setNetwork={setNetwork}
           statementDay={statementDay}
           setStatementDay={setStatementDay}
           dueDay={dueDay}
