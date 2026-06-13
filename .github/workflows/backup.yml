@@ -1,15 +1,12 @@
 name: Supabase Backup
-
 on:
   schedule:
     # 22:00 UTC = 05:00 Asia/Bangkok (after keep-alive)
     - cron: "0 22 * * *"
   workflow_dispatch:
-
 concurrency:
   group: supabase-backup
   cancel-in-progress: false
-
 jobs:
   backup:
     runs-on: ubuntu-latest
@@ -26,15 +23,13 @@ jobs:
             | sudo tee /etc/apt/sources.list.d/pgdg.list >/dev/null
           sudo apt-get update -qq
           sudo apt-get install -y -qq postgresql-client-17
-          pg_dump --version
-
+          /usr/lib/postgresql/17/bin/pg_dump --version
       - name: Prepare backup filename
         id: meta
         run: |
           DATE=$(date -u +%Y-%m-%d)
           echo "date=${DATE}" >> "$GITHUB_OUTPUT"
           echo "filename=backup-${DATE}.sql.gz" >> "$GITHUB_OUTPUT"
-
       - name: Run pg_dump (schema public + auth, data included)
         env:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
@@ -44,7 +39,7 @@ jobs:
             echo "::error::SUPABASE_DB_URL secret is not set"
             exit 1
           fi
-          pg_dump \
+          /usr/lib/postgresql/17/bin/pg_dump \
             --no-owner \
             --no-privileges \
             --schema=public \
@@ -58,7 +53,6 @@ jobs:
             echo "::error::Backup file is suspiciously small (${SIZE} bytes)"
             exit 1
           fi
-
       - name: Upload backup artifact (retention 7 days)
         uses: actions/upload-artifact@v4
         with:
