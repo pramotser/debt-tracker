@@ -110,9 +110,13 @@ export function PlanCard({
   const isCompleted = uiStatus === "completed";
   const isEarly = uiStatus === "early-settlement";
   const isOpenForActions = !isCompleted && !isEarly;
+  const showDots = !isCompleted && !isEarly && total <= 12;
+  const isClosed = isCompleted || isEarly;
 
   return (
-    <Card className="gap-3 px-5 py-4">
+    <Card
+      className={cn("gap-3 px-5 py-4", isClosed && "bg-muted/40 shadow-none")}
+    >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
@@ -179,18 +183,32 @@ export function PlanCard({
         <>
           <div className="flex flex-col gap-1 text-sm">
             <Row label="ยอดรวม" value={formatMoney(totalAmount)} />
-            <Row label="คงเหลือ" value={formatMoney(remainingAmount)} />
+            <Row
+              label="คงเหลือ"
+              value={formatMoney(remainingAmount)}
+              emphasize
+            />
             <Row
               label="ค่างวด"
               value={`${formatMoney(plan.installmentAmount)} / เดือน`}
             />
           </div>
-          <Progress value={percent} className="h-2.5" />
+          <Progress
+            value={percent}
+            className={cn(
+              "[&_[data-slot=progress-track]]:h-2.5",
+              uiStatus === "near-end" &&
+                "[&_[data-slot=progress-indicator]]:bg-amber-500"
+            )}
+          />
+          {showDots && (
+            <InstallmentDots total={total} paidCount={paidCount} />
+          )}
           <div className="flex flex-wrap justify-between gap-2 text-xs text-muted-foreground">
             <span>
               งวด {paidCount} / {total}
               {uiStatus === "near-end" && (
-                <span className="ml-2 font-medium text-orange-600">
+                <span className="ml-2 font-medium text-amber-600">
                   เหลืออีก {remaining} งวด
                 </span>
               )}
@@ -229,11 +247,65 @@ export function PlanCard({
   );
 }
 
-function Row({ label, value }: { label: string; value: string }) {
+function Row({
+  label,
+  value,
+  emphasize = false,
+}: {
+  label: string;
+  value: string;
+  emphasize?: boolean;
+}) {
   return (
-    <div className="flex items-center justify-between">
-      <span className="text-muted-foreground">{label}</span>
-      <span className="font-semibold tabular-nums">{value}</span>
+    <div className="flex items-center justify-between gap-3">
+      <span
+        className={cn(
+          "text-muted-foreground",
+          emphasize && "text-foreground font-medium"
+        )}
+      >
+        {label}
+      </span>
+      <span
+        className={cn(
+          "font-semibold tabular-nums whitespace-nowrap",
+          emphasize && "text-xl"
+        )}
+      >
+        {value}
+      </span>
+    </div>
+  );
+}
+
+function InstallmentDots({
+  total,
+  paidCount,
+}: {
+  total: number;
+  paidCount: number;
+}) {
+  const dots = Array.from({ length: total }, (_, i) => i < paidCount);
+  return (
+    <div
+      className="grid gap-1"
+      style={{ gridTemplateColumns: `repeat(${total}, minmax(0, 1fr))` }}
+      aria-label={`ผ่อนแล้ว ${paidCount} จาก ${total} งวด`}
+    >
+      {dots.map((paid, i) => (
+        <div key={i} className="flex flex-col items-center gap-0.5">
+          <span
+            aria-hidden
+            className={cn(
+              "h-2 w-full rounded-sm",
+              paid ? "bg-primary" : "border border-border bg-muted"
+            )}
+          />
+          <span className="text-[10px] text-muted-foreground tabular-nums">
+            {i + 1}
+          </span>
+        </div>
+      ))}
     </div>
   );
 }

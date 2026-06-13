@@ -122,25 +122,25 @@ export function InstallmentView({
       )}
 
       {buckets.active.length > 0 && (
-        <Section title="กำลังผ่อน">
+        <Section title="กำลังผ่อน" dotClass="bg-emerald-500">
           {buckets.active.map((p) => renderPlan(p, "active"))}
         </Section>
       )}
 
       {buckets.nearEnd.length > 0 && (
-        <Section title="ใกล้จบ">
+        <Section title="ใกล้จบ" dotClass="bg-amber-500">
           {buckets.nearEnd.map((p) => renderPlan(p, "near-end"))}
         </Section>
       )}
 
       {buckets.completed.length > 0 && (
-        <Section title="ผ่อนครบแล้ว">
+        <Section title="ผ่อนครบแล้ว" dotClass="bg-emerald-700">
           {buckets.completed.map((p) => renderPlan(p, "completed"))}
         </Section>
       )}
 
       {buckets.early.length > 0 && (
-        <Section title="ปิดก่อนกำหนด">
+        <Section title="ปิดก่อนกำหนด" dotClass="bg-violet-500">
           {buckets.early.map((p) => renderPlan(p, "early-settlement"))}
         </Section>
       )}
@@ -150,14 +150,22 @@ export function InstallmentView({
 
 function Section({
   title,
+  dotClass,
   children,
 }: {
   title: string;
+  dotClass: string;
   children: React.ReactNode;
 }) {
   return (
     <section className="flex flex-col gap-3">
-      <h2 className="text-lg font-semibold">{title}</h2>
+      <h2 className="flex items-center gap-2 text-lg font-semibold">
+        <span
+          aria-hidden
+          className={`inline-block size-2.5 rounded-full ${dotClass}`}
+        />
+        {title}
+      </h2>
       <div className="flex flex-col gap-3">{children}</div>
     </section>
   );
