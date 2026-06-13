@@ -14,21 +14,22 @@ import { formatMoney, formatMonthShortTh } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { HeatmapByYear } from "@/server/queries/dashboard-v2";
 
+// GitHub-style 5-stop scale (empty + 4 green steps)
 const INTENSITY_STOPS = [
   "bg-muted",
-  "bg-primary/15",
-  "bg-primary/30",
-  "bg-primary/50",
-  "bg-primary/70",
-  "bg-primary",
+  "bg-emerald-200 dark:bg-emerald-900",
+  "bg-emerald-400 dark:bg-emerald-700",
+  "bg-emerald-600 dark:bg-emerald-500",
+  "bg-emerald-800 dark:bg-emerald-300",
 ];
 
 function intensityClass(value: number, max: number): string {
   if (max <= 0 || value <= 0) return INTENSITY_STOPS[0];
   const ratio = value / max;
+  // map (0, 1] → stops 1..4
   const idx = Math.min(
     INTENSITY_STOPS.length - 1,
-    1 + Math.floor(ratio * (INTENSITY_STOPS.length - 1))
+    1 + Math.floor(ratio * (INTENSITY_STOPS.length - 1 - 0.0001))
   );
   return INTENSITY_STOPS[idx];
 }
