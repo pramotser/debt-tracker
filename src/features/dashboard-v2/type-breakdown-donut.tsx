@@ -33,7 +33,13 @@ const config = {
   total: { label: "ยอดรวม" },
 } satisfies ChartConfig;
 
-export function TypeBreakdownDonut({ data }: { data: TypeBreakdownItem[] }) {
+export function TypeBreakdownDonut({
+  data,
+  title = "รายจ่ายตามประเภท",
+}: {
+  data: TypeBreakdownItem[];
+  title?: string;
+}) {
   const grandTotal = data.reduce((s, d) => s + d.total, 0);
   const chartData = data.map((d) => ({
     type: d.type,
@@ -45,9 +51,7 @@ export function TypeBreakdownDonut({ data }: { data: TypeBreakdownItem[] }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">
-          รายจ่ายตามประเภท
-        </CardTitle>
+        <CardTitle className="text-base">{title}</CardTitle>
       </CardHeader>
       <CardContent>
         {grandTotal > 0 ? (

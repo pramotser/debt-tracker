@@ -14,7 +14,7 @@ export function InstallmentProgress({
     <Card>
       <CardHeader>
         <CardTitle className="text-base">
-          ความคืบหน้าแผนผ่อน
+          ความคืบหน้าแผนการผ่อนชำระ
         </CardTitle>
       </CardHeader>
       <CardContent>

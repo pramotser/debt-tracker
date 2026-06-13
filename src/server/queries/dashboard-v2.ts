@@ -172,6 +172,32 @@ export async function getTypeBreakdown(): Promise<TypeBreakdownItem[]> {
     .sort((a, b) => b.total - a.total);
 }
 
+export async function getTypeBreakdownByMonth(
+  year: number,
+  month: number
+): Promise<TypeBreakdownItem[]> {
+  const user = await getCurrentUser();
+  const rows = await db
+    .select({
+      type: ledgerEntries.type,
+      total: sql<string>`COALESCE(SUM(${ledgerEntries.amount}), 0)`,
+    })
+    .from(ledgerEntries)
+    .where(
+      and(
+        eq(ledgerEntries.userId, user.id),
+        eq(ledgerEntries.year, year),
+        eq(ledgerEntries.month, month)
+      )
+    )
+    .groupBy(ledgerEntries.type);
+
+  return rows
+    .map((r) => ({ type: r.type, total: Number(r.total) }))
+    .filter((r) => r.total > 0)
+    .sort((a, b) => b.total - a.total);
+}
+
 // -----------------------------------------------------------------------------
 // 2.5 เงินไหลไปหมวดไหน (เรียงมาก→น้อย) — รวมทุกเดือน
 // -----------------------------------------------------------------------------

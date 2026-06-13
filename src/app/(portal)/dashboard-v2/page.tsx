@@ -7,6 +7,7 @@ import {
   getThisMonthSummary,
   getTrailingTotals,
   getTypeBreakdown,
+  getTypeBreakdownByMonth,
   getUpcomingTotals,
 } from "@/server/queries/dashboard-v2";
 
@@ -20,6 +21,7 @@ export default async function DashboardV2Page() {
     trailing,
     upcoming,
     typeBreakdown,
+    typeBreakdownThisMonth,
     categoryFlow,
     installments,
     heatmap,
@@ -28,6 +30,7 @@ export default async function DashboardV2Page() {
     getTrailingTotals(year, month, 6),
     getUpcomingTotals(year, month, 6),
     getTypeBreakdown(),
+    getTypeBreakdownByMonth(year, month),
     getCategoryFlow(),
     getInstallmentProgress(),
     getHeatmapByYears(year),
@@ -40,6 +43,7 @@ export default async function DashboardV2Page() {
     trailing,
     upcoming,
     typeBreakdown,
+    typeBreakdownThisMonth,
     categoryFlow,
     installments,
     heatmap,

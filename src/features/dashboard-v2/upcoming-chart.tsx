@@ -36,7 +36,7 @@ export function UpcomingChart({ data }: { data: MonthTotal[] }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">เดือนข้างหน้า 6 เดือน</CardTitle>
+        <CardTitle className="text-base">รายจ่าย 6 เดือนข้างหน้า</CardTitle>
       </CardHeader>
       <CardContent>
         {hasAny ? (

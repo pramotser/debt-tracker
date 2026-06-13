@@ -6,10 +6,11 @@ import { formatMoney, formatYearMonth } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 import { MonthlyTrendChart } from "./monthly-trend-chart";
+import { TypeBreakdownDonut } from "./type-breakdown-donut";
 import type { DashboardV2Data } from "./types";
 
 export function ThisMonthTab({ data }: { data: DashboardV2Data }) {
-  const { year, month, summary, trailing } = data;
+  const { year, month, summary, trailing, typeBreakdownThisMonth } = data;
   const { total, paid, due, naCount, entryCount } = summary;
 
   const paidPct = total > 0 ? Math.round((paid / total) * 100) : 0;
@@ -76,6 +77,11 @@ export function ThisMonthTab({ data }: { data: DashboardV2Data }) {
           </div>
         )}
       </Card>
+
+      <TypeBreakdownDonut
+        data={typeBreakdownThisMonth}
+        title="รายจ่ายตามประเภทเดือนนี้"
+      />
 
       <MonthlyTrendChart data={trailing} />
     </div>

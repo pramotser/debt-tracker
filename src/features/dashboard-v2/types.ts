@@ -14,6 +14,7 @@ export type DashboardV2Data = {
   trailing: MonthTotal[];
   upcoming: MonthTotal[];
   typeBreakdown: TypeBreakdownItem[];
+  typeBreakdownThisMonth: TypeBreakdownItem[];
   categoryFlow: CategoryFlowItem[];
   installments: InstallmentProgressItem[];
   heatmap: HeatmapByYear;
