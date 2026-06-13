@@ -6,6 +6,8 @@ import { Info, Plus } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { formatMoney } from "@/lib/format";
+import { cn } from "@/lib/utils";
 import type { InstallmentPlanWithProgress } from "@/server/queries/credit-card-installments";
 
 import { PlanCard } from "./plan-card";
@@ -83,6 +85,24 @@ export function InstallmentView({
     return { active: a, nearEnd: n, completed: c, early: e };
   }, [plans]);
 
+  const summary = useMemo(() => {
+    const openPlans = [...buckets.active, ...buckets.nearEnd];
+    const openIds = new Set(openPlans.map((p) => p.id));
+    const sumPerMonth = openPlans.reduce(
+      (s, p) => s + Number(p.installmentAmount),
+      0
+    );
+    const sumRemaining = entries
+      .filter((e) => !e.paid && e.sourceId && openIds.has(e.sourceId))
+      .reduce((s, e) => s + Number(e.amount), 0);
+    return {
+      sumRemaining,
+      sumPerMonth,
+      activeCount: buckets.active.length,
+      nearEndCount: buckets.nearEnd.length,
+    };
+  }, [buckets, entries]);
+
   const renderPlan = (p: InstallmentPlanWithProgress, status: UiStatus) => (
     <PlanCard
       key={p.id}
@@ -107,6 +127,8 @@ export function InstallmentView({
           เพื่อมอนิเตอร์ภาพรวมของหนี้ปัจจุบัน
         </AlertDescription>
       </Alert>
+
+      {plans.length > 0 && <SummaryCards summary={summary} />}
 
       <div className="flex justify-end">
         <Button onClick={onAddPlan} disabled={cards.length === 0}>
@@ -145,6 +167,57 @@ export function InstallmentView({
         </Section>
       )}
     </div>
+  );
+}
+
+function SummaryCards({
+  summary,
+}: {
+  summary: {
+    sumRemaining: number;
+    sumPerMonth: number;
+    activeCount: number;
+    nearEndCount: number;
+  };
+}) {
+  return (
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <SummaryCard label="คงเหลือ" value={formatMoney(summary.sumRemaining)} />
+      <SummaryCard
+        label="ต้องจ่าย/เดือน"
+        value={formatMoney(summary.sumPerMonth)}
+      />
+      <SummaryCard label="กำลังผ่อน" value={String(summary.activeCount)} />
+      <SummaryCard
+        label="ใกล้จบ"
+        value={String(summary.nearEndCount)}
+        valueClass="text-amber-600"
+      />
+    </div>
+  );
+}
+
+function SummaryCard({
+  label,
+  value,
+  valueClass,
+}: {
+  label: string;
+  value: string;
+  valueClass?: string;
+}) {
+  return (
+    <Card className="gap-1 bg-muted/40 p-3 shadow-none sm:p-4">
+      <div className="text-xs text-muted-foreground">{label}</div>
+      <div
+        className={cn(
+          "truncate text-xl font-bold tabular-nums",
+          valueClass
+        )}
+      >
+        {value}
+      </div>
+    </Card>
   );
 }
 
