@@ -14,7 +14,7 @@ const tabTriggerClass =
 export function DashboardTabs({ data }: { data: DashboardV2Data }) {
   return (
     <Tabs defaultValue={"this-month" satisfies TabValue}>
-      <TabsList className="w-full justify-start gap-6 rounded-none border-b bg-transparent p-0">
+      <TabsList className="-mx-1 flex w-full flex-nowrap justify-start gap-6 overflow-x-auto rounded-none border-b bg-transparent px-1">
         <TabsTrigger value="this-month" className={tabTriggerClass}>
           เดือนนี้ต้องจ่ายอะไรบ้าง
         </TabsTrigger>
