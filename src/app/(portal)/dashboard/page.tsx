@@ -51,7 +51,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="text-2xl font-bold">ภาพรวม</h1>
+      <h1 className="text-2xl font-bold">Dashboard</h1>
       <DashboardTabs data={data} />
     </div>
   );

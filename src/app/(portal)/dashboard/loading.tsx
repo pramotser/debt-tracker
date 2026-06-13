@@ -9,7 +9,7 @@ export default function Loading() {
     <div className="flex flex-col gap-5" aria-busy aria-live="polite">
       {/* header + month nav */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold">ภาพรวม</h1>
+        <h1 className="text-2xl font-bold">Dashboard</h1>
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="icon" disabled aria-label="เดือนก่อน">
             <ChevronLeft />
