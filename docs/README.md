@@ -9,6 +9,10 @@ docs/
 ├── README.md                          ← คุณอยู่ที่นี่ (index)
 ├── deployment.md                      ← runbook deploy production (Vercel + Supabase + OAuth)
 ├── specs/                             ← spec รายโมดูล (อ่านก่อนลงมือทำ feature)
+│   ├── dashboard/                       /dashboard (2 tabs · read-only)
+│   │   ├── dashboard.md                   overview + data flow
+│   │   ├── this-month-tab.md              tab "เดือนนี้ต้องจ่ายอะไรบ้าง"
+│   │   └── overview-tab.md                tab "ภาพรวมรายจ่าย"
 │   ├── monthly-cost/                    /monthly-cost (2 tabs)
 │   │   ├── monthly-cost.md                overview + data flow
 │   │   ├── month-tab.md                   tab "รายการจ่ายรายเดือน"
@@ -42,11 +46,12 @@ Spec เขียนตอนตัดสินใจ design ครั้งแ�
 
 | Spec | Route | Code path |
 |---|---|---|
+| `specs/dashboard/*` | `/dashboard` | `src/app/(portal)/dashboard/`, `features/dashboard/`, `server/queries/dashboard.ts` |
 | `specs/monthly-cost/*` | `/monthly-cost` | `src/app/(portal)/monthly-cost/`, `features/monthly-cost/` |
 | `specs/subscription/*` | `/subscription` | `src/app/(portal)/subscription/`, `features/subscription/` |
 | `specs/credit-cards/*` | `/credit-cards` | `src/app/(portal)/credit-cards/`, `features/credit-cards/` |
 
-ยังไม่มี spec: `/dashboard`, `/ledger`, `/settings`, admin (`/banks`, `/categories`, `/users`) — ตอนนี้เป็น stub
+ยังไม่มี spec: `/ledger`, `/settings`, admin (`/banks`, `/categories`, `/users`) — ตอนนี้เป็น stub
 
 ## Convention ของ spec
 

@@ -73,16 +73,21 @@ Next.js 16 App Router + TS · shadcn/ui + Tailwind v4 (UI เดียว ห้
 > ⚠️ bankId / categoryId ยังเป็น text (mock) — รอ admin tables (banks, categories) ที่ยังไม่ได้สร้าง ห้ามเปลี่ยน type เอง
 
 ## Module Status
+- ✅ `/dashboard` — 2 tabs (เดือนนี้ / ภาพรวม) · read-only chart + KPI
 - ✅ `/monthly-cost` — ค่าใช้จ่ายรายเดือน
 - ✅ `/subscription` — รายเดือน/รายปี
 - ✅ `/credit-cards` — 3 tabs (ชำระ / ผ่อน / บัตร)
-- 🚧 stub: `/dashboard`, `/ledger`, `/settings`, admin pages
+- 🚧 stub: `/ledger`, `/settings`, admin pages
 
 > Credit installment = module ซับซ้อนสุด — อ่าน `docs/specs/credit-cards/credit-cards.md` ก่อน แล้วต่อ `installment-tab.md` ห้ามเดา logic
 
 ## Docs
 - `docs/README.md` — index รวม
 - `docs/specs/` — spec รายโมดูล (อ่านก่อนทำ feature ซับซ้อน)
+- `docs/specs/dashboard/` — dashboard module (read-only):
+  - `dashboard.md` — overview + 2 tabs + 8 queries
+  - `this-month-tab.md` — KPI + progress + trend bar + monthly donut
+  - `overview-tab.md` — upcoming line + all-time donut + category flow + installment progress + heatmap
 - `docs/specs/monthly-cost/` — monthly-cost module:
   - `monthly-cost.md` — overview + 2 tabs + data flow
   - `month-tab.md` — รายการจ่ายรายเดือน + import banner
