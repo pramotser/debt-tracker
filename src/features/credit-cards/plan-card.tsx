@@ -1,9 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ChevronDown, ChevronUp, MoreHorizontal, Trash2, XCircle } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -14,11 +13,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import { Progress } from "@/components/ui/progress";
 import { formatMoney, formatYearMonth } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 import { CategoryBadge } from "@/components/shared/category-badge";
+import { Segments } from "./components/segments";
+import { StatusBadge } from "./components/status-badge";
+import type { StatusKey } from "./components/status-tokens";
 import type {
   Category,
   CreditCard,
@@ -27,39 +28,18 @@ import type {
   UiStatus,
 } from "./types";
 
-export function StatusBadge({ status }: { status: UiStatus }) {
-  switch (status) {
-    case "active":
-      return (
-        <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100">
-          ● ACTIVE
-        </Badge>
-      );
-    case "near-end":
-      return (
-        <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100">
-          ● NEAR END
-        </Badge>
-      );
-    case "completed":
-      return (
-        <Badge className="bg-gray-100 text-gray-700 hover:bg-gray-100">
-          ● COMPLETED
-        </Badge>
-      );
-    case "early-settlement":
-      return (
-        <Badge className="bg-violet-100 text-violet-700 hover:bg-violet-100">
-          ● EARLY SETTLEMENT
-        </Badge>
-      );
-  }
-}
-
 function toNumber(v: string | null): number {
   if (v === null) return 0;
   const n = Number(v);
   return Number.isFinite(n) ? n : 0;
+}
+
+// แมพ UiStatus → token status (plan ใช้ active/nearEnd/settle · off สำหรับผ่อนครบแล้ว)
+function statusKeyOf(status: UiStatus): StatusKey {
+  if (status === "active") return "active";
+  if (status === "near-end") return "nearEnd";
+  if (status === "early-settlement") return "settle";
+  return "off";
 }
 
 export function PlanCard({
@@ -68,6 +48,8 @@ export function PlanCard({
   card,
   category,
   entries,
+  scrollTarget,
+  onScrolled,
   onTogglePaid,
   onUpdateInterestSplit,
   onSettle,
@@ -78,6 +60,8 @@ export function PlanCard({
   card?: CreditCard;
   category?: Category;
   entries: LedgerEntry[];
+  scrollTarget?: boolean;
+  onScrolled?: () => void;
   onTogglePaid: (entryId: string) => void;
   onUpdateInterestSplit: (
     entryId: string,
@@ -88,18 +72,25 @@ export function PlanCard({
   onDelete: () => void;
 }) {
   const [expanded, setExpanded] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  // เมื่อมี scrollTarget = true → เลื่อนเข้าจอ + highlight ชั่วครู่
+  useEffect(() => {
+    if (!scrollTarget) return;
+    ref.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    onScrolled?.();
+  }, [scrollTarget, onScrolled]);
 
   const paidCount = entries.filter((e) => e.paid).length;
   const total = plan.totalInstallments;
   const remaining = total - paidCount;
-  const percent = total > 0 ? (paidCount / total) * 100 : 0;
 
   const totalAmount = toNumber(plan.totalAmount);
   const remainingAmount = entries
     .filter((e) => !e.paid)
     .reduce((s, e) => s + toNumber(e.amount), 0);
 
-  // last unpaid งวด → expected end (fall back to last งวด overall)
+  // last unpaid งวด → expected end (fallback ตัวสุดท้าย)
   const lastEntry =
     entries.slice().reverse().find((e) => !e.paid) ??
     entries[entries.length - 1];
@@ -107,15 +98,28 @@ export function PlanCard({
     ? formatYearMonth(lastEntry.year, lastEntry.month)
     : "—";
 
+  // งวดถัดที่จะจ่าย (สำหรับ Segments highlight "current")
+  const nextUnpaid = entries.find((e) => !e.paid);
+  const currentIdx = nextUnpaid
+    ? (nextUnpaid.year - plan.startYear) * 12 +
+      (nextUnpaid.month - plan.startMonth) +
+      1
+    : undefined;
+
   const isCompleted = uiStatus === "completed";
   const isEarly = uiStatus === "early-settlement";
   const isOpenForActions = !isCompleted && !isEarly;
-  const showDots = !isCompleted && !isEarly && total <= 12;
   const isClosed = isCompleted || isEarly;
+  const statusKey = statusKeyOf(uiStatus);
 
   return (
     <Card
-      className={cn("gap-3 px-5 py-4", isClosed && "bg-muted/40 shadow-none")}
+      ref={ref}
+      id={`plan-${plan.id}`}
+      className={cn(
+        "scroll-mt-20 gap-3 px-5 py-4",
+        isClosed && "bg-muted/40 shadow-none"
+      )}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
@@ -129,7 +133,7 @@ export function PlanCard({
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <StatusBadge status={uiStatus} />
+          <StatusBadge status={statusKey} />
           {isOpenForActions && (
             <DropdownMenu>
               <DropdownMenuTrigger
@@ -175,7 +179,7 @@ export function PlanCard({
           {plan.closedAt && (
             <Row
               label="ปิดเมื่อ"
-              value={new Date(plan.closedAt).toLocaleDateString("th-TH")}
+              value={new Date(plan.closedAt).toLocaleDateString("en-CA")}
             />
           )}
         </div>
@@ -193,17 +197,12 @@ export function PlanCard({
               value={`${formatMoney(plan.installmentAmount)} / เดือน`}
             />
           </div>
-          <Progress
-            value={percent}
-            className={cn(
-              "[&_[data-slot=progress-track]]:h-2.5",
-              uiStatus === "near-end" &&
-                "[&_[data-slot=progress-indicator]]:bg-amber-500"
-            )}
+          <Segments
+            total={total}
+            paidCount={paidCount}
+            current={currentIdx}
+            numbers
           />
-          {showDots && (
-            <InstallmentDots total={total} paidCount={paidCount} />
-          )}
           <div className="flex flex-wrap justify-between gap-2 text-xs text-muted-foreground">
             <span>
               งวด {paidCount} / {total}
@@ -274,38 +273,6 @@ function Row({
       >
         {value}
       </span>
-    </div>
-  );
-}
-
-function InstallmentDots({
-  total,
-  paidCount,
-}: {
-  total: number;
-  paidCount: number;
-}) {
-  const dots = Array.from({ length: total }, (_, i) => i < paidCount);
-  return (
-    <div
-      className="grid gap-1"
-      style={{ gridTemplateColumns: `repeat(${total}, minmax(0, 1fr))` }}
-      aria-label={`ผ่อนแล้ว ${paidCount} จาก ${total} งวด`}
-    >
-      {dots.map((paid, i) => (
-        <div key={i} className="flex flex-col items-center gap-0.5">
-          <span
-            aria-hidden
-            className={cn(
-              "h-2 w-full rounded-sm",
-              paid ? "bg-primary" : "border border-border bg-muted"
-            )}
-          />
-          <span className="text-[10px] text-muted-foreground tabular-nums">
-            {i + 1}
-          </span>
-        </div>
-      ))}
     </div>
   );
 }

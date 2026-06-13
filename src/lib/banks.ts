@@ -54,3 +54,29 @@ export function getNetworkLabel(network: string | null | undefined): string | nu
   if (!network) return null;
   return NETWORK_LABELS[network as CardNetwork] ?? network;
 }
+
+// ธีมสีการ์ดที่ user เลือกได้ — gradient 135deg (`from` → `to`)
+// ใช้บน CardFace ใน tab "บัตรของฉัน" + แสดงเป็นพื้นหลังการ์ดทุกที่
+export const CARD_COLORS = ["blue", "navy", "teal", "plum"] as const;
+
+export type CardColor = (typeof CARD_COLORS)[number];
+
+export type CardColorTheme = {
+  id: CardColor;
+  label: string;
+  from: string;
+  to: string;
+  fg: string;
+};
+
+export const CARD_COLOR_THEMES: Record<CardColor, CardColorTheme> = {
+  blue: { id: "blue", label: "น้ำเงิน", from: "#2563EB", to: "#1E3A8A", fg: "#F1F5FD" },
+  navy: { id: "navy", label: "กรมท่า", from: "#2B2F52", to: "#474D86", fg: "#ECEDF6" },
+  teal: { id: "teal", label: "เขียวมรกต", from: "#0E7C6B", to: "#0B4F45", fg: "#E2F2EE" },
+  plum: { id: "plum", label: "ม่วงพลัม", from: "#7C3AED", to: "#5B21B6", fg: "#EFE8FB" },
+};
+
+export function getCardColorTheme(color: string | null | undefined): CardColorTheme {
+  if (!color) return CARD_COLOR_THEMES.blue;
+  return (CARD_COLOR_THEMES as Record<string, CardColorTheme>)[color] ?? CARD_COLOR_THEMES.blue;
+}

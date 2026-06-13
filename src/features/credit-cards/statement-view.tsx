@@ -1,23 +1,22 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useOptimistic, useState, useTransition } from "react";
 import { ChevronLeft, ChevronRight, Plus, Trash2 } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { formatMoney, formatYearMonth } from "@/lib/format";
+import { getCardColorTheme } from "@/lib/banks";
 import { cn } from "@/lib/utils";
+import type { InstallmentPlanWithProgress } from "@/server/queries/credit-card-installments";
 
-import type {
-  CreditCard,
-  CreditCardInstallment,
-  LedgerEntry,
-  YearMonth,
-} from "./types";
+import { StatusBadge } from "./components/status-badge";
+import { STATUS } from "./components/status-tokens";
+import { SummaryStrip } from "./components/summary-strip";
+import type { CreditCard, LedgerEntry, YearMonth } from "./types";
 
 function toNumber(v: string | null): number {
   if (v === null) return 0;
@@ -25,14 +24,16 @@ function toNumber(v: string | null): number {
   return Number.isFinite(n) ? n : 0;
 }
 
-function planById(plans: CreditCardInstallment[]): Map<string, CreditCardInstallment> {
+function planById(
+  plans: InstallmentPlanWithProgress[]
+): Map<string, InstallmentPlanWithProgress> {
   return new Map(plans.map((p) => [p.id, p]));
 }
 
 function cardOfEntry(
   entry: LedgerEntry,
   cardById: Map<string, CreditCard>,
-  planMap: Map<string, CreditCardInstallment>
+  planMap: Map<string, InstallmentPlanWithProgress>
 ): CreditCard | undefined {
   if (entry.type === "CREDIT_CARD") {
     return entry.sourceId ? cardById.get(entry.sourceId) : undefined;
@@ -42,6 +43,16 @@ function cardOfEntry(
     return plan ? cardById.get(plan.creditCardId) : undefined;
   }
   return undefined;
+}
+
+// คำนวณว่าเป็นงวดที่เท่าไหร่ของแผน — จาก year/month vs plan.startYear/startMonth
+function installmentIndex(
+  entry: LedgerEntry,
+  plan: InstallmentPlanWithProgress
+): number {
+  const diff =
+    (entry.year - plan.startYear) * 12 + (entry.month - plan.startMonth);
+  return diff + 1;
 }
 
 export function StatementView({
@@ -55,31 +66,92 @@ export function StatementView({
   onTogglePaid,
   onUpdateAmount,
   onDelete,
+  onJumpToPlan,
 }: {
   ym: YearMonth;
   cards: CreditCard[];
-  plans: CreditCardInstallment[];
+  plans: InstallmentPlanWithProgress[];
   entries: LedgerEntry[];
   onPrev: () => void;
   onNext: () => void;
   onAddCharge: () => void;
-  onTogglePaid: (entry: LedgerEntry) => void;
+  onTogglePaid: (entry: LedgerEntry, next: boolean) => Promise<void>;
   onUpdateAmount: (entry: LedgerEntry, amount: string) => void;
   onDelete: (entry: LedgerEntry) => void;
+  onJumpToPlan: (planId: string) => void;
 }) {
-  const cardById = new Map(cards.map((c) => [c.id, c]));
-  const planMap = planById(plans);
-  const activeCards = cards.filter((c) => c.active);
+  const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
 
-  // group entries by card
-  const grouped = new Map<string, LedgerEntry[]>();
-  for (const e of entries) {
-    const card = cardOfEntry(e, cardById, planMap);
-    if (!card) continue;
-    const arr = grouped.get(card.id) ?? [];
-    arr.push(e);
-    grouped.set(card.id, arr);
-  }
+  // baseline = entries (server-controlled); optimistic = พลิก paid ทันทีระหว่าง transition
+  const [optimisticEntries, applyOptimisticToggle] = useOptimistic(
+    entries,
+    (current, payload: { id: string; paid: boolean }) =>
+      current.map((e) =>
+        e.id === payload.id
+          ? {
+              ...e,
+              paid: payload.paid,
+              paidAt: payload.paid ? new Date() : null,
+            }
+          : e
+      )
+  );
+  const [, startToggleTransition] = useTransition();
+
+  const handleTogglePaid = (entry: LedgerEntry) => {
+    const next = !entry.paid;
+    startToggleTransition(async () => {
+      applyOptimisticToggle({ id: entry.id, paid: next });
+      try {
+        await onTogglePaid(entry, next);
+      } catch {
+        // useOptimistic rolls back อัตโนมัติเมื่อ transition จบ
+      }
+    });
+  };
+
+  const cardById = useMemo(() => new Map(cards.map((c) => [c.id, c])), [cards]);
+  const planMap = useMemo(() => planById(plans), [plans]);
+  const activeCards = useMemo(() => cards.filter((c) => c.active), [cards]);
+
+  // group entries by card (ใช้สรุปยอดในการ์ดเล็ก)
+  const groupedByCard = useMemo(() => {
+    const m = new Map<string, LedgerEntry[]>();
+    for (const e of optimisticEntries) {
+      const card = cardOfEntry(e, cardById, planMap);
+      if (!card) continue;
+      const arr = m.get(card.id) ?? [];
+      arr.push(e);
+      m.set(card.id, arr);
+    }
+    return m;
+  }, [optimisticEntries, cardById, planMap]);
+
+  const visibleEntries = useMemo(() => {
+    if (!selectedCardId) return optimisticEntries;
+    return optimisticEntries.filter((e) => {
+      const card = cardOfEntry(e, cardById, planMap);
+      return card?.id === selectedCardId;
+    });
+  }, [optimisticEntries, selectedCardId, cardById, planMap]);
+
+  const summary = useMemo(() => {
+    let total = 0;
+    let paid = 0;
+    let due = 0;
+    for (const e of visibleEntries) {
+      const amt = toNumber(e.amount);
+      total += amt;
+      if (e.paid) paid += amt;
+      else due += amt;
+    }
+    return {
+      total,
+      paid,
+      due,
+      count: visibleEntries.length,
+    };
+  }, [visibleEntries]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -103,82 +175,131 @@ export function StatementView({
 
       {activeCards.length === 0 ? (
         <Card className="px-6 py-10 text-center text-sm text-muted-foreground">
-          ยังไม่มีบัตร — สลับไปแท็บ "บัตรของฉัน" เพื่อเพิ่มบัตรก่อน
+          ยังไม่มีบัตร — สลับไปแท็บ &quot;บัตรของฉัน&quot; เพื่อเพิ่มบัตรก่อน
         </Card>
       ) : (
         <ScrollArea className="w-full">
-          <div className="flex gap-3 pb-3">
+          <div className="flex items-stretch gap-3 pb-3">
             {activeCards.map((c) => {
-              const arr = grouped.get(c.id) ?? [];
+              const arr = groupedByCard.get(c.id) ?? [];
               const total = arr.reduce((s, e) => s + toNumber(e.amount), 0);
+              const selected = selectedCardId === c.id;
+              const theme = getCardColorTheme(c.color);
               return (
-                <Card
+                <button
                   key={c.id}
-                  className="min-w-[260px] gap-2 px-5 py-4"
+                  type="button"
+                  onClick={() =>
+                    setSelectedCardId(selected ? null : c.id)
+                  }
+                  className={cn(
+                    "min-w-[220px] rounded-2xl p-4 text-left shadow-sm transition-all",
+                    "hover:scale-[1.02]",
+                    selected && "ring-2 ring-offset-2 ring-foreground/40"
+                  )}
+                  style={{
+                    backgroundImage: `linear-gradient(135deg, ${theme.from}, ${theme.to})`,
+                    color: theme.fg,
+                  }}
                 >
-                  <div className="text-sm font-semibold">{c.name}</div>
-                  <div className="text-xs text-muted-foreground">
-                    {c.lastFourDigits ? `****${c.lastFourDigits}` : "—"}
+                  <div className="text-sm font-semibold truncate">{c.name}</div>
+                  <div className="text-xs opacity-80">
+                    {c.lastFourDigits ? `•••• ${c.lastFourDigits}` : "—"}
                   </div>
-                  <div className="mt-1 text-xs text-muted-foreground">
-                    ยอดบิลเดือนนี้
-                  </div>
+                  <div className="mt-3 text-xs opacity-80">ยอดบิลเดือนนี้</div>
                   <div className="text-2xl font-bold tabular-nums">
                     {formatMoney(total)}
                   </div>
-                  {c.dueDate && (
-                    <div className="text-xs text-muted-foreground">
-                      ครบกำหนด: ทุกวันที่ {c.dueDate}
-                    </div>
-                  )}
-                </Card>
+                  <div className="mt-1 text-xs opacity-80">
+                    {arr.length} รายการ
+                  </div>
+                </button>
               );
             })}
           </div>
         </ScrollArea>
       )}
 
-      {entries.length === 0 ? (
+      {selectedCardId && (
+        <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
+          <span>
+            แสดงเฉพาะบัตร: {cardById.get(selectedCardId)?.name ?? "—"}
+          </span>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setSelectedCardId(null)}
+            className="h-7"
+          >
+            แสดงทุกใบ
+          </Button>
+        </div>
+      )}
+
+      {activeCards.length > 0 && entries.length > 0 && (
+        <SummaryStrip
+          items={[
+            { label: "ยอดรวม", value: formatMoney(summary.total) },
+            { label: "จ่ายแล้ว", value: formatMoney(summary.paid), tone: "paid" },
+            { label: "ค้างจ่าย", value: formatMoney(summary.due), tone: "due" },
+            { label: "จำนวนรายการ", value: String(summary.count) },
+          ]}
+        />
+      )}
+
+      {visibleEntries.length === 0 ? (
         <Card className="px-6 py-10 text-center text-sm text-muted-foreground">
           ยังไม่มีรายการเดือนนี้
         </Card>
       ) : (
-        <Card className="gap-0 divide-y divide-border p-0">
-          {entries.map((e) => {
+        <div className="flex flex-col gap-2">
+          {visibleEntries.map((e) => {
             const card = cardOfEntry(e, cardById, planMap);
+            const plan =
+              e.type === "CREDIT_CARD_INSTALLMENT" && e.sourceId
+                ? planMap.get(e.sourceId)
+                : undefined;
             return (
-              <TransactionRow
+              <StatusRailRow
                 key={e.id}
                 entry={e}
                 cardName={card?.name ?? "—"}
-                onTogglePaid={() => onTogglePaid(e)}
+                plan={plan}
+                onTogglePaid={() => handleTogglePaid(e)}
                 onUpdateAmount={(amt) => onUpdateAmount(e, amt)}
                 onDelete={() => onDelete(e)}
+                onJumpToPlan={onJumpToPlan}
               />
             );
           })}
-        </Card>
+        </div>
       )}
     </div>
   );
 }
 
-function TransactionRow({
+function StatusRailRow({
   entry,
   cardName,
+  plan,
   onTogglePaid,
   onUpdateAmount,
   onDelete,
+  onJumpToPlan,
 }: {
   entry: LedgerEntry;
   cardName: string;
+  plan?: InstallmentPlanWithProgress;
   onTogglePaid: () => void;
   onUpdateAmount: (amount: string) => void;
   onDelete: () => void;
+  onJumpToPlan: (planId: string) => void;
 }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("");
   const isInstallment = entry.type === "CREDIT_CARD_INSTALLMENT";
+  // accent เดียวคุม rail / amount / progress current — flip ตาม paid (optimistic)
+  const accent = entry.paid ? STATUS.paid.bar : STATUS.due.bar;
 
   const startEdit = () => {
     setDraft(entry.amount ?? "");
@@ -193,73 +314,106 @@ function TransactionRow({
     setEditing(false);
   };
 
+  const cur = plan ? installmentIndex(entry, plan) : 0;
+  const total = plan?.totalInstallments ?? 0;
+
   return (
-    <div
+    <Card
       className={cn(
-        "flex items-center gap-3 px-5 py-3 text-sm",
-        entry.paid && "opacity-60"
+        "relative gap-2 overflow-hidden p-0 py-3 pr-3 pl-4 text-sm shadow-sm",
+        entry.paid && "opacity-70"
       )}
     >
-      <Checkbox checked={entry.paid} onCheckedChange={onTogglePaid} />
-      <Badge
-        variant="outline"
-        className={cn(
-          "shrink-0",
-          isInstallment
-            ? "border-amber-300 bg-amber-50 text-amber-700"
-            : "border-emerald-300 bg-emerald-50 text-emerald-700"
-        )}
-      >
-        {isInstallment ? "🟡 ผ่อน" : "🟢 รูด"}
-      </Badge>
-      <div className="min-w-0 flex-1">
-        <div className={cn("truncate font-medium", entry.paid && "line-through")}>
-          {entry.name}
-        </div>
-        <div className="text-xs text-muted-foreground">{cardName}</div>
-      </div>
-      {isInstallment || editing ? (
-        editing ? (
-          <Input
-            autoFocus
-            type="number"
-            inputMode="decimal"
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            onBlur={commit}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") commit();
-              else if (e.key === "Escape") setEditing(false);
-            }}
-            className="h-9 w-28 text-right tabular-nums"
-          />
-        ) : (
-          <div className="min-w-[6rem] text-right text-base font-semibold tabular-nums">
-            {formatMoney(entry.amount ?? "0")}
+      <span
+        aria-hidden
+        className="absolute inset-y-0 left-0 w-1"
+        style={{ backgroundColor: accent }}
+      />
+      <div className="flex items-center gap-3">
+        <Checkbox checked={entry.paid} onCheckedChange={onTogglePaid} />
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <span
+              className={cn(
+                "truncate font-medium",
+                entry.paid && "line-through"
+              )}
+            >
+              {entry.name}
+            </span>
+            {isInstallment && plan && (
+              <button
+                type="button"
+                onClick={() => onJumpToPlan(plan.id)}
+                className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium hover:opacity-80"
+                style={{
+                  backgroundColor: STATUS.active.bg,
+                  color: STATUS.active.text,
+                }}
+                aria-label="ไปแผนผ่อน"
+              >
+                ผ่อน {cur}/{total}
+              </button>
+            )}
           </div>
-        )
-      ) : (
+          <div className="text-xs text-muted-foreground">{cardName}</div>
+        </div>
+
+        <StatusBadge
+          status={entry.paid ? "paid" : "due"}
+          className="hidden shrink-0 sm:inline-flex"
+        />
+
+        {isInstallment || editing ? (
+          editing ? (
+            <Input
+              autoFocus
+              type="number"
+              inputMode="decimal"
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              onBlur={commit}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") commit();
+                else if (e.key === "Escape") setEditing(false);
+              }}
+              className="h-9 w-28 text-right tabular-nums"
+            />
+          ) : (
+            <div
+              className={cn(
+                "min-w-[6rem] text-right text-base font-semibold tabular-nums",
+                entry.paid && "line-through"
+              )}
+              style={{ color: accent }}
+            >
+              {formatMoney(entry.amount ?? "0")}
+            </div>
+          )
+        ) : (
+          <Button
+            variant="ghost"
+            onClick={startEdit}
+            className={cn(
+              "h-auto min-w-[6rem] justify-end px-2 py-1 text-base font-semibold tabular-nums",
+              entry.paid && "line-through"
+            )}
+            style={{ color: accent }}
+          >
+            {formatMoney(entry.amount ?? "0")}
+          </Button>
+        )}
         <Button
           variant="ghost"
-          onClick={startEdit}
-          className={cn(
-            "h-auto min-w-[6rem] justify-end px-2 py-1 text-base font-semibold tabular-nums",
-            entry.paid && "line-through"
-          )}
+          size="icon"
+          onClick={onDelete}
+          aria-label="ลบ"
+          className="text-muted-foreground hover:text-destructive"
+          disabled={isInstallment}
         >
-          {formatMoney(entry.amount ?? "0")}
+          <Trash2 />
         </Button>
-      )}
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={onDelete}
-        aria-label="ลบ"
-        className="text-muted-foreground hover:text-destructive"
-        disabled={isInstallment}
-      >
-        <Trash2 />
-      </Button>
-    </div>
+      </div>
+    </Card>
   );
 }

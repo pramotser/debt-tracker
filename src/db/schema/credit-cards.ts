@@ -27,6 +27,7 @@ export const creditCards = pgTable(
     cardNetwork: text("card_network"),
     statementDate: integer("statement_date"),
     dueDate: integer("due_date"),
+    color: text("color").notNull().default("blue"),
     active: boolean("active").notNull().default(true),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()

@@ -11,7 +11,11 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Switch } from "@/components/ui/switch";
-import { getBankBrand, getNetworkLabel, type BankBrand } from "@/lib/banks";
+import {
+  getBankBrand,
+  getCardColorTheme,
+  getNetworkLabel,
+} from "@/lib/banks";
 import { cn } from "@/lib/utils";
 
 import type { CreditCard } from "./types";
@@ -110,16 +114,20 @@ function CardFace({
   onToggleActive: () => void;
   onDelete: () => void;
 }) {
-  const brand: BankBrand = getBankBrand(card.bankId);
+  const theme = getCardColorTheme(card.color);
+  const bankLabel = getBankBrand(card.bankId).label;
   const networkLabel = getNetworkLabel(card.cardNetwork);
   const last4 = card.lastFourDigits;
   const masked = last4 ? `•••• •••• •••• ${last4}` : "•••• ••••";
 
   return (
     <div
-      style={{ backgroundColor: brand.bg, color: brand.fg }}
+      style={{
+        backgroundImage: `linear-gradient(135deg, ${theme.from}, ${theme.to})`,
+        color: theme.fg,
+      }}
       className={cn(
-        "flex min-h-[150px] flex-col justify-between rounded-xl p-4 shadow-sm transition-opacity",
+        "flex min-h-[150px] flex-col justify-between rounded-2xl p-4 shadow-sm transition-opacity",
         !card.active && "opacity-55"
       )}
     >
@@ -142,7 +150,7 @@ function CardFace({
                   variant="ghost"
                   size="icon"
                   aria-label="เมนู"
-                  style={{ color: brand.fg }}
+                  style={{ color: theme.fg }}
                   className="h-8 w-8 hover:bg-white/15"
                 >
                   <MoreHorizontal />
@@ -173,13 +181,13 @@ function CardFace({
         </div>
         <div className="flex items-end justify-between gap-2 text-xs">
           <div className="min-w-0 truncate opacity-85">
-            {brand.label}
+            {bankLabel}
             {card.statementDate ? ` · ตัดรอบ ${card.statementDate}` : ""}
           </div>
           {networkLabel && (
             <Badge
               variant="outline"
-              style={{ color: brand.fg, borderColor: "currentColor" }}
+              style={{ color: theme.fg, borderColor: "currentColor" }}
               className="border bg-transparent text-[10px] font-semibold uppercase tracking-wider"
             >
               {networkLabel}
