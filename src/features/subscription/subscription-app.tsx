@@ -37,19 +37,25 @@ import {
 import { shiftMonth, ymKey } from "@/lib/month";
 
 import { ImportModal } from "./import-modal";
-import { MOCK_CATEGORIES } from "./mock";
 import { MonthView } from "./month-view";
 import { TemplateDialog, type TemplateDraft } from "./template-dialog";
 import { TemplateView } from "./template-view";
-import type { LedgerEntry, SubscriptionTemplate, YearMonth } from "./types";
+import type {
+  Category,
+  LedgerEntry,
+  SubscriptionTemplate,
+  YearMonth,
+} from "./types";
 
 export function SubscriptionApp({
   initialTemplates,
   initialEntries,
+  categories,
   ym: initialYm,
 }: {
   initialTemplates: SubscriptionTemplate[];
   initialEntries: LedgerEntry[];
+  categories: Category[];
   ym: YearMonth;
 }) {
   const [ym, setYm] = useState<YearMonth>(initialYm);
@@ -376,7 +382,7 @@ export function SubscriptionApp({
             items={entries}
             loading={isMonthLoading}
             templatesById={templatesById}
-            categories={MOCK_CATEGORIES}
+            categories={categories}
             pendingTemplates={pendingTemplates}
             bannerDismissed={bannerDismissed}
             onPrev={() => navigateMonth(-1)}
@@ -398,7 +404,7 @@ export function SubscriptionApp({
         <TabsContent value="tpl" className="mt-4">
           <TemplateView
             templates={templates}
-            categories={MOCK_CATEGORIES}
+            categories={categories}
             onAdd={() => {
               setEditingTemplate(null);
               setTemplateDialogOpen(true);
@@ -421,7 +427,7 @@ export function SubscriptionApp({
           setTemplateDialogOpen(o);
           if (!o) setEditingTemplate(null);
         }}
-        categories={MOCK_CATEGORIES}
+        categories={categories}
         initial={editingTemplate}
         onSubmit={handleSubmitTemplate}
       />

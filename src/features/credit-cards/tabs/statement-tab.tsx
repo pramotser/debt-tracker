@@ -21,21 +21,22 @@ import type { InstallmentPlanWithProgress } from "@/server/queries/credit-card-i
 import { shiftMonth, ymKey } from "@/lib/month";
 
 import { ChargeDialog, type ChargeDraft } from "../charge-dialog";
-import { MOCK_CATEGORIES } from "../mock";
 import { StatementView } from "../statement-view";
-import type { CreditCard, LedgerEntry, YearMonth } from "../types";
+import type { Category, CreditCard, LedgerEntry, YearMonth } from "../types";
 
 export function StatementTab({
   initialYm,
   initialEntries,
   cards,
   plans,
+  categories,
   onJumpToPlan,
 }: {
   initialYm: YearMonth;
   initialEntries: LedgerEntry[];
   cards: CreditCard[];
   plans: InstallmentPlanWithProgress[];
+  categories: Category[];
   onJumpToPlan: (planId: string) => void;
 }) {
   const [ym, setYm] = useState<YearMonth>(initialYm);
@@ -199,7 +200,7 @@ export function StatementTab({
         open={chargeDialogOpen}
         onOpenChange={setChargeDialogOpen}
         cards={cards.filter((c) => c.active)}
-        categories={MOCK_CATEGORIES}
+        categories={categories}
         ym={ym}
         onSubmit={handleSubmitCharge}
       />

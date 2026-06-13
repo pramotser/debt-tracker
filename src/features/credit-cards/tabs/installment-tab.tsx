@@ -24,10 +24,9 @@ import {
 import type { InstallmentPlanWithProgress } from "@/server/queries/credit-card-installments";
 
 import { InstallmentView } from "../installment-view";
-import { MOCK_CATEGORIES } from "../mock";
 import { PlanDialog, type PlanDraft } from "../plan-dialog";
 import { SettleDialog, type SettleDraft } from "../settle-dialog";
-import type { CreditCard, LedgerEntry } from "../types";
+import type { Category, CreditCard, LedgerEntry } from "../types";
 
 export function InstallmentTab({
   cards,
@@ -35,6 +34,7 @@ export function InstallmentTab({
   setPlans,
   entries,
   setEntries,
+  categories,
   scrollToPlanId,
   onScrolled,
 }: {
@@ -43,6 +43,7 @@ export function InstallmentTab({
   setPlans: Dispatch<SetStateAction<InstallmentPlanWithProgress[]>>;
   entries: LedgerEntry[];
   setEntries: Dispatch<SetStateAction<LedgerEntry[]>>;
+  categories: Category[];
   scrollToPlanId: string | null;
   onScrolled: () => void;
 }) {
@@ -199,7 +200,7 @@ export function InstallmentTab({
         cards={cards}
         plans={plans}
         entries={entries}
-        categories={MOCK_CATEGORIES}
+        categories={categories}
         scrollToPlanId={scrollToPlanId}
         onScrolled={onScrolled}
         onAddPlan={() => setPlanDialogOpen(true)}
@@ -213,7 +214,7 @@ export function InstallmentTab({
         open={planDialogOpen}
         onOpenChange={setPlanDialogOpen}
         cards={cards.filter((c) => c.active)}
-        categories={MOCK_CATEGORIES}
+        categories={categories}
         defaultYm={currentYm}
         onSubmit={handleCreatePlan}
       />

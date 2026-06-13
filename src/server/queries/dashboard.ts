@@ -4,6 +4,7 @@ import { and, asc, desc, eq, sql } from "drizzle-orm";
 
 import { db } from "@/db";
 import {
+  categories,
   creditCardInstallments,
   creditCards,
   ledgerEntries,
@@ -202,23 +203,46 @@ export async function getTypeBreakdownByMonth(
 // -----------------------------------------------------------------------------
 export type CategoryFlowItem = {
   categoryId: string;
+  name: string | null; // null = id ไม่อยู่ใน catalog (user พิมพ์เอง / id เก่า) → fallback ที่ UI
+  icon: string | null;
+  colorBg: string | null;
+  colorFg: string | null;
   total: number;
 };
 
+// LEFT JOIN: ห้าม inner join + ห้าม filter active=true — ไม่งั้นยอดที่ใช้ category ถูก disable/ลบ จะหายเงียบๆ
 export async function getCategoryFlow(): Promise<CategoryFlowItem[]> {
   const user = await getCurrentUser();
   const rows = await db
     .select({
       categoryId: ledgerEntries.categoryId,
+      name: categories.name,
+      icon: categories.icon,
+      colorBg: categories.colorBg,
+      colorFg: categories.colorFg,
       total: sql<string>`COALESCE(SUM(${ledgerEntries.amount}), 0)`,
     })
     .from(ledgerEntries)
+    .leftJoin(categories, eq(categories.id, ledgerEntries.categoryId))
     .where(eq(ledgerEntries.userId, user.id))
-    .groupBy(ledgerEntries.categoryId)
+    .groupBy(
+      ledgerEntries.categoryId,
+      categories.name,
+      categories.icon,
+      categories.colorBg,
+      categories.colorFg
+    )
     .orderBy(desc(sql`COALESCE(SUM(${ledgerEntries.amount}), 0)`));
 
   return rows
-    .map((r) => ({ categoryId: r.categoryId, total: Number(r.total) }))
+    .map((r) => ({
+      categoryId: r.categoryId,
+      name: r.name,
+      icon: r.icon,
+      colorBg: r.colorBg,
+      colorFg: r.colorFg,
+      total: Number(r.total),
+    }))
     .filter((r) => r.total > 0);
 }
 

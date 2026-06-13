@@ -20,10 +20,13 @@ import {
   updateCreditCard,
 } from "@/server/actions/credit-cards";
 
+import { BANK_LIST } from "@/lib/banks";
+
 import { CardDialog, type CardDraft } from "../card-dialog";
 import { CardFaceGrid } from "../card-face-grid";
-import { MOCK_BANKS } from "../mock";
-import type { CreditCard } from "../types";
+import type { Bank, CreditCard } from "../types";
+
+const BANKS: Bank[] = BANK_LIST.map((b) => ({ id: b.id, name: b.label }));
 
 export function CardsTab({
   cards,
@@ -142,7 +145,7 @@ export function CardsTab({
           setCardDialogOpen(o);
           if (!o) setEditingCard(null);
         }}
-        banks={MOCK_BANKS}
+        banks={BANKS}
         initial={editingCard}
         onSubmit={handleSubmit}
       />

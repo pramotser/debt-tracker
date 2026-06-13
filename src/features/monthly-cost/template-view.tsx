@@ -34,13 +34,13 @@ export function TemplateView({
       <div className="flex justify-end">
         <Button onClick={onAdd}>
           <Plus />
-          เพิ่ม template
+          เพิ่มรายการประจำ
         </Button>
       </div>
 
       {templates.length === 0 ? (
         <Card className="px-6 py-10 text-center text-sm text-muted-foreground">
-          ยังไม่มี template กด &quot;เพิ่ม template&quot;
+          ยังไม่มีรายการประจำ กด &quot;เพิ่มรายการประจำ&quot;
         </Card>
       ) : (
         <div className="flex flex-col gap-2.5">
