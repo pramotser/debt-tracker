@@ -1,7 +1,7 @@
 /** Spec: docs/specs/credit-cards/credit-cards.md — orchestrator ของ 3 tabs (state ร่วมอยู่ที่นี่, logic ในแต่ละ tab) */
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { InstallmentPlanWithProgress } from "@/server/queries/credit-card-installments";
@@ -10,6 +10,8 @@ import { CardsTab } from "./tabs/cards-tab";
 import { InstallmentTab } from "./tabs/installment-tab";
 import { StatementTab } from "./tabs/statement-tab";
 import type { CreditCard, LedgerEntry, YearMonth } from "./types";
+
+type TabValue = "statement" | "installment" | "mine";
 
 const tabTriggerClass =
   "-mb-px flex-none rounded-none border-0 border-b-2 border-transparent bg-transparent px-0 pt-2 pb-3 text-sm font-medium text-muted-foreground after:hidden data-active:border-primary! data-active:bg-transparent! data-active:font-semibold data-active:text-primary!";
@@ -33,6 +35,8 @@ export function CreditCardsApp({
   const [installmentEntries, setInstallmentEntries] = useState<LedgerEntry[]>(
     initialInstallmentEntries
   );
+  const [activeTab, setActiveTab] = useState<TabValue>("statement");
+  const [scrollToPlanId, setScrollToPlanId] = useState<string | null>(null);
 
   // sync state ตอน server ส่ง props ใหม่ (router.refresh จาก settle/delete plan)
   useEffect(() => {
@@ -45,11 +49,16 @@ export function CreditCardsApp({
     setInstallmentEntries(initialInstallmentEntries);
   }, [initialInstallmentEntries]);
 
+  const jumpToPlan = useCallback((planId: string) => {
+    setActiveTab("installment");
+    setScrollToPlanId(planId);
+  }, []);
+
   return (
     <div className="flex flex-col gap-4">
       <h1 className="text-2xl font-bold">บัตรเครดิต</h1>
 
-      <Tabs defaultValue="statement">
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as TabValue)}>
         <TabsList
           variant="line"
           className="h-auto w-full justify-start gap-6 rounded-none border-b border-border bg-transparent p-0"
@@ -72,6 +81,7 @@ export function CreditCardsApp({
             initialEntries={initialEntries}
             cards={cards}
             plans={plans}
+            onJumpToPlan={jumpToPlan}
           />
         </TabsContent>
 
@@ -82,6 +92,8 @@ export function CreditCardsApp({
             setPlans={setPlans}
             entries={installmentEntries}
             setEntries={setInstallmentEntries}
+            scrollToPlanId={scrollToPlanId}
+            onScrolled={() => setScrollToPlanId(null)}
           />
         </TabsContent>
 

@@ -30,11 +30,13 @@ export function StatementTab({
   initialEntries,
   cards,
   plans,
+  onJumpToPlan,
 }: {
   initialYm: YearMonth;
   initialEntries: LedgerEntry[];
   cards: CreditCard[];
   plans: InstallmentPlanWithProgress[];
+  onJumpToPlan: (planId: string) => void;
 }) {
   const [ym, setYm] = useState<YearMonth>(initialYm);
   const [entries, setEntries] = useState<LedgerEntry[]>(initialEntries);
@@ -203,6 +205,7 @@ export function StatementTab({
         onTogglePaid={handleTogglePaid}
         onUpdateAmount={handleUpdateAmount}
         onDelete={handleDelete}
+        onJumpToPlan={onJumpToPlan}
       />
 
       <ChargeDialog
