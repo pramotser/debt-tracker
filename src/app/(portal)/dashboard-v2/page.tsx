@@ -1,10 +1,9 @@
 import { DashboardTabs } from "@/features/dashboard-v2/dashboard-tabs";
 import type { DashboardV2Data } from "@/features/dashboard-v2/types";
 import {
-  getAvailableLedgerYears,
   getCategoryFlow,
+  getHeatmapByYears,
   getInstallmentProgress,
-  getMonthlyHeatmap,
   getThisMonthSummary,
   getTrailingTotals,
   getTypeBreakdown,
@@ -24,7 +23,6 @@ export default async function DashboardV2Page() {
     categoryFlow,
     installments,
     heatmap,
-    availableYears,
   ] = await Promise.all([
     getThisMonthSummary(year, month),
     getTrailingTotals(year, month, 6),
@@ -32,8 +30,7 @@ export default async function DashboardV2Page() {
     getTypeBreakdown(),
     getCategoryFlow(),
     getInstallmentProgress(),
-    getMonthlyHeatmap(year),
-    getAvailableLedgerYears(),
+    getHeatmapByYears(year),
   ]);
 
   const data: DashboardV2Data = {
@@ -46,8 +43,6 @@ export default async function DashboardV2Page() {
     categoryFlow,
     installments,
     heatmap,
-    heatmapYear: year,
-    availableYears,
   };
 
   return (

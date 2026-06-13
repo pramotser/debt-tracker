@@ -269,40 +269,49 @@ export async function getInstallmentProgress(): Promise<
 
 // -----------------------------------------------------------------------------
 // 2.7 ความหนาแน่นภาระรายเดือน 12 ช่อง ต่อปี
+// query เดียวคืน map ทุกปี + ปีปัจจุบันถ้ายังไม่มี data → year selector เล่นฝั่ง
+// client ได้ทันทีไม่ต้อง round-trip
 // -----------------------------------------------------------------------------
 export type HeatmapCell = {
   month: number; // 1-12
   total: number;
 };
 
-export async function getMonthlyHeatmap(year: number): Promise<HeatmapCell[]> {
+export type HeatmapByYear = {
+  years: number[]; // เรียงน้อย→มาก
+  byYear: Record<number, HeatmapCell[]>;
+};
+
+function emptyYearCells(): HeatmapCell[] {
+  return Array.from({ length: 12 }, (_, i) => ({ month: i + 1, total: 0 }));
+}
+
+export async function getHeatmapByYears(
+  fallbackYear: number
+): Promise<HeatmapByYear> {
   const user = await getCurrentUser();
   const rows = await db
     .select({
+      year: ledgerEntries.year,
       month: ledgerEntries.month,
       total: sql<string>`COALESCE(SUM(${ledgerEntries.amount}), 0)`,
     })
     .from(ledgerEntries)
-    .where(
-      and(eq(ledgerEntries.userId, user.id), eq(ledgerEntries.year, year))
-    )
-    .groupBy(ledgerEntries.month);
-
-  const map = new Map(rows.map((r) => [r.month, Number(r.total)]));
-  return Array.from({ length: 12 }, (_, i) => ({
-    month: i + 1,
-    total: map.get(i + 1) ?? 0,
-  }));
-}
-
-// ปีที่มี ledger อย่างน้อย 1 row — feed year selector ของ heatmap
-export async function getAvailableLedgerYears(): Promise<number[]> {
-  const user = await getCurrentUser();
-  const rows = await db
-    .selectDistinct({ year: ledgerEntries.year })
-    .from(ledgerEntries)
     .where(eq(ledgerEntries.userId, user.id))
-    .orderBy(asc(ledgerEntries.year));
+    .groupBy(ledgerEntries.year, ledgerEntries.month)
+    .orderBy(asc(ledgerEntries.year), asc(ledgerEntries.month));
 
-  return rows.map((r) => r.year);
+  const byYear: Record<number, HeatmapCell[]> = {};
+  for (const r of rows) {
+    if (!byYear[r.year]) byYear[r.year] = emptyYearCells();
+    byYear[r.year][r.month - 1].total = Number(r.total);
+  }
+  // ให้ปี fallback (ปัจจุบัน) มีอยู่เสมอ
+  if (!byYear[fallbackYear]) byYear[fallbackYear] = emptyYearCells();
+
+  const years = Object.keys(byYear)
+    .map((y) => Number(y))
+    .sort((a, b) => a - b);
+
+  return { years, byYear };
 }

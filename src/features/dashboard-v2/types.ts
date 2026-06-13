@@ -1,6 +1,6 @@
 import type {
   CategoryFlowItem,
-  HeatmapCell,
+  HeatmapByYear,
   InstallmentProgressItem,
   MonthTotal,
   ThisMonthSummary,
@@ -16,7 +16,5 @@ export type DashboardV2Data = {
   typeBreakdown: TypeBreakdownItem[];
   categoryFlow: CategoryFlowItem[];
   installments: InstallmentProgressItem[];
-  heatmap: HeatmapCell[];
-  heatmapYear: number;
-  availableYears: number[];
+  heatmap: HeatmapByYear;
 };
