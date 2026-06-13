@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useTheme } from "next-themes";
+import { toast } from "sonner";
 
 import { Label } from "@/components/ui/label";
 import {
@@ -11,6 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { updateTheme } from "@/server/actions/user-settings";
 
 const OPTIONS: { value: string; label: string }[] = [
   { value: "light", label: "Light" },
@@ -18,19 +20,41 @@ const OPTIONS: { value: string; label: string }[] = [
   { value: "system", label: "System (ตามอุปกรณ์)" },
 ];
 
-export function ThemeForm() {
+type Props = {
+  initialTheme: string;
+};
+
+export function ThemeForm({ initialTheme }: Props) {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
+  const [pending, startTransition] = useTransition();
 
   useEffect(() => setMounted(true), []);
 
-  const value = mounted ? theme ?? "system" : "system";
+  const value = mounted ? theme ?? initialTheme : initialTheme;
+
+  const handleChange = (v: string | null) => {
+    if (!v || v === value) return;
+    setTheme(v);
+    startTransition(async () => {
+      const result = await updateTheme(v);
+      if (result?.error) {
+        toast.error(result.error);
+      } else {
+        toast.success("บันทึกธีมแล้ว");
+      }
+    });
+  };
 
   return (
     <div className="flex flex-col gap-2">
       <Label htmlFor="theme">ธีม</Label>
-      <Select value={value} onValueChange={(v) => v && setTheme(v)}>
-        <SelectTrigger id="theme" className="w-full sm:w-64" disabled={!mounted}>
+      <Select value={value} onValueChange={handleChange}>
+        <SelectTrigger
+          id="theme"
+          className="w-full sm:w-64"
+          disabled={!mounted || pending}
+        >
           <SelectValue>
             {(v: string | null) =>
               OPTIONS.find((o) => o.value === v)?.label ?? ""

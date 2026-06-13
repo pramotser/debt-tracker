@@ -13,6 +13,7 @@ import { createClient } from "./supabase/server";
 
 export type CurrentUser = {
   id: string;
+  email: string;
   role: "admin" | "user";
   firstName: string;
   middleName: string | null;
@@ -47,5 +48,5 @@ export const getCurrentUser = cache(async (): Promise<CurrentUser> => {
     throw new Error(`Profile not found for auth user ${user.id}`);
   }
 
-  return row;
+  return { ...row, email: user.email ?? "" };
 });
