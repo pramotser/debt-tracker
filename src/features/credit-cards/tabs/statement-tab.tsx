@@ -41,7 +41,7 @@ export function StatementTab({
   const [ym, setYm] = useState<YearMonth>(initialYm);
   const [entries, setEntries] = useState<LedgerEntry[]>(initialEntries);
   const [, startMutation] = useTransition();
-  const [, startMonthChange] = useTransition();
+  const [isMonthLoading, startMonthChange] = useTransition();
   const [chargeDialogOpen, setChargeDialogOpen] = useState(false);
 
   // cache รายเดือน — key = "year-month" · seed จาก initial
@@ -185,6 +185,7 @@ export function StatementTab({
         cards={cards}
         plans={plans}
         entries={entries}
+        loading={isMonthLoading}
         onPrev={() => navigateMonth(-1)}
         onNext={() => navigateMonth(1)}
         onAddCharge={() => setChargeDialogOpen(true)}

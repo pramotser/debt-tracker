@@ -12,6 +12,7 @@ import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
+import { Skeleton } from "@/components/ui/skeleton";
 import { formatMoney, formatYearMonth } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
@@ -32,6 +33,7 @@ function toNumber(value: string | null): number {
 export function MonthView({
   ym,
   items,
+  loading = false,
   templatesById,
   categories,
   pendingTemplates,
@@ -46,6 +48,7 @@ export function MonthView({
 }: {
   ym: YearMonth;
   items: LedgerEntry[];
+  loading?: boolean;
   templatesById: Map<string, SubscriptionTemplate>;
   categories: Category[];
   pendingTemplates: SubscriptionTemplate[];
@@ -65,7 +68,7 @@ export function MonthView({
   const paidCount = items.filter((i) => i.paid).length;
 
   const categoryById = new Map(categories.map((c) => [c.id, c]));
-  const showBanner = !bannerDismissed && pendingTemplates.length > 0;
+  const showBanner = !loading && !bannerDismissed && pendingTemplates.length > 0;
 
   return (
     <div className="flex flex-col gap-4">
@@ -91,49 +94,53 @@ export function MonthView({
         </Button>
       </div>
 
-      <Card className="gap-4 p-4 sm:p-6">
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <div className="rounded-xl border bg-background px-4 py-3">
-            <Stat
-              label="ยอดรวม"
-              value={formatMoney(total)}
-              hint={`${items.length} รายการ`}
-            />
-          </div>
-          <div className="rounded-xl border bg-background px-4 py-3">
-            <Stat
-              label="จ่ายแล้ว"
-              value={formatMoney(paidSum)}
-              hint={`${paidCount} รายการ`}
-              className="text-emerald-600"
-            />
-          </div>
-          <div className="rounded-xl border bg-background px-4 py-3">
-            <Stat
-              label="ค้างจ่าย"
-              value={formatMoney(total - paidSum)}
-              hint={`${items.length - paidCount} รายการ`}
-              className="text-orange-600"
-            />
-          </div>
-        </div>
-        {items.length > 0 ? (
-          <div className="flex flex-col gap-2">
-            <Progress
-              value={(paidCount / items.length) * 100}
-              className="block [&_[data-slot=progress-track]]:h-2 [&_[data-slot=progress-indicator]]:bg-emerald-500"
-            />
-            <div className="flex justify-between text-sm text-muted-foreground">
-              <span>
-                จ่ายแล้ว {Math.round((paidCount / items.length) * 100)}%
-              </span>
-              <span>
-                {paidCount} / {items.length} รายการ
-              </span>
+      {loading ? (
+        <SummarySkeleton />
+      ) : (
+        <Card className="gap-4 p-4 sm:p-6">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div className="rounded-xl border bg-background px-4 py-3">
+              <Stat
+                label="ยอดรวม"
+                value={formatMoney(total)}
+                hint={`${items.length} รายการ`}
+              />
+            </div>
+            <div className="rounded-xl border bg-background px-4 py-3">
+              <Stat
+                label="จ่ายแล้ว"
+                value={formatMoney(paidSum)}
+                hint={`${paidCount} รายการ`}
+                className="text-emerald-600"
+              />
+            </div>
+            <div className="rounded-xl border bg-background px-4 py-3">
+              <Stat
+                label="ค้างจ่าย"
+                value={formatMoney(total - paidSum)}
+                hint={`${items.length - paidCount} รายการ`}
+                className="text-orange-600"
+              />
             </div>
           </div>
-        ) : null}
-      </Card>
+          {items.length > 0 ? (
+            <div className="flex flex-col gap-2">
+              <Progress
+                value={(paidCount / items.length) * 100}
+                className="block [&_[data-slot=progress-track]]:h-2 [&_[data-slot=progress-indicator]]:bg-emerald-500"
+              />
+              <div className="flex justify-between text-sm text-muted-foreground">
+                <span>
+                  จ่ายแล้ว {Math.round((paidCount / items.length) * 100)}%
+                </span>
+                <span>
+                  {paidCount} / {items.length} รายการ
+                </span>
+              </div>
+            </div>
+          ) : null}
+        </Card>
+      )}
 
       {showBanner && (
         <Alert className="border-blue-200 bg-blue-50/60 text-blue-900">
@@ -156,7 +163,9 @@ export function MonthView({
         </Alert>
       )}
 
-      {items.length === 0 ? (
+      {loading ? (
+        <RowSkeletonList count={5} />
+      ) : items.length === 0 ? (
         <Card className="px-6 py-10 text-center text-sm text-muted-foreground">
           ยังไม่มีรายการเดือนนี้
           {pendingTemplates.length > 0
@@ -180,6 +189,57 @@ export function MonthView({
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+function SummarySkeleton() {
+  return (
+    <Card className="gap-4 p-4 sm:p-6" aria-busy aria-live="polite">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div
+            key={i}
+            className="flex flex-col gap-2 rounded-xl border bg-background px-4 py-3"
+          >
+            <Skeleton className="h-3 w-16" />
+            <Skeleton className="h-6 w-28" />
+            <Skeleton className="h-3 w-16" />
+          </div>
+        ))}
+      </div>
+      <div className="flex flex-col gap-2">
+        <Skeleton className="h-2 w-full rounded-full" />
+        <div className="flex justify-between">
+          <Skeleton className="h-3 w-20" />
+          <Skeleton className="h-3 w-24" />
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+function RowSkeletonList({ count }: { count: number }) {
+  return (
+    <div className="flex flex-col gap-2.5" aria-busy aria-live="polite">
+      {Array.from({ length: count }).map((_, i) => (
+        <Card
+          key={i}
+          className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:gap-3"
+        >
+          <div className="flex items-center gap-3 sm:contents">
+            <Skeleton className="h-5 w-5 rounded-sm" />
+            <div className="flex min-w-0 flex-1 flex-col gap-2">
+              <Skeleton className="h-4 w-2/5" />
+              <div className="flex gap-1.5">
+                <Skeleton className="h-4 w-16 rounded-full" />
+                <Skeleton className="h-4 w-20 rounded-full" />
+              </div>
+            </div>
+          </div>
+          <Skeleton className="h-7 w-24" />
+        </Card>
+      ))}
     </div>
   );
 }

@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Skeleton } from "@/components/ui/skeleton";
 import { formatMoney, formatYearMonth } from "@/lib/format";
 import { getCardColorTheme } from "@/lib/banks";
 import { cn } from "@/lib/utils";
@@ -60,6 +61,7 @@ export function StatementView({
   cards,
   plans,
   entries,
+  loading = false,
   onPrev,
   onNext,
   onAddCharge,
@@ -72,6 +74,7 @@ export function StatementView({
   cards: CreditCard[];
   plans: InstallmentPlanWithProgress[];
   entries: LedgerEntry[];
+  loading?: boolean;
   onPrev: () => void;
   onNext: () => void;
   onAddCharge: () => void;
@@ -207,12 +210,21 @@ export function StatementView({
                     {c.lastFourDigits ? `•••• ${c.lastFourDigits}` : "—"}
                   </div>
                   <div className="mt-3 text-xs opacity-80">ยอดบิลเดือนนี้</div>
-                  <div className="text-2xl font-bold tabular-nums">
-                    {formatMoney(total)}
-                  </div>
-                  <div className="mt-1 text-xs opacity-80">
-                    {arr.length} รายการ
-                  </div>
+                  {loading ? (
+                    <>
+                      <Skeleton className="h-7 w-28 bg-white/30" />
+                      <Skeleton className="mt-1 h-3 w-20 bg-white/30" />
+                    </>
+                  ) : (
+                    <>
+                      <div className="text-2xl font-bold tabular-nums">
+                        {formatMoney(total)}
+                      </div>
+                      <div className="mt-1 text-xs opacity-80">
+                        {arr.length} รายการ
+                      </div>
+                    </>
+                  )}
                 </button>
               );
             })}
@@ -236,7 +248,9 @@ export function StatementView({
         </div>
       )}
 
-      {activeCards.length > 0 && entries.length > 0 && (
+      {loading ? (
+        <SummaryStripSkeleton />
+      ) : activeCards.length > 0 && entries.length > 0 ? (
         <SummaryStrip
           items={[
             { label: "ยอดรวม", value: formatMoney(summary.total) },
@@ -245,9 +259,11 @@ export function StatementView({
             { label: "จำนวนรายการ", value: String(summary.count) },
           ]}
         />
-      )}
+      ) : null}
 
-      {visibleEntries.length === 0 ? (
+      {loading ? (
+        <RowSkeletonList count={5} />
+      ) : visibleEntries.length === 0 ? (
         <Card className="px-6 py-10 text-center text-sm text-muted-foreground">
           ยังไม่มีรายการเดือนนี้
         </Card>
@@ -415,5 +431,49 @@ function StatusRailRow({
         </Button>
       </div>
     </Card>
+  );
+}
+
+function SummaryStripSkeleton() {
+  return (
+    <div
+      className="grid grid-cols-2 gap-3 sm:grid-cols-4"
+      aria-busy
+      aria-live="polite"
+    >
+      {Array.from({ length: 4 }).map((_, i) => (
+        <Card key={i} className="gap-1 bg-muted/40 p-3 shadow-none sm:p-4">
+          <Skeleton className="h-3 w-16" />
+          <Skeleton className="h-6 w-28" />
+        </Card>
+      ))}
+    </div>
+  );
+}
+
+function RowSkeletonList({ count }: { count: number }) {
+  return (
+    <div className="flex flex-col gap-2" aria-busy aria-live="polite">
+      {Array.from({ length: count }).map((_, i) => (
+        <Card
+          key={i}
+          className="relative gap-2 overflow-hidden p-0 py-3 pr-3 pl-4 text-sm shadow-sm"
+        >
+          <span
+            aria-hidden
+            className="absolute inset-y-0 left-0 w-1 bg-foreground/10"
+          />
+          <div className="flex items-center gap-3">
+            <Skeleton className="h-5 w-5 rounded-sm" />
+            <div className="min-w-0 flex-1 space-y-2">
+              <Skeleton className="h-4 w-2/5" />
+              <Skeleton className="h-3 w-24" />
+            </div>
+            <Skeleton className="hidden h-5 w-14 rounded-full sm:block" />
+            <Skeleton className="h-7 w-24" />
+          </div>
+        </Card>
+      ))}
+    </div>
   );
 }

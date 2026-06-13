@@ -1,36 +1,58 @@
-import { DashboardApp } from "@/features/dashboard/dashboard-app";
-import { fetchDashboardDataByMonth } from "@/server/actions/dashboard";
-import { listInstallmentPlans } from "@/server/queries/credit-card-installments";
+import { DashboardTabs } from "@/features/dashboard/dashboard-tabs";
+import type { DashboardData } from "@/features/dashboard/types";
+import {
+  getCategoryFlow,
+  getHeatmapByYears,
+  getInstallmentProgress,
+  getThisMonthSummary,
+  getTrailingTotals,
+  getTypeBreakdown,
+  getTypeBreakdownByMonth,
+  getUpcomingTotals,
+} from "@/server/queries/dashboard";
 
-function parseYm(searchParams: Record<string, string | string[] | undefined>) {
-  const yRaw = Array.isArray(searchParams.y) ? searchParams.y[0] : searchParams.y;
-  const mRaw = Array.isArray(searchParams.m) ? searchParams.m[0] : searchParams.m;
-  const yParsed = yRaw ? Number(yRaw) : NaN;
-  const mParsed = mRaw ? Number(mRaw) : NaN;
+export default async function DashboardPage() {
   const now = new Date();
-  const year =
-    Number.isInteger(yParsed) && yParsed >= 1970 && yParsed <= 9999
-      ? yParsed
-      : now.getFullYear();
-  const month =
-    Number.isInteger(mParsed) && mParsed >= 1 && mParsed <= 12
-      ? mParsed
-      : now.getMonth() + 1;
-  return { year, month };
-}
+  const year = now.getFullYear();
+  const month = now.getMonth() + 1;
 
-export default async function DashboardPage({
-  searchParams,
-}: {
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
-}) {
-  const sp = await searchParams;
-  const ym = parseYm(sp);
-  const [initialData, plans] = await Promise.all([
-    fetchDashboardDataByMonth(ym.year, ym.month),
-    listInstallmentPlans(),
+  const [
+    summary,
+    trailing,
+    upcoming,
+    typeBreakdown,
+    typeBreakdownThisMonth,
+    categoryFlow,
+    installments,
+    heatmap,
+  ] = await Promise.all([
+    getThisMonthSummary(year, month),
+    getTrailingTotals(year, month, 6),
+    getUpcomingTotals(year, month, 6),
+    getTypeBreakdown(),
+    getTypeBreakdownByMonth(year, month),
+    getCategoryFlow(),
+    getInstallmentProgress(),
+    getHeatmapByYears(year),
   ]);
+
+  const data: DashboardData = {
+    year,
+    month,
+    summary,
+    trailing,
+    upcoming,
+    typeBreakdown,
+    typeBreakdownThisMonth,
+    categoryFlow,
+    installments,
+    heatmap,
+  };
+
   return (
-    <DashboardApp initialYm={ym} initialData={initialData} plans={plans} />
+    <div className="flex flex-col gap-4">
+      <h1 className="text-2xl font-bold">Dashboard</h1>
+      <DashboardTabs data={data} />
+    </div>
   );
 }
