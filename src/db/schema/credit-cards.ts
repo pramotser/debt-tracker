@@ -24,6 +24,7 @@ export const creditCards = pgTable(
     bankId: text("bank_id").notNull(),
     name: text("name").notNull(),
     lastFourDigits: text("last_four_digits"),
+    cardNetwork: text("card_network"),
     statementDate: integer("statement_date"),
     dueDate: integer("due_date"),
     active: boolean("active").notNull().default(true),

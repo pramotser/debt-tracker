@@ -21,7 +21,7 @@ import {
 } from "@/server/actions/credit-cards";
 
 import { CardDialog, type CardDraft } from "../card-dialog";
-import { CardListView } from "../card-list-view";
+import { CardFaceGrid } from "../card-face-grid";
 import { MOCK_BANKS } from "../mock";
 import type { CreditCard } from "../types";
 
@@ -49,6 +49,7 @@ export function CardsTab({
                 name: d.name,
                 bankId: d.bankId,
                 lastFourDigits: d.lastFourDigits,
+                cardNetwork: d.cardNetwork,
                 statementDate: d.statementDate,
                 dueDate: d.dueDate,
                 updatedAt: new Date(),
@@ -119,9 +120,8 @@ export function CardsTab({
 
   return (
     <>
-      <CardListView
+      <CardFaceGrid
         cards={cards}
-        banks={MOCK_BANKS}
         onAdd={() => {
           setEditingCard(null);
           setCardDialogOpen(true);
