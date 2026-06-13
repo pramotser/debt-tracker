@@ -7,6 +7,7 @@ import { z } from "zod";
 import { db } from "@/db";
 import { creditCards, type CreditCard } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
+import { CARD_NETWORKS } from "@/lib/banks";
 
 const PAGE_PATH = "/credit-cards";
 
@@ -22,6 +23,7 @@ const upsertSchema = z.object({
     .trim()
     .regex(/^\d{4}$/, "4 digits")
     .nullable(),
+  cardNetwork: z.enum(CARD_NETWORKS).nullable(),
   statementDate: dayOfMonthSchema,
   dueDate: dayOfMonthSchema,
 });
@@ -42,6 +44,7 @@ export async function createCreditCard(
       bankId: parsed.bankId,
       name: parsed.name,
       lastFourDigits: parsed.lastFourDigits,
+      cardNetwork: parsed.cardNetwork,
       statementDate: parsed.statementDate,
       dueDate: parsed.dueDate,
     })
@@ -63,6 +66,7 @@ export async function updateCreditCard(
       bankId: parsed.bankId,
       name: parsed.name,
       lastFourDigits: parsed.lastFourDigits,
+      cardNetwork: parsed.cardNetwork,
       statementDate: parsed.statementDate,
       dueDate: parsed.dueDate,
       updatedAt: new Date(),
