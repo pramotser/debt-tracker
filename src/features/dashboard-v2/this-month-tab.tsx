@@ -78,12 +78,13 @@ export function ThisMonthTab({ data }: { data: DashboardV2Data }) {
         )}
       </Card>
 
-      <TypeBreakdownDonut
-        data={typeBreakdownThisMonth}
-        title="รายจ่ายตามประเภทเดือนนี้"
-      />
-
-      <MonthlyTrendChart data={trailing} />
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <MonthlyTrendChart data={trailing} />
+        <TypeBreakdownDonut
+          data={typeBreakdownThisMonth}
+          title="รายจ่ายตามประเภทเดือนนี้"
+        />
+      </div>
     </div>
   );
 }
