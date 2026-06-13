@@ -34,6 +34,7 @@ route `/credit-cards` · หน้าเดียว 3 tabs · โมดูล�
 ```
 credit_cards
   ├─ userId, bankId (text mock), name, lastFourDigits?
+  ├─ cardNetwork? ('visa' | 'mastercard' | 'jcb' | 'amex' | 'unionpay')
   ├─ statementDate? (1-31), dueDate? (1-31)
   └─ active
 
@@ -118,5 +119,8 @@ state ภายใน tab:
 - Tab trigger style = underline pure (active = `font-semibold text-primary` + `border-b-2`)
 - ทุก mutation = **optimistic UI** + rollback ใน catch · `toast.error` ทุกครั้งที่ fail
 - mock dropdowns ใช้ `src/features/credit-cards/mock.ts`:
-  - `MOCK_BANKS` (6 ธนาคาร — UOB, TTB, SCB, KBank, KKP, KTC)
+  - `MOCK_BANKS` (6 ธนาคาร — UOB, TTB, SCB, KBank, KKP, KTC) — derive จาก `BANK_LIST` ใน `lib/banks.ts`
   - `MOCK_CATEGORIES` (7 หมวด — อาหาร, น้ำมัน, ช้อปปิ้ง, อิเล็กทรอนิกส์, เฟอร์นิเจอร์, ท่องเที่ยว, อื่นๆ)
+- bank brand (label/bg/fg) อยู่ใน `src/lib/banks.ts` — single source ของ bank color ที่ใช้บนหน้า CardFace
+  - **ข้อยกเว้นที่ตั้งใจ** ของกฎ "ห้าม hardcode สี" — สีอื่นใน UI ยังต้องผ่าน token shadcn/Tailwind
+- card network constants + label อยู่ใน `lib/banks.ts` (`CARD_NETWORKS`, `getNetworkLabel`)
