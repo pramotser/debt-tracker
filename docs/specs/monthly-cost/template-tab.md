@@ -12,7 +12,7 @@ CRUD `fixed_cost_templates` — รายการจ่ายประจำท
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                                          [ + เพิ่ม template ]  │
+│                                          [ + เพิ่มรายการประจำ ]  │
 ├─────────────────────────────────────────────────────────────────┤
 │ [🟢]  ค่าเช่าบ้าน          [ครอบครัว]       ฿8,000.00    [🗑] │
 │ [🟢]  ค่าน้ำค่าไฟ          [ค่าน้ำค่าไฟ]    กรอกเอง       [🗑] │
@@ -21,10 +21,10 @@ CRUD `fixed_cost_templates` — รายการจ่ายประจำท
 ```
 
 ### Header
-- ปุ่ม `[ + เพิ่ม template ]` (right) → เปิด `<AddTemplateDialog>`
+- ปุ่ม `[ + เพิ่มรายการประจำ ]` (right) → เปิด `<AddTemplateDialog>`
 
 ### Empty state
-ถ้า `templates.length === 0`: "ยังไม่มี template กด 'เพิ่ม template'"
+ถ้า `templates.length === 0`: "ยังไม่มี template กด 'เพิ่มรายการประจำ'"
 
 ### TemplateRow (Card ต่อ row)
 - **Switch** (active toggle)
