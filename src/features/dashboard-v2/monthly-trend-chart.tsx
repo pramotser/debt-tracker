@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  CartesianGrid,
-  Line,
-  LineChart,
-  XAxis,
-  YAxis,
-} from "recharts";
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -43,7 +37,7 @@ export function MonthlyTrendChart({ data }: { data: MonthTotal[] }) {
       <CardContent>
         {hasAny ? (
           <ChartContainer config={config} className="h-[220px] w-full">
-            <LineChart data={chartData} margin={{ left: 4, right: 12 }}>
+            <BarChart data={chartData}>
               <CartesianGrid vertical={false} strokeDasharray="3 3" />
               <XAxis
                 dataKey="label"
@@ -69,15 +63,12 @@ export function MonthlyTrendChart({ data }: { data: MonthTotal[] }) {
                   />
                 }
               />
-              <Line
-                type="monotone"
+              <Bar
                 dataKey="total"
-                stroke="var(--color-total)"
-                strokeWidth={2}
-                dot={{ r: 3 }}
-                activeDot={{ r: 5 }}
+                fill="var(--color-total)"
+                radius={[6, 6, 0, 0]}
               />
-            </LineChart>
+            </BarChart>
           </ChartContainer>
         ) : (
           <div className="flex h-[220px] items-center justify-center text-sm text-muted-foreground">

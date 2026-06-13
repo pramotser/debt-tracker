@@ -1,6 +1,12 @@
 "use client";
 
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
+import {
+  CartesianGrid,
+  Line,
+  LineChart,
+  XAxis,
+  YAxis,
+} from "recharts";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -19,13 +25,13 @@ const config = {
   },
 } satisfies ChartConfig;
 
-export function UpcomingBarsChart({ data }: { data: MonthTotal[] }) {
-  const hasAny = data.some((d) => d.total > 0);
+export function UpcomingChart({ data }: { data: MonthTotal[] }) {
   const chartData = data.map((d) => ({
     label: formatMonthShortTh(d.month),
     ym: formatYearMonth(d.year, d.month),
     total: d.total,
   }));
+  const hasAny = chartData.some((d) => d.total > 0);
 
   return (
     <Card>
@@ -35,7 +41,7 @@ export function UpcomingBarsChart({ data }: { data: MonthTotal[] }) {
       <CardContent>
         {hasAny ? (
           <ChartContainer config={config} className="h-[220px] w-full">
-            <BarChart data={chartData}>
+            <LineChart data={chartData} margin={{ left: 4, right: 12 }}>
               <CartesianGrid vertical={false} strokeDasharray="3 3" />
               <XAxis
                 dataKey="label"
@@ -61,12 +67,15 @@ export function UpcomingBarsChart({ data }: { data: MonthTotal[] }) {
                   />
                 }
               />
-              <Bar
+              <Line
+                type="monotone"
                 dataKey="total"
-                fill="var(--color-total)"
-                radius={[6, 6, 0, 0]}
+                stroke="var(--color-total)"
+                strokeWidth={2}
+                dot={{ r: 3 }}
+                activeDot={{ r: 5 }}
               />
-            </BarChart>
+            </LineChart>
           </ChartContainer>
         ) : (
           <div className="flex h-[220px] items-center justify-center text-sm text-muted-foreground">

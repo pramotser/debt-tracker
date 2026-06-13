@@ -5,11 +5,11 @@ import { Progress } from "@/components/ui/progress";
 import { formatMoney, formatYearMonth } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
-import { UpcomingBarsChart } from "./upcoming-bars-chart";
+import { MonthlyTrendChart } from "./monthly-trend-chart";
 import type { DashboardV2Data } from "./types";
 
 export function ThisMonthTab({ data }: { data: DashboardV2Data }) {
-  const { year, month, summary, upcoming } = data;
+  const { year, month, summary, trailing } = data;
   const { total, paid, due, naCount, entryCount } = summary;
 
   const paidPct = total > 0 ? Math.round((paid / total) * 100) : 0;
@@ -77,7 +77,7 @@ export function ThisMonthTab({ data }: { data: DashboardV2Data }) {
         )}
       </Card>
 
-      <UpcomingBarsChart data={upcoming} />
+      <MonthlyTrendChart data={trailing} />
     </div>
   );
 }
