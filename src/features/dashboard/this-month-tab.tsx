@@ -7,9 +7,9 @@ import { cn } from "@/lib/utils";
 
 import { MonthlyTrendChart } from "./monthly-trend-chart";
 import { TypeBreakdownDonut } from "./type-breakdown-donut";
-import type { DashboardV2Data } from "./types";
+import type { DashboardData } from "./types";
 
-export function ThisMonthTab({ data }: { data: DashboardV2Data }) {
+export function ThisMonthTab({ data }: { data: DashboardData }) {
   const { year, month, summary, trailing, typeBreakdownThisMonth } = data;
   const { total, paid, due, naCount, entryCount } = summary;
 

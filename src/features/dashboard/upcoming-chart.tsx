@@ -1,6 +1,12 @@
 "use client";
 
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
+import {
+  CartesianGrid,
+  Line,
+  LineChart,
+  XAxis,
+  YAxis,
+} from "recharts";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -10,7 +16,7 @@ import {
   type ChartConfig,
 } from "@/components/ui/chart";
 import { formatMoney, formatMonthShortTh, formatYearMonth } from "@/lib/format";
-import type { MonthTotal } from "@/server/queries/dashboard-v2";
+import type { MonthTotal } from "@/server/queries/dashboard";
 
 const config = {
   total: {
@@ -19,7 +25,7 @@ const config = {
   },
 } satisfies ChartConfig;
 
-export function MonthlyTrendChart({ data }: { data: MonthTotal[] }) {
+export function UpcomingChart({ data }: { data: MonthTotal[] }) {
   const chartData = data.map((d) => ({
     label: formatMonthShortTh(d.month),
     ym: formatYearMonth(d.year, d.month),
@@ -30,14 +36,12 @@ export function MonthlyTrendChart({ data }: { data: MonthTotal[] }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">
-          แนวโน้ม 6 เดือนย้อนหลัง
-        </CardTitle>
+        <CardTitle className="text-base">รายจ่าย 6 เดือนข้างหน้า</CardTitle>
       </CardHeader>
       <CardContent>
         {hasAny ? (
           <ChartContainer config={config} className="h-[220px] w-full">
-            <BarChart data={chartData}>
+            <LineChart data={chartData} margin={{ left: 4, right: 12 }}>
               <CartesianGrid vertical={false} strokeDasharray="3 3" />
               <XAxis
                 dataKey="label"
@@ -63,16 +67,19 @@ export function MonthlyTrendChart({ data }: { data: MonthTotal[] }) {
                   />
                 }
               />
-              <Bar
+              <Line
+                type="monotone"
                 dataKey="total"
-                fill="var(--color-total)"
-                radius={[6, 6, 0, 0]}
+                stroke="var(--color-total)"
+                strokeWidth={2}
+                dot={{ r: 3 }}
+                activeDot={{ r: 5 }}
               />
-            </BarChart>
+            </LineChart>
           </ChartContainer>
         ) : (
           <div className="flex h-[220px] items-center justify-center text-sm text-muted-foreground">
-            ยังไม่มีรายการใน 6 เดือนที่ผ่านมา
+            ยังไม่มีรายการล่วงหน้าใน 6 เดือนข้างหน้า
           </div>
         )}
       </CardContent>

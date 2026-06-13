@@ -3,7 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getCategoryLabel } from "@/lib/categories";
 import { formatMoney } from "@/lib/format";
-import type { CategoryFlowItem } from "@/server/queries/dashboard-v2";
+import type { CategoryFlowItem } from "@/server/queries/dashboard";
 
 export function CategoryFlowList({ data }: { data: CategoryFlowItem[] }) {
   const max = data.reduce((m, d) => (d.total > m ? d.total : m), 0);

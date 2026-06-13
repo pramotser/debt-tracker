@@ -4,14 +4,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { OverviewTab } from "./overview-tab";
 import { ThisMonthTab } from "./this-month-tab";
-import type { DashboardV2Data } from "./types";
+import type { DashboardData } from "./types";
 
 type TabValue = "this-month" | "overview";
 
 const tabTriggerClass =
   "-mb-px flex-none rounded-none border-0 border-b-2 border-transparent bg-transparent px-0 pt-2 pb-3 text-sm font-medium text-muted-foreground after:hidden data-active:border-primary! data-active:bg-transparent! data-active:font-semibold data-active:text-primary!";
 
-export function DashboardTabs({ data }: { data: DashboardV2Data }) {
+export function DashboardTabs({ data }: { data: DashboardData }) {
   return (
     <Tabs defaultValue={"this-month" satisfies TabValue}>
       <TabsList className="-mx-1 flex w-full flex-nowrap justify-start gap-6 overflow-x-auto rounded-none border-b bg-transparent px-1">

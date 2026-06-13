@@ -3,7 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { formatMoney } from "@/lib/format";
-import type { InstallmentProgressItem } from "@/server/queries/dashboard-v2";
+import type { InstallmentProgressItem } from "@/server/queries/dashboard";
 
 export function InstallmentProgress({
   data,

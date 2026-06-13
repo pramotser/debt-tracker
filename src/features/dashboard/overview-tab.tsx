@@ -5,9 +5,9 @@ import { InstallmentProgress } from "./installment-progress";
 import { MonthlyHeatmap } from "./monthly-heatmap";
 import { TypeBreakdownDonut } from "./type-breakdown-donut";
 import { UpcomingChart } from "./upcoming-chart";
-import type { DashboardV2Data } from "./types";
+import type { DashboardData } from "./types";
 
-export function OverviewTab({ data }: { data: DashboardV2Data }) {
+export function OverviewTab({ data }: { data: DashboardData }) {
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
       <UpcomingChart data={data.upcoming} />

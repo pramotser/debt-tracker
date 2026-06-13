@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/chart";
 import { formatMoney } from "@/lib/format";
 import type { LedgerEntryType } from "@/db/schema";
-import type { TypeBreakdownItem } from "@/server/queries/dashboard-v2";
+import type { TypeBreakdownItem } from "@/server/queries/dashboard";
 
 const TYPE_LABEL: Record<LedgerEntryType, string> = {
   CREDIT_CARD_INSTALLMENT: "ผ่อนบัตรเครดิต",

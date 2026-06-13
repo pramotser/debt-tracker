@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/select";
 import { formatMoney, formatMonthShortTh } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import type { HeatmapByYear } from "@/server/queries/dashboard-v2";
+import type { HeatmapByYear } from "@/server/queries/dashboard";
 
 // GitHub-style 5-stop scale (empty + 4 green steps)
 const INTENSITY_STOPS = [
