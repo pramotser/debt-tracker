@@ -1,14 +1,10 @@
 export type {
+  Category,
   CreditCard,
   CreditCardInstallment,
   InstallmentStatusDb,
   LedgerEntry,
 } from "@/db/schema";
-
-export type Category = {
-  id: string;
-  name: string;
-};
 
 export type Bank = {
   id: string;

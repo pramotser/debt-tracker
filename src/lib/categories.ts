@@ -1,41 +1,92 @@
-// Category placeholder dictionary — ย้ายเป็น admin categories table ทีหลัง
-// label ที่ใช้ตรงนี้ sync กับ MOCK_CATEGORIES ของแต่ละ feature:
-//   - src/features/monthly-cost/mock.ts
-//   - src/features/subscription/mock.ts
-//   - src/features/credit-cards/mock.ts
-// TODO: เมื่อมี admin `categories` table แล้ว ให้ join แทน lookup จาก dict นี้
-//       (และลบ MOCK_CATEGORIES ใน 3 feature mocks ทิ้ง)
+// Client-side helpers for the category catalog
+// - getCategoryLabel(map, id): id → name, fallback = id ดิบ (ไม่ throw)
+// - getCategoryIcon(iconKey): kebab-case → Lucide component, fallback = Tag
+// catalog data load ผ่าน server query `getCategories()` / `getCategoryMap()`
+// แล้วส่งลงมา component → ห้าม import server query ที่นี่
 
-export type CategoryLabel = {
-  id: string;
-  label: string;
-};
+import type { LucideIcon } from "lucide-react";
+import {
+  ArrowLeftRight,
+  Banknote,
+  Car,
+  Droplet,
+  Gift,
+  GraduationCap,
+  HandCoins,
+  HeartPulse,
+  Home,
+  MoreHorizontal,
+  Package,
+  PawPrint,
+  PiggyBank,
+  Plane,
+  ShieldCheck,
+  ShoppingBag,
+  Tag,
+  Ticket,
+  Users,
+  Utensils,
+} from "lucide-react";
 
-export const CATEGORIES: Record<string, CategoryLabel> = {
-  // monthly-cost
-  "c-loan": { id: "c-loan", label: "เงินกู้" },
-  "c-family": { id: "c-family", label: "ครอบครัว" },
-  "c-utility": { id: "c-utility", label: "ค่าน้ำค่าไฟ" },
-  // subscription
-  "c-streaming": { id: "c-streaming", label: "Streaming" },
-  "c-music": { id: "c-music", label: "Music" },
-  "c-software": { id: "c-software", label: "Software/AI" },
-  // credit-cards
-  "c-food": { id: "c-food", label: "อาหาร" },
-  "c-fuel": { id: "c-fuel", label: "น้ำมัน" },
-  "c-shopping": { id: "c-shopping", label: "ช้อปปิ้ง" },
-  "c-electronics": { id: "c-electronics", label: "อิเล็กทรอนิกส์" },
-  "c-furniture": { id: "c-furniture", label: "เฟอร์นิเจอร์" },
-  "c-travel": { id: "c-travel", label: "ท่องเที่ยว" },
-  // shared
-  "c-other": { id: "c-other", label: "อื่นๆ" },
-};
+import type { Category } from "@/db/schema";
 
 const FALLBACK_LABEL = "ไม่ระบุหมวด";
+const FALLBACK_COLOR_BG = "#94A3B8";
+const FALLBACK_COLOR_FG = "#FFFFFF";
 
+// kebab-case key (ของ DB) → Lucide component
+// เพิ่ม key ใหม่เมื่อ catalog เพิ่ม icon ที่ยังไม่มีในนี้
+const ICON_MAP: Record<string, LucideIcon> = {
+  "arrow-left-right": ArrowLeftRight,
+  banknote: Banknote,
+  car: Car,
+  droplet: Droplet,
+  gift: Gift,
+  "graduation-cap": GraduationCap,
+  "hand-coins": HandCoins,
+  "heart-pulse": HeartPulse,
+  home: Home,
+  "more-horizontal": MoreHorizontal,
+  package: Package,
+  "paw-print": PawPrint,
+  "piggy-bank": PiggyBank,
+  plane: Plane,
+  "shield-check": ShieldCheck,
+  "shopping-bag": ShoppingBag,
+  ticket: Ticket,
+  users: Users,
+  utensils: Utensils,
+};
+
+export function getCategoryIcon(iconKey: string | null | undefined): LucideIcon {
+  if (!iconKey) return Tag;
+  return ICON_MAP[iconKey] ?? Tag;
+}
+
+// คืนชื่อหมวดจาก catalog · id ไม่อยู่ใน catalog → คืน id ดิบ (ไม่ throw)
+// id เป็น null/undefined → "ไม่ระบุหมวด"
 export function getCategoryLabel(
+  map: Map<string, Category> | undefined,
   categoryId: string | null | undefined
 ): string {
   if (!categoryId) return FALLBACK_LABEL;
-  return CATEGORIES[categoryId]?.label ?? categoryId;
+  return map?.get(categoryId)?.name ?? categoryId;
+}
+
+export type CategoryBrand = {
+  iconKey: string | null;
+  colorBg: string;
+  colorFg: string;
+};
+
+export function getCategoryBrand(
+  map: Map<string, Category> | undefined,
+  categoryId: string | null | undefined
+): CategoryBrand {
+  const row = categoryId ? map?.get(categoryId) : undefined;
+  return {
+    iconKey: row?.icon ?? null,
+    colorBg: row?.colorBg ?? FALLBACK_COLOR_BG,
+    colorFg: row?.colorFg ?? FALLBACK_COLOR_FG,
+  };
 }

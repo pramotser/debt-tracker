@@ -1,4 +1,5 @@
 import { MonthlyCostApp } from "@/features/monthly-cost/monthly-cost-app";
+import { getCategories } from "@/server/queries/categories";
 import { listTemplates } from "@/server/queries/fixed-cost-templates";
 import { listFixCostEntriesByMonth } from "@/server/queries/ledger-entries";
 
@@ -26,14 +27,16 @@ export default async function MonthlyCostPage({
 }) {
   const sp = await searchParams;
   const ym = parseYm(sp);
-  const [templates, entries] = await Promise.all([
+  const [templates, entries, categories] = await Promise.all([
     listTemplates(),
     listFixCostEntriesByMonth(ym.year, ym.month),
+    getCategories(),
   ]);
   return (
     <MonthlyCostApp
       initialTemplates={templates}
       initialEntries={entries}
+      categories={categories}
       ym={ym}
     />
   );

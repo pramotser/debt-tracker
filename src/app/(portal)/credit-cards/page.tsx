@@ -1,4 +1,5 @@
 import { CreditCardsApp } from "@/features/credit-cards/credit-cards-app";
+import { getCategories } from "@/server/queries/categories";
 import {
   listAllInstallmentEntries,
   listInstallmentPlans,
@@ -30,11 +31,12 @@ export default async function CreditCardsPage({
 }) {
   const sp = await searchParams;
   const ym = parseYm(sp);
-  const [cards, plans, entries, installmentEntries] = await Promise.all([
+  const [cards, plans, entries, installmentEntries, categories] = await Promise.all([
     listCreditCards(),
     listInstallmentPlans(),
     listCreditCardLedgerByMonth(ym.year, ym.month),
     listAllInstallmentEntries(),
+    getCategories(),
   ]);
   return (
     <CreditCardsApp
@@ -42,6 +44,7 @@ export default async function CreditCardsPage({
       initialPlans={plans}
       initialEntries={entries}
       initialInstallmentEntries={installmentEntries}
+      categories={categories}
       ym={ym}
     />
   );

@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Calendar as CalendarIcon, Check, Pencil, Plus } from "lucide-react";
+import { Calendar as CalendarIcon, Pencil, Plus } from "lucide-react";
 
+import { CategoryPickerGrid } from "@/components/shared/category-picker-grid";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
 import {
@@ -112,33 +113,11 @@ function TemplateFormFields({
 
       <div className="flex flex-col gap-2">
         <Label>หมวดหมู่</Label>
-        <div
-          role="radiogroup"
-          aria-label="หมวดหมู่"
-          className="grid grid-cols-2 gap-2 sm:grid-cols-4"
-        >
-          {categories.map((c) => {
-            const active = c.id === categoryId;
-            return (
-              <button
-                key={c.id}
-                type="button"
-                role="radio"
-                aria-checked={active}
-                onClick={() => setCategoryId(c.id)}
-                className={cn(
-                  "flex h-10 items-center justify-center gap-1.5 rounded-md border px-3 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                  active
-                    ? "border-primary bg-primary/10 text-primary"
-                    : "border-input bg-background text-foreground hover:bg-muted"
-                )}
-              >
-                {active ? <Check className="size-3.5" aria-hidden /> : null}
-                <span className="truncate">{c.name}</span>
-              </button>
-            );
-          })}
-        </div>
+        <CategoryPickerGrid
+          categories={categories}
+          value={categoryId}
+          onChange={setCategoryId}
+        />
       </div>
 
       <div className="flex flex-col gap-2">
@@ -322,20 +301,22 @@ export function TemplateDialog({
           <DialogTitle>{titleNode}</DialogTitle>
           <DialogDescription>{descriptionText}</DialogDescription>
         </DialogHeader>
-        <TemplateFormFields
-          name={name}
-          setName={setName}
-          amount={amount}
-          setAmount={setAmount}
-          categoryId={categoryId}
-          setCategoryId={setCategoryId}
-          billingCycle={billingCycle}
-          setBillingCycle={setBillingCycle}
-          renewDate={renewDate}
-          setRenewDate={setRenewDate}
-          categories={categories}
-          idPrefix="sub-d"
-        />
+        <div className="max-h-[70vh] overflow-y-auto">
+          <TemplateFormFields
+            name={name}
+            setName={setName}
+            amount={amount}
+            setAmount={setAmount}
+            categoryId={categoryId}
+            setCategoryId={setCategoryId}
+            billingCycle={billingCycle}
+            setBillingCycle={setBillingCycle}
+            renewDate={renewDate}
+            setRenewDate={setRenewDate}
+            categories={categories}
+            idPrefix="sub-d"
+          />
+        </div>
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
             ยกเลิก

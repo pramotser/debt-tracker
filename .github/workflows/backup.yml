@@ -1,0 +1,63 @@
+name: Supabase Backup
+on:
+  schedule:
+    # 22:00 UTC = 05:00 Asia/Bangkok (after keep-alive)
+    - cron: "0 22 * * *"
+  workflow_dispatch:
+concurrency:
+  group: supabase-backup
+  cancel-in-progress: false
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Install postgresql-client-17
+        run: |
+          set -euo pipefail
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc \
+            -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc
+          . /etc/os-release
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt ${VERSION_CODENAME}-pgdg main" \
+            | sudo tee /etc/apt/sources.list.d/pgdg.list >/dev/null
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-client-17
+          /usr/lib/postgresql/17/bin/pg_dump --version
+      - name: Prepare backup filename
+        id: meta
+        run: |
+          DATE=$(date -u +%Y-%m-%d)
+          echo "date=${DATE}" >> "$GITHUB_OUTPUT"
+          echo "filename=backup-${DATE}.sql.gz" >> "$GITHUB_OUTPUT"
+      - name: Run pg_dump (schema public + auth, data included)
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          set -euo pipefail
+          if [ -z "${SUPABASE_DB_URL:-}" ]; then
+            echo "::error::SUPABASE_DB_URL secret is not set"
+            exit 1
+          fi
+          /usr/lib/postgresql/17/bin/pg_dump \
+            --no-owner \
+            --no-privileges \
+            --schema=public \
+            --schema=auth \
+            --format=plain \
+            "${SUPABASE_DB_URL}" \
+            | gzip -9 > "${{ steps.meta.outputs.filename }}"
+          ls -lh "${{ steps.meta.outputs.filename }}"
+          SIZE=$(stat -c%s "${{ steps.meta.outputs.filename }}")
+          if [ "${SIZE}" -lt 1024 ]; then
+            echo "::error::Backup file is suspiciously small (${SIZE} bytes)"
+            exit 1
+          fi
+      - name: Upload backup artifact (retention 7 days)
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.meta.outputs.filename }}
+          path: ${{ steps.meta.outputs.filename }}
+          retention-days: 7
+          if-no-files-found: error
+          compression-level: 0
