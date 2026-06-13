@@ -30,11 +30,13 @@ export function StatementTab({
   initialEntries,
   cards,
   plans,
+  onJumpToPlan,
 }: {
   initialYm: YearMonth;
   initialEntries: LedgerEntry[];
   cards: CreditCard[];
   plans: InstallmentPlanWithProgress[];
+  onJumpToPlan: (planId: string) => void;
 }) {
   const [ym, setYm] = useState<YearMonth>(initialYm);
   const [entries, setEntries] = useState<LedgerEntry[]>(initialEntries);
@@ -126,34 +128,20 @@ export function StatementTab({
     });
   };
 
-  const handleTogglePaid = (entry: LedgerEntry) => {
-    const next = !entry.paid;
-    mutateCurrentMonth((p) =>
-      p.map((e) =>
-        e.id === entry.id
-          ? { ...e, paid: next, paidAt: next ? new Date() : null }
-          : e
-      )
-    );
-    startMutation(async () => {
-      try {
-        if (entry.type === "CREDIT_CARD") {
-          await toggleCreditCardChargePaid(entry.id, next);
-        } else {
-          await toggleInstallmentLedgerPaid(entry.id, next);
-        }
-      } catch (err) {
-        toast.error("บันทึกไม่สำเร็จ");
-        console.error("togglePaid failed", err);
-        mutateCurrentMonth((p) =>
-          p.map((e) =>
-            e.id === entry.id
-              ? { ...e, paid: !next, paidAt: !next ? new Date() : null }
-              : e
-          )
-        );
+  // optimistic flip ทำใน StatementView (useOptimistic) — ที่นี่แค่ยิง action + กันให้ throw
+  // เพื่อให้ useOptimistic rollback ได้ · revalidatePath จะ sync entries กลับเองทาง useEffect
+  const handleTogglePaid = async (entry: LedgerEntry, next: boolean) => {
+    try {
+      if (entry.type === "CREDIT_CARD") {
+        await toggleCreditCardChargePaid(entry.id, next);
+      } else {
+        await toggleInstallmentLedgerPaid(entry.id, next);
       }
-    });
+    } catch (err) {
+      toast.error("บันทึกไม่สำเร็จ");
+      console.error("togglePaid failed", err);
+      throw err;
+    }
   };
 
   const handleUpdateAmount = (entry: LedgerEntry, amount: string) => {
@@ -203,6 +191,7 @@ export function StatementTab({
         onTogglePaid={handleTogglePaid}
         onUpdateAmount={handleUpdateAmount}
         onDelete={handleDelete}
+        onJumpToPlan={onJumpToPlan}
       />
 
       <ChargeDialog

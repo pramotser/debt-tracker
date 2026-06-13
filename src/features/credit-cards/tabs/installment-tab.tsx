@@ -35,12 +35,16 @@ export function InstallmentTab({
   setPlans,
   entries,
   setEntries,
+  scrollToPlanId,
+  onScrolled,
 }: {
   cards: CreditCard[];
   plans: InstallmentPlanWithProgress[];
   setPlans: Dispatch<SetStateAction<InstallmentPlanWithProgress[]>>;
   entries: LedgerEntry[];
   setEntries: Dispatch<SetStateAction<LedgerEntry[]>>;
+  scrollToPlanId: string | null;
+  onScrolled: () => void;
 }) {
   const router = useRouter();
   const [, startMutation] = useTransition();
@@ -196,6 +200,8 @@ export function InstallmentTab({
         plans={plans}
         entries={entries}
         categories={MOCK_CATEGORIES}
+        scrollToPlanId={scrollToPlanId}
+        onScrolled={onScrolled}
         onAddPlan={() => setPlanDialogOpen(true)}
         onTogglePaid={handleTogglePaid}
         onUpdateInterestSplit={handleUpdateInterestSplit}

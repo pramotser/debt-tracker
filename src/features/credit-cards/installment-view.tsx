@@ -7,16 +7,12 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { formatMoney } from "@/lib/format";
-import { cn } from "@/lib/utils";
 import type { InstallmentPlanWithProgress } from "@/server/queries/credit-card-installments";
 
+import { STATUS } from "./components/status-tokens";
+import { SummaryStrip } from "./components/summary-strip";
 import { PlanCard } from "./plan-card";
-import type {
-  Category,
-  CreditCard,
-  LedgerEntry,
-  UiStatus,
-} from "./types";
+import type { Category, CreditCard, LedgerEntry, UiStatus } from "./types";
 
 function uiStatusOf(plan: InstallmentPlanWithProgress): UiStatus {
   if (plan.status === "early_settled") return "early-settlement";
@@ -30,6 +26,8 @@ export function InstallmentView({
   plans,
   entries,
   categories,
+  scrollToPlanId,
+  onScrolled,
   onAddPlan,
   onTogglePaid,
   onUpdateInterestSplit,
@@ -40,6 +38,8 @@ export function InstallmentView({
   plans: InstallmentPlanWithProgress[];
   entries: LedgerEntry[];
   categories: Category[];
+  scrollToPlanId: string | null;
+  onScrolled: () => void;
   onAddPlan: () => void;
   onTogglePaid: (entryId: string) => void;
   onUpdateInterestSplit: (
@@ -111,6 +111,8 @@ export function InstallmentView({
       card={cardById.get(p.creditCardId)}
       category={categoryById.get(p.categoryId)}
       entries={entriesByPlanId.get(p.id) ?? []}
+      scrollTarget={scrollToPlanId === p.id}
+      onScrolled={onScrolled}
       onTogglePaid={onTogglePaid}
       onUpdateInterestSplit={onUpdateInterestSplit}
       onSettle={() => onSettle(p)}
@@ -128,7 +130,27 @@ export function InstallmentView({
         </AlertDescription>
       </Alert>
 
-      {plans.length > 0 && <SummaryCards summary={summary} />}
+      {plans.length > 0 && (
+        <SummaryStrip
+          items={[
+            { label: "คงเหลือ", value: formatMoney(summary.sumRemaining) },
+            {
+              label: "ต้องจ่าย/เดือน",
+              value: formatMoney(summary.sumPerMonth),
+            },
+            {
+              label: "กำลังผ่อน",
+              value: String(summary.activeCount),
+              tone: "active",
+            },
+            {
+              label: "ใกล้จบ",
+              value: String(summary.nearEndCount),
+              tone: "nearEnd",
+            },
+          ]}
+        />
+      )}
 
       <div className="flex justify-end">
         <Button onClick={onAddPlan} disabled={cards.length === 0}>
@@ -144,90 +166,39 @@ export function InstallmentView({
       )}
 
       {buckets.active.length > 0 && (
-        <Section title="กำลังผ่อน" dotClass="bg-emerald-500">
+        <Section title="กำลังผ่อน" dotColor={STATUS.active.bar}>
           {buckets.active.map((p) => renderPlan(p, "active"))}
         </Section>
       )}
 
       {buckets.nearEnd.length > 0 && (
-        <Section title="ใกล้จบ" dotClass="bg-amber-500">
+        <Section title="ใกล้จบ" dotColor={STATUS.nearEnd.bar}>
           {buckets.nearEnd.map((p) => renderPlan(p, "near-end"))}
         </Section>
       )}
 
-      {buckets.completed.length > 0 && (
-        <Section title="ผ่อนครบแล้ว" dotClass="bg-emerald-700">
-          {buckets.completed.map((p) => renderPlan(p, "completed"))}
-        </Section>
-      )}
-
       {buckets.early.length > 0 && (
-        <Section title="ปิดก่อนกำหนด" dotClass="bg-violet-500">
+        <Section title="ปิดก่อนกำหนด" dotColor={STATUS.settle.bar}>
           {buckets.early.map((p) => renderPlan(p, "early-settlement"))}
         </Section>
       )}
-    </div>
-  );
-}
 
-function SummaryCards({
-  summary,
-}: {
-  summary: {
-    sumRemaining: number;
-    sumPerMonth: number;
-    activeCount: number;
-    nearEndCount: number;
-  };
-}) {
-  return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-      <SummaryCard label="คงเหลือ" value={formatMoney(summary.sumRemaining)} />
-      <SummaryCard
-        label="ต้องจ่าย/เดือน"
-        value={formatMoney(summary.sumPerMonth)}
-      />
-      <SummaryCard label="กำลังผ่อน" value={String(summary.activeCount)} />
-      <SummaryCard
-        label="ใกล้จบ"
-        value={String(summary.nearEndCount)}
-        valueClass="text-amber-600"
-      />
+      {buckets.completed.length > 0 && (
+        <Section title="ผ่อนครบแล้ว" dotColor={STATUS.off.bar}>
+          {buckets.completed.map((p) => renderPlan(p, "completed"))}
+        </Section>
+      )}
     </div>
-  );
-}
-
-function SummaryCard({
-  label,
-  value,
-  valueClass,
-}: {
-  label: string;
-  value: string;
-  valueClass?: string;
-}) {
-  return (
-    <Card className="gap-1 bg-muted/40 p-3 shadow-none sm:p-4">
-      <div className="text-xs text-muted-foreground">{label}</div>
-      <div
-        className={cn(
-          "truncate text-xl font-bold tabular-nums",
-          valueClass
-        )}
-      >
-        {value}
-      </div>
-    </Card>
   );
 }
 
 function Section({
   title,
-  dotClass,
+  dotColor,
   children,
 }: {
   title: string;
-  dotClass: string;
+  dotColor: string;
   children: React.ReactNode;
 }) {
   return (
@@ -235,7 +206,8 @@ function Section({
       <h2 className="flex items-center gap-2 text-lg font-semibold">
         <span
           aria-hidden
-          className={`inline-block size-2.5 rounded-full ${dotClass}`}
+          className="inline-block size-2.5 rounded-full"
+          style={{ backgroundColor: dotColor }}
         />
         {title}
       </h2>

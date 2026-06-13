@@ -7,7 +7,7 @@ import { z } from "zod";
 import { db } from "@/db";
 import { creditCards, type CreditCard } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
-import { CARD_NETWORKS } from "@/lib/banks";
+import { CARD_COLORS, CARD_NETWORKS } from "@/lib/banks";
 
 const PAGE_PATH = "/credit-cards";
 
@@ -26,6 +26,7 @@ const upsertSchema = z.object({
   cardNetwork: z.enum(CARD_NETWORKS).nullable(),
   statementDate: dayOfMonthSchema,
   dueDate: dayOfMonthSchema,
+  color: z.enum(CARD_COLORS).default("blue"),
 });
 
 function revalidate() {
@@ -47,6 +48,7 @@ export async function createCreditCard(
       cardNetwork: parsed.cardNetwork,
       statementDate: parsed.statementDate,
       dueDate: parsed.dueDate,
+      color: parsed.color,
     })
     .returning();
   revalidate();
@@ -69,6 +71,7 @@ export async function updateCreditCard(
       cardNetwork: parsed.cardNetwork,
       statementDate: parsed.statementDate,
       dueDate: parsed.dueDate,
+      color: parsed.color,
       updatedAt: new Date(),
     })
     .where(and(eq(creditCards.id, parsedId), eq(creditCards.userId, user.id)))
