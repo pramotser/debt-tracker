@@ -62,7 +62,7 @@ CRUD `fixed_cost_templates` — รายการจ่ายประจำท
 function persistNewTemplate(input: { name, categoryId, defaultAmount })
 ```
 ถูกเรียกจาก 2 ที่:
-- `submitTemplate` (tab 2 — เพิ่ม template โดยตรง)
+- `submitTemplate` (tab 2 — เพิ่มรายการประจำ โดยตรง)
 - `submitItem` (tab 1 — ติ๊ก "บันทึกเป็น template ด้วย" ตอนเพิ่มรายการ + ชื่อยังไม่ซ้ำ)
 
 ## Delete flow
