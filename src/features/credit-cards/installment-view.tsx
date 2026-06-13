@@ -6,6 +6,8 @@ import { Info, Plus } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { formatMoney } from "@/lib/format";
+import { cn } from "@/lib/utils";
 import type { InstallmentPlanWithProgress } from "@/server/queries/credit-card-installments";
 
 import { PlanCard } from "./plan-card";
@@ -83,6 +85,24 @@ export function InstallmentView({
     return { active: a, nearEnd: n, completed: c, early: e };
   }, [plans]);
 
+  const summary = useMemo(() => {
+    const openPlans = [...buckets.active, ...buckets.nearEnd];
+    const openIds = new Set(openPlans.map((p) => p.id));
+    const sumPerMonth = openPlans.reduce(
+      (s, p) => s + Number(p.installmentAmount),
+      0
+    );
+    const sumRemaining = entries
+      .filter((e) => !e.paid && e.sourceId && openIds.has(e.sourceId))
+      .reduce((s, e) => s + Number(e.amount), 0);
+    return {
+      sumRemaining,
+      sumPerMonth,
+      activeCount: buckets.active.length,
+      nearEndCount: buckets.nearEnd.length,
+    };
+  }, [buckets, entries]);
+
   const renderPlan = (p: InstallmentPlanWithProgress, status: UiStatus) => (
     <PlanCard
       key={p.id}
@@ -108,6 +128,8 @@ export function InstallmentView({
         </AlertDescription>
       </Alert>
 
+      {plans.length > 0 && <SummaryCards summary={summary} />}
+
       <div className="flex justify-end">
         <Button onClick={onAddPlan} disabled={cards.length === 0}>
           <Plus />
@@ -122,25 +144,25 @@ export function InstallmentView({
       )}
 
       {buckets.active.length > 0 && (
-        <Section title="กำลังผ่อน">
+        <Section title="กำลังผ่อน" dotClass="bg-emerald-500">
           {buckets.active.map((p) => renderPlan(p, "active"))}
         </Section>
       )}
 
       {buckets.nearEnd.length > 0 && (
-        <Section title="ใกล้จบ">
+        <Section title="ใกล้จบ" dotClass="bg-amber-500">
           {buckets.nearEnd.map((p) => renderPlan(p, "near-end"))}
         </Section>
       )}
 
       {buckets.completed.length > 0 && (
-        <Section title="ผ่อนครบแล้ว">
+        <Section title="ผ่อนครบแล้ว" dotClass="bg-emerald-700">
           {buckets.completed.map((p) => renderPlan(p, "completed"))}
         </Section>
       )}
 
       {buckets.early.length > 0 && (
-        <Section title="ปิดก่อนกำหนด">
+        <Section title="ปิดก่อนกำหนด" dotClass="bg-violet-500">
           {buckets.early.map((p) => renderPlan(p, "early-settlement"))}
         </Section>
       )}
@@ -148,16 +170,75 @@ export function InstallmentView({
   );
 }
 
+function SummaryCards({
+  summary,
+}: {
+  summary: {
+    sumRemaining: number;
+    sumPerMonth: number;
+    activeCount: number;
+    nearEndCount: number;
+  };
+}) {
+  return (
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <SummaryCard label="คงเหลือ" value={formatMoney(summary.sumRemaining)} />
+      <SummaryCard
+        label="ต้องจ่าย/เดือน"
+        value={formatMoney(summary.sumPerMonth)}
+      />
+      <SummaryCard label="กำลังผ่อน" value={String(summary.activeCount)} />
+      <SummaryCard
+        label="ใกล้จบ"
+        value={String(summary.nearEndCount)}
+        valueClass="text-amber-600"
+      />
+    </div>
+  );
+}
+
+function SummaryCard({
+  label,
+  value,
+  valueClass,
+}: {
+  label: string;
+  value: string;
+  valueClass?: string;
+}) {
+  return (
+    <Card className="gap-1 bg-muted/40 p-3 shadow-none sm:p-4">
+      <div className="text-xs text-muted-foreground">{label}</div>
+      <div
+        className={cn(
+          "truncate text-xl font-bold tabular-nums",
+          valueClass
+        )}
+      >
+        {value}
+      </div>
+    </Card>
+  );
+}
+
 function Section({
   title,
+  dotClass,
   children,
 }: {
   title: string;
+  dotClass: string;
   children: React.ReactNode;
 }) {
   return (
     <section className="flex flex-col gap-3">
-      <h2 className="text-lg font-semibold">{title}</h2>
+      <h2 className="flex items-center gap-2 text-lg font-semibold">
+        <span
+          aria-hidden
+          className={`inline-block size-2.5 rounded-full ${dotClass}`}
+        />
+        {title}
+      </h2>
       <div className="flex flex-col gap-3">{children}</div>
     </section>
   );
