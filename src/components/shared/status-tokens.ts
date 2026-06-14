@@ -1,7 +1,6 @@
-// Design tokens สถานะรวม (ชุดเดียวทั้งหน้า credit-cards)
-// — รายการชำระ (tab1) ใช้ paid/due
-// — รายการผ่อน (tab2) ใช้ active/nearEnd/settle
-// — บัตรของฉัน (tab3) ใช้ off สำหรับบัตรปิดใช้งาน
+// Design tokens สถานะรวมทั้งโปรเจ็กต์
+// — paid/due ใช้ทุก list รายการจ่าย (monthly-cost / subscription / credit-cards statement)
+// — active/nearEnd/settle/off ใช้กับแผนผ่อน + การ์ดบัตรเครดิต
 
 export type StatusKey =
   | "paid"

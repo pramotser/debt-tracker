@@ -14,8 +14,8 @@ import { getCardColorTheme } from "@/lib/banks";
 import { cn } from "@/lib/utils";
 import type { InstallmentPlanWithProgress } from "@/server/queries/credit-card-installments";
 
-import { StatusBadge } from "./components/status-badge";
-import { STATUS } from "./components/status-tokens";
+import { StatusBadge } from "@/components/shared/status-badge";
+import { STATUS } from "@/components/shared/status-tokens";
 import { SummaryStrip } from "./components/summary-strip";
 import type { CreditCard, LedgerEntry, YearMonth } from "./types";
 

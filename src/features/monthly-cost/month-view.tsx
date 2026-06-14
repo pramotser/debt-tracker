@@ -14,6 +14,8 @@ import { formatMoney, formatYearMonth } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 import { CategoryBadge } from "@/components/shared/category-badge";
+import { StatusBadge } from "@/components/shared/status-badge";
+import { STATUS } from "@/components/shared/status-tokens";
 import type {
   Category,
   FixedCostTemplate,
@@ -181,7 +183,7 @@ export function MonthView({
             : " — กด \"เพิ่มรายการ\""}
         </Card>
       ) : (
-        <div className="flex flex-col gap-2.5">
+        <div className="flex flex-col gap-2">
           {items.map((i) => (
             <ItemRow
               key={i.id}
@@ -226,20 +228,25 @@ function SummarySkeleton() {
 
 function RowSkeletonList({ count }: { count: number }) {
   return (
-    <div className="flex flex-col gap-2.5" aria-busy aria-live="polite">
+    <div className="flex flex-col gap-2" aria-busy aria-live="polite">
       {Array.from({ length: count }).map((_, i) => (
         <Card
           key={i}
-          className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:gap-3"
+          className="relative gap-2 overflow-hidden p-0 py-3 pr-3 pl-4 text-sm shadow-sm"
         >
-          <div className="flex items-center gap-3 sm:contents">
+          <span
+            aria-hidden
+            className="absolute inset-y-0 left-0 w-1 bg-foreground/10"
+          />
+          <div className="flex items-center gap-3">
             <Skeleton className="h-5 w-5 rounded-full" />
-            <div className="flex min-w-0 flex-1 flex-col gap-2">
+            <div className="min-w-0 flex-1 space-y-2">
               <Skeleton className="h-4 w-2/5" />
-              <Skeleton className="h-3 w-1/4" />
+              <Skeleton className="h-3 w-24" />
             </div>
+            <Skeleton className="hidden h-5 w-14 rounded-full sm:block" />
+            <Skeleton className="h-7 w-24" />
           </div>
-          <Skeleton className="h-7 w-24" />
         </Card>
       ))}
     </div>
@@ -301,30 +308,41 @@ function ItemRow({
     setEditing(false);
   };
 
+  const accent = item.paid ? STATUS.paid.bar : STATUS.due.bar;
+
   return (
     <Card
       className={cn(
-        "flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:gap-3",
-        item.paid && "opacity-60"
+        "relative gap-2 overflow-hidden p-0 py-3 pr-3 pl-4 text-sm shadow-sm",
+        item.paid && "opacity-70"
       )}
     >
-      <div className="flex items-center gap-3 sm:contents">
+      <span
+        aria-hidden
+        className="absolute inset-y-0 left-0 w-1"
+        style={{ backgroundColor: accent }}
+      />
+      <div className="flex items-center gap-3">
         <Checkbox checked={item.paid} onCheckedChange={onTogglePaid} />
-        <div className="flex min-w-0 flex-1 flex-col gap-1">
+        <div className="min-w-0 flex-1">
           <div
             className={cn(
-              "truncate text-sm font-medium",
+              "truncate font-medium",
               item.paid && "line-through"
             )}
           >
             {item.name}
           </div>
-          <div className="flex flex-wrap items-center gap-1.5">
+          <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
             <CategoryBadge category={category} />
           </div>
         </div>
-      </div>
-      <div className="flex items-center justify-end gap-1 sm:contents">
+
+        <StatusBadge
+          status={item.paid ? "paid" : "due"}
+          className="hidden shrink-0 sm:inline-flex"
+        />
+
         {editing ? (
           <Input
             autoFocus
@@ -344,10 +362,10 @@ function ItemRow({
             variant="ghost"
             onClick={startEdit}
             className={cn(
-              "h-auto min-w-[7rem] justify-end px-2 py-1 text-base font-semibold tabular-nums",
-              item.paid && "line-through",
-              item.amount === null && "text-orange-600"
+              "h-auto min-w-[6rem] justify-end px-2 py-1 text-base font-semibold tabular-nums",
+              item.paid && "line-through"
             )}
+            style={{ color: item.amount === null ? STATUS.due.bar : accent }}
           >
             {item.amount === null ? "แตะเพื่อกรอก" : formatMoney(item.amount)}
           </Button>

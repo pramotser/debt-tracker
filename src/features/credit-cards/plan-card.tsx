@@ -17,9 +17,9 @@ import { formatMoney, formatYearMonth } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 import { CategoryBadge } from "@/components/shared/category-badge";
+import { StatusBadge } from "@/components/shared/status-badge";
+import type { StatusKey } from "@/components/shared/status-tokens";
 import { Segments } from "./components/segments";
-import { StatusBadge } from "./components/status-badge";
-import type { StatusKey } from "./components/status-tokens";
 import type {
   Category,
   CreditCard,
