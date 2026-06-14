@@ -464,7 +464,7 @@ function RowSkeletonList({ count }: { count: number }) {
             className="absolute inset-y-0 left-0 w-1 bg-foreground/10"
           />
           <div className="flex items-center gap-3">
-            <Skeleton className="h-5 w-5 rounded-sm" />
+            <Skeleton className="h-5 w-5 rounded-full" />
             <div className="min-w-0 flex-1 space-y-2">
               <Skeleton className="h-4 w-2/5" />
               <Skeleton className="h-3 w-24" />

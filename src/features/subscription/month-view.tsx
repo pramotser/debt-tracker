@@ -228,7 +228,7 @@ function RowSkeletonList({ count }: { count: number }) {
           className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:gap-3"
         >
           <div className="flex items-center gap-3 sm:contents">
-            <Skeleton className="h-5 w-5 rounded-sm" />
+            <Skeleton className="h-5 w-5 rounded-full" />
             <div className="flex min-w-0 flex-1 flex-col gap-2">
               <Skeleton className="h-4 w-2/5" />
               <div className="flex gap-1.5">
