@@ -9,7 +9,7 @@ import { Card } from "@/components/ui/card";
 import { formatMoney } from "@/lib/format";
 import type { InstallmentPlanWithProgress } from "@/server/queries/credit-card-installments";
 
-import { STATUS } from "./components/status-tokens";
+import { STATUS } from "@/components/shared/status-tokens";
 import { SummaryStrip } from "./components/summary-strip";
 import { PlanCard } from "./plan-card";
 import type { Category, CreditCard, LedgerEntry, UiStatus } from "./types";

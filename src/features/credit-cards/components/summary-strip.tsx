@@ -11,8 +11,8 @@ export type SummaryStripItem = {
 const TONE: Record<NonNullable<SummaryStripItem["tone"]>, string> = {
   default: "",
   paid: "text-[#15803D]",
-  due: "text-[#8A6410]",
-  nearEnd: "text-[#8A6410]",
+  due: "text-orange-600",
+  nearEnd: "text-[#92400E]",
   active: "text-[#1E40AF]",
 };
 
