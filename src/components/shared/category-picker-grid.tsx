@@ -77,7 +77,7 @@ export function CategoryPickerGrid({
           ref={rowRef}
           role="radiogroup"
           aria-label={ariaLabel}
-          className="no-scrollbar flex snap-x snap-mandatory gap-2 overflow-x-auto pb-1"
+          className="no-scrollbar flex snap-x snap-mandatory gap-2 overflow-x-auto px-4 py-3 scroll-px-4"
         >
           {categories.map((c) => {
             const active = c.id === value;
@@ -121,29 +121,36 @@ const CategoryOption = function CategoryOption({
       aria-checked={active}
       onClick={onSelect}
       className={cn(
-        "group relative flex flex-col items-center gap-1.5 rounded-lg border p-2 text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-        variant === "row" &&
-          "w-[4.5rem] shrink-0 snap-start sm:w-20",
+        "group relative flex flex-col items-center gap-1.5 rounded-[14px] p-2 text-xs transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+        variant === "row" && "w-[4.5rem] shrink-0 snap-start sm:w-20",
         active
-          ? "border-primary bg-primary/5 ring-2 ring-primary/30"
-          : "border-input bg-background hover:bg-muted"
+          ? "bg-muted shadow-[0_3px_14px_rgba(0,0,0,0.13)]"
+          : "bg-transparent hover:bg-muted/40"
       )}
     >
-      <span
-        className="flex h-10 w-10 items-center justify-center rounded-full"
-        style={{ backgroundColor: category.colorBg, color: category.colorFg }}
-      >
-        <Icon className="size-5" aria-hidden />
+      <span className="relative">
+        <span
+          className={cn(
+            "flex h-10 w-10 items-center justify-center rounded-full transition-all duration-200",
+            active ? "scale-110 shadow-[0_4px_14px_rgba(0,0,0,0.18)]" : ""
+          )}
+          style={{ backgroundColor: category.colorBg, color: category.colorFg }}
+        >
+          <Icon className="size-5" aria-hidden />
+        </span>
+        <span
+          className={cn(
+            "absolute -right-[3px] -top-[3px] flex h-4 w-4 items-center justify-center rounded-full bg-[#1e293b] transition-all duration-200",
+            active ? "scale-100 opacity-100" : "scale-0 opacity-0"
+          )}
+          aria-hidden
+        >
+          <Check className="h-[10px] w-[10px] text-white" strokeWidth={3} />
+        </span>
       </span>
       <span className="line-clamp-2 text-center text-[11px] leading-tight">
         {category.name}
       </span>
-      {active ? (
-        <Check
-          className="absolute right-1 top-1 size-3 text-primary"
-          aria-hidden
-        />
-      ) : null}
     </button>
   );
 };
