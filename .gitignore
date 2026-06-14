@@ -43,3 +43,6 @@ next-env.d.ts
 
 # claude code local state
 .claude/
+plan/admin-config-tables.md
+plan/dashboard-v2-plan.md
+plan/plan-categories-catalog.md
