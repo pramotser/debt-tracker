@@ -52,17 +52,24 @@ export type PlanDraft = {
   hasInterest: boolean;
 };
 
-const INTEREST_OPTIONS: { value: InterestMode; label: string; helper: string }[] = [
+const INTEREST_OPTIONS: {
+  value: InterestMode;
+  label: string;
+  helper: string;
+  comingSoon?: boolean;
+}[] = [
   { value: "zero", label: "ผ่อน 0%", helper: "ไม่มีดอกเบี้ย" },
   {
     value: "known-split",
     label: "มีดอกเบี้ย (รู้ split)",
     helper: "รองรับเงินต้น/ดอกเบี้ยต่องวด",
+    comingSoon: true,
   },
   {
     value: "unknown-split",
     label: "มีดอกเบี้ย (split รู้ทีหลัง)",
     helper: "ยังไม่รู้ split ตอนสร้าง",
+    comingSoon: true,
   },
 ];
 
@@ -284,16 +291,21 @@ function PlanFormFields(s: FormState) {
           >
             {INTEREST_OPTIONS.map((opt) => {
               const active = s.mode === opt.value;
+              const disabled = opt.comingSoon === true;
               return (
                 <button
                   key={opt.value}
                   type="button"
                   role="radio"
                   aria-checked={active}
-                  onClick={() => s.setMode(opt.value)}
+                  aria-disabled={disabled}
+                  disabled={disabled}
+                  onClick={() => !disabled && s.setMode(opt.value)}
                   className={cn(
                     "flex items-start gap-3 rounded-md border p-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                    active
+                    disabled
+                      ? "cursor-not-allowed border-dashed border-input bg-muted/30 opacity-60"
+                      : active
                       ? "border-primary bg-primary/5 ring-1 ring-primary/30"
                       : "border-input bg-background hover:bg-muted"
                   )}
@@ -301,17 +313,24 @@ function PlanFormFields(s: FormState) {
                   <span
                     className={cn(
                       "mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full border-2",
-                      active
+                      active && !disabled
                         ? "border-primary"
                         : "border-muted-foreground/40"
                     )}
                   >
-                    {active ? (
+                    {active && !disabled ? (
                       <span className="size-1.5 rounded-full bg-primary" />
                     ) : null}
                   </span>
                   <div className="flex flex-1 flex-col gap-0.5">
-                    <span className="text-sm font-medium">{opt.label}</span>
+                    <span className="flex items-center gap-2 text-sm font-medium">
+                      {opt.label}
+                      {disabled ? (
+                        <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-400">
+                          เร็วๆ นี้
+                        </span>
+                      ) : null}
+                    </span>
                     <span className="text-xs text-muted-foreground">
                       {opt.helper}
                     </span>
