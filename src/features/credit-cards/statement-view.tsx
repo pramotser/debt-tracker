@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useOptimistic, useState, useTransition } from "react";
-import { ChevronLeft, ChevronRight, Plus, Trash2 } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Plus, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -182,7 +182,7 @@ export function StatementView({
         </Card>
       ) : (
         <ScrollArea className="w-full">
-          <div className="flex items-stretch gap-3 pb-3">
+          <div className="flex items-stretch gap-5 scroll-px-4 px-4 py-3">
             {activeCards.map((c) => {
               const arr = groupedByCard.get(c.id) ?? [];
               const total = arr.reduce((s, e) => s + toNumber(e.amount), 0);
@@ -195,16 +195,27 @@ export function StatementView({
                   onClick={() =>
                     setSelectedCardId(selected ? null : c.id)
                   }
+                  aria-pressed={selected}
                   className={cn(
-                    "min-w-[220px] rounded-2xl p-4 text-left shadow-sm transition-all",
-                    "hover:scale-[1.02]",
-                    selected && "ring-2 ring-offset-2 ring-foreground/40"
+                    "relative min-w-[220px] rounded-2xl p-4 text-left transition-all duration-200",
+                    selected
+                      ? "scale-[1.02] shadow-[0_8px_24px_rgba(0,0,0,0.22)]"
+                      : "shadow-sm hover:scale-[1.02] hover:shadow-md"
                   )}
                   style={{
                     backgroundImage: `linear-gradient(135deg, ${theme.from}, ${theme.to})`,
                     color: theme.fg,
                   }}
                 >
+                  <span
+                    aria-hidden
+                    className={cn(
+                      "absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-white shadow-md transition-all duration-200",
+                      selected ? "scale-100 opacity-100" : "scale-0 opacity-0"
+                    )}
+                  >
+                    <Check className="h-3 w-3 text-slate-900" strokeWidth={3} />
+                  </span>
                   <div className="text-sm font-semibold truncate">{c.name}</div>
                   <div className="text-xs opacity-80">
                     {c.lastFourDigits ? `•••• ${c.lastFourDigits}` : "—"}
