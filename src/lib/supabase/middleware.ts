@@ -37,10 +37,18 @@ export async function updateSession(request: NextRequest) {
     pathname.startsWith("/forgot-password") ||
     pathname.startsWith("/reset-password") ||
     pathname.startsWith("/auth");
+  const isLandingRoute = pathname === "/";
 
-  if (!user && !isAuthRoute) {
+  if (!user && !isAuthRoute && !isLandingRoute) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
+    return NextResponse.redirect(url);
+  }
+
+  // logged-in user เปิด landing → ส่งเข้า dashboard ทันที
+  if (user && isLandingRoute) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/dashboard";
     return NextResponse.redirect(url);
   }
 
