@@ -27,21 +27,22 @@ import {
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 
-import type { Category, SubscriptionCycle, SubscriptionTemplate } from "./types";
+import type { Category, CycleType, RecurringTemplate } from "./types";
 
-export type TemplateDraft = {
+export type RecurringTemplateDraft = {
   name: string;
   categoryId: string;
-  defaultAmount: string;
-  billingCycle: SubscriptionCycle;
+  defaultAmount: string | null;
+  billingCycle: CycleType;
   renewDate: string | null;
 };
 
-function parseAmount(raw: string): string | null {
+function parseAmount(raw: string): string | null | "invalid" {
   const trimmed = raw.trim();
   if (trimmed === "") return null;
   const n = Number(trimmed);
-  return Number.isFinite(n) && n >= 0 ? n.toFixed(2) : null;
+  if (!Number.isFinite(n) || n < 0) return "invalid";
+  return n.toFixed(2);
 }
 
 function todayIso(): string {
@@ -55,8 +56,8 @@ type FormProps = {
   setAmount: (v: string) => void;
   categoryId: string;
   setCategoryId: (v: string) => void;
-  billingCycle: SubscriptionCycle;
-  setBillingCycle: (v: SubscriptionCycle) => void;
+  billingCycle: CycleType;
+  setBillingCycle: (v: CycleType) => void;
   renewDate: string | null;
   setRenewDate: (v: string | null) => void;
   categories: Category[];
@@ -80,10 +81,10 @@ function TemplateFormFields({
   return (
     <div className="flex flex-col gap-5">
       <div className="flex flex-col gap-2">
-        <Label htmlFor={`${idPrefix}-name`}>ชื่อบริการ</Label>
+        <Label htmlFor={`${idPrefix}-name`}>ชื่อรายการ</Label>
         <Input
           id={`${idPrefix}-name`}
-          placeholder="เช่น Netflix"
+          placeholder="เช่น ค่าน้ำ ค่าไฟ Netflix"
           value={name}
           onChange={(e) => setName(e.target.value)}
           autoFocus
@@ -103,12 +104,15 @@ function TemplateFormFields({
             id={`${idPrefix}-amount`}
             type="number"
             inputMode="decimal"
-            placeholder="0.00"
+            placeholder="เว้นว่างได้ (กรอกทีหลัง)"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
             className="pl-7"
           />
         </div>
+        <span className="text-xs text-muted-foreground">
+          เว้นว่าง = กรอกตอนดึงเข้าเดือน (เช่นค่าไฟที่ยอดไม่คงที่)
+        </span>
       </div>
 
       <div className="flex flex-col gap-2">
@@ -170,8 +174,8 @@ function TemplateFormFields({
         />
         <span className="text-xs text-muted-foreground">
           {billingCycle === "yearly"
-            ? "banner จะโผล่เฉพาะเดือนต่ออายุ"
-            : "ใช้แสดงในรายการเดือน"}
+            ? "ดึงเข้าเดือนเฉพาะเดือนต่ออายุ"
+            : "ใช้แสดงในรายการเดือน · เว้นว่างได้"}
         </span>
       </div>
     </div>
@@ -188,22 +192,21 @@ export function TemplateDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
   categories: Category[];
-  initial?: SubscriptionTemplate | null;
-  onSubmit: (draft: TemplateDraft) => void;
+  initial?: RecurringTemplate | null;
+  onSubmit: (draft: RecurringTemplateDraft) => void;
 }) {
   const isMobile = useIsMobile();
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
   const [categoryId, setCategoryId] = useState(categories[0]?.id ?? "");
-  const [billingCycle, setBillingCycle] =
-    useState<SubscriptionCycle>("monthly");
+  const [billingCycle, setBillingCycle] = useState<CycleType>("monthly");
   const [renewDate, setRenewDate] = useState<string | null>(todayIso());
 
   useEffect(() => {
     if (!open) return;
     if (initial) {
       setName(initial.name);
-      setAmount(initial.defaultAmount);
+      setAmount(initial.defaultAmount ?? "");
       setCategoryId(initial.categoryId);
       setBillingCycle(initial.billingCycle);
       setRenewDate(initial.renewDate ?? todayIso());
@@ -220,10 +223,10 @@ export function TemplateDialog({
   const canSubmit =
     name.trim().length > 0 &&
     categoryId.length > 0 &&
-    parsedAmount !== null;
+    parsedAmount !== "invalid";
 
   const handleSubmit = () => {
-    if (!canSubmit || parsedAmount === null) return;
+    if (!canSubmit || parsedAmount === "invalid") return;
     onSubmit({
       name: name.trim(),
       categoryId,
@@ -241,10 +244,11 @@ export function TemplateDialog({
       ) : (
         <Plus className="size-4 text-primary" aria-hidden />
       )}
-      {initial ? "แก้ไขบริการ" : "เพิ่มบริการ"}
+      {initial ? "แก้ไขรายการประจำ" : "เพิ่มรายการประจำ"}
     </span>
   );
-  const descriptionText = "บริการที่ตัดเงินประจำเดือน/ปี — ใช้ดึงเข้ารายการเดือนได้";
+  const descriptionText =
+    "รายการที่เกิดประจำเดือน/ปี — ใช้ดึงเข้ารายการเดือนได้";
 
   if (isMobile) {
     return (
@@ -270,7 +274,7 @@ export function TemplateDialog({
               renewDate={renewDate}
               setRenewDate={setRenewDate}
               categories={categories}
-              idPrefix="sub-m"
+              idPrefix="rec-m"
             />
           </div>
           <SheetFooter className="flex-col gap-2 px-0 pb-0">
@@ -314,7 +318,7 @@ export function TemplateDialog({
             renewDate={renewDate}
             setRenewDate={setRenewDate}
             categories={categories}
-            idPrefix="sub-d"
+            idPrefix="rec-d"
           />
         </div>
         <DialogFooter>

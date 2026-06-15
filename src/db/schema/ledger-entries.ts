@@ -15,7 +15,7 @@ import { ledgerEntryType } from "./enums";
 import { users } from "./users";
 
 // ตารางกลางของรายจ่ายจริงทุกประเภท (unified ledger)
-// source_type / source_id = อ้างกลับต้นทาง เช่น "fixed_cost_template" + template.id
+// source_type / source_id = อ้างกลับต้นทาง — ค่าที่ใช้: "recurring_template" | "credit_card" | "credit_card_installment" (NULL = manual entry)
 // principal_amount / interest_amount = ใช้ตอนเป็นรายการผ่อน
 export const ledgerEntries = pgTable(
   "ledger_entries",

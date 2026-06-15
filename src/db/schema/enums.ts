@@ -12,14 +12,12 @@ export type LedgerEntryType = (typeof LEDGER_ENTRY_TYPES)[number];
 
 export const ledgerEntryType = pgEnum("ledger_entry_type", LEDGER_ENTRY_TYPES);
 
-export const SUBSCRIPTION_CYCLES = ["monthly", "yearly"] as const;
+// รอบรายการประจำ — monthly = fixed cost / sub รายเดือน · yearly = sub รายปี
+export const CYCLE_TYPES = ["monthly", "yearly"] as const;
 
-export type SubscriptionCycle = (typeof SUBSCRIPTION_CYCLES)[number];
+export type CycleType = (typeof CYCLE_TYPES)[number];
 
-export const subscriptionCycle = pgEnum(
-  "subscription_cycle",
-  SUBSCRIPTION_CYCLES
-);
+export const cycleType = pgEnum("cycle_type", CYCLE_TYPES);
 
 export const INSTALLMENT_STATUSES = ["active", "early_settled"] as const;
 
