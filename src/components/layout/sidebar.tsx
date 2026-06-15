@@ -3,11 +3,10 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  CalendarDays,
   CreditCard,
   LayoutDashboard,
+  ListChecks,
   LogOut,
-  RefreshCw,
   Settings,
   type LucideIcon,
 } from "lucide-react";
@@ -21,8 +20,7 @@ type NavLink = { href: string; label: string; icon: LucideIcon };
 
 const mainLinks: NavLink[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/monthly-cost", label: "ค่าใช้จ่ายรายเดือน", icon: CalendarDays },
-  { href: "/subscription", label: "สมาชิก/บริการ", icon: RefreshCw },
+  { href: "/recurring", label: "รายการประจำ", icon: ListChecks },
   { href: "/credit-cards", label: "บัตรเครดิต", icon: CreditCard },
 ];
 

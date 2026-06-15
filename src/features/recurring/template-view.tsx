@@ -2,6 +2,7 @@
 
 import { MoreHorizontal, Pencil, Plus, Trash2 } from "lucide-react";
 
+import { CategoryBadge } from "@/components/shared/category-badge";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -15,8 +16,7 @@ import { Switch } from "@/components/ui/switch";
 import { formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
-import { CategoryBadge } from "@/components/shared/category-badge";
-import type { Category, SubscriptionTemplate } from "./types";
+import type { Category, RecurringTemplate } from "./types";
 
 const TH_MONTHS = [
   "ม.ค.",
@@ -33,7 +33,7 @@ const TH_MONTHS = [
   "ธ.ค.",
 ];
 
-function formatRenew(template: SubscriptionTemplate): string | null {
+function formatRenew(template: RecurringTemplate): string | null {
   if (!template.renewDate) return null;
   const [, mStr, dStr] = template.renewDate.split("-");
   const day = Number(dStr);
@@ -53,7 +53,7 @@ export function TemplateView({
   onToggleActive,
   onDelete,
 }: {
-  templates: SubscriptionTemplate[];
+  templates: RecurringTemplate[];
   categories: Category[];
   onAdd: () => void;
   onEdit: (id: string) => void;
@@ -72,13 +72,13 @@ export function TemplateView({
         </div>
         <Button onClick={onAdd}>
           <Plus />
-          เพิ่มบริการ
+          เพิ่มรายการประจำ
         </Button>
       </div>
 
       {templates.length === 0 ? (
         <Card className="px-6 py-10 text-center text-sm text-muted-foreground">
-          ยังไม่มีบริการ — กด &quot;เพิ่มบริการ&quot;
+          ยังไม่มีรายการประจำ — กด &quot;เพิ่มรายการประจำ&quot;
         </Card>
       ) : (
         <>
@@ -140,7 +140,7 @@ function TemplateRow({
   onToggleActive,
   onDelete,
 }: {
-  template: SubscriptionTemplate;
+  template: RecurringTemplate;
   category?: Category;
   onEdit: () => void;
   onToggleActive: () => void;
@@ -180,7 +180,13 @@ function TemplateRow({
         </div>
       </div>
       <div className="min-w-[7rem] text-right text-base font-semibold tabular-nums">
-        {formatMoney(template.defaultAmount)}
+        {template.defaultAmount === null ? (
+          <span className="text-sm font-medium text-muted-foreground">
+            กรอกทีหลัง
+          </span>
+        ) : (
+          formatMoney(template.defaultAmount)
+        )}
       </div>
       <DropdownMenu>
         <DropdownMenuTrigger

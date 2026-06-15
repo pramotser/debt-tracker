@@ -1,9 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronLeft, ChevronRight, Info, Plus, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Info, Trash2 } from "lucide-react";
 
+import { CategoryBadge } from "@/components/shared/category-badge";
+import { StatusBadge } from "@/components/shared/status-badge";
+import { STATUS } from "@/components/shared/status-tokens";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -13,13 +17,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { formatMoney, formatYearMonth } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
-import { CategoryBadge } from "@/components/shared/category-badge";
-import { StatusBadge } from "@/components/shared/status-badge";
-import { STATUS } from "@/components/shared/status-tokens";
 import type {
   Category,
-  FixedCostTemplate,
   LedgerEntry,
+  RecurringTemplate,
   YearMonth,
 } from "./types";
 
@@ -29,36 +30,43 @@ function toNumber(value: string | null): number {
   return Number.isFinite(n) ? n : 0;
 }
 
+export type AmountEditRequest = {
+  ledgerId: string;
+  templateId: string | null;
+  templateHasAmount: boolean;
+  nextAmount: string | null;
+};
+
 export function MonthView({
   ym,
   items,
   loading = false,
+  templatesById,
   categories,
   pendingTemplates,
   bannerDismissed,
   onPrev,
   onNext,
-  onTogglePaid,
-  onUpdateAmount,
-  onDelete,
-  onAdd,
   onOpenImport,
   onDismissBanner,
+  onTogglePaid,
+  onRequestEditAmount,
+  onDelete,
 }: {
   ym: YearMonth;
   items: LedgerEntry[];
   loading?: boolean;
+  templatesById: Map<string, RecurringTemplate>;
   categories: Category[];
-  pendingTemplates: FixedCostTemplate[];
+  pendingTemplates: RecurringTemplate[];
   bannerDismissed: boolean;
   onPrev: () => void;
   onNext: () => void;
-  onTogglePaid: (id: string) => void;
-  onUpdateAmount: (id: string, amount: string | null) => void;
-  onDelete: (id: string) => void;
-  onAdd: () => void;
   onOpenImport: () => void;
   onDismissBanner: () => void;
+  onTogglePaid: (id: string) => void;
+  onRequestEditAmount: (req: AmountEditRequest) => void;
+  onDelete: (id: string) => void;
 }) {
   const total = items.reduce((s, i) => s + toNumber(i.amount), 0);
   const paidSum = items
@@ -71,38 +79,28 @@ export function MonthView({
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Month nav + actions */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onPrev}
-            aria-label="เดือนก่อน"
-          >
-            <ChevronLeft />
-          </Button>
-          <span className="text-xl font-bold tabular-nums">
-            {formatYearMonth(ym.year, ym.month)}
-          </span>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onNext}
-            aria-label="เดือนถัดไป"
-          >
-            <ChevronRight />
-          </Button>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button onClick={onAdd}>
-            <Plus />
-            เพิ่มรายการ
-          </Button>
-        </div>
+      <div className="flex items-center gap-3">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onPrev}
+          aria-label="เดือนก่อน"
+        >
+          <ChevronLeft />
+        </Button>
+        <span className="text-xl font-bold tabular-nums">
+          {formatYearMonth(ym.year, ym.month)}
+        </span>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onNext}
+          aria-label="เดือนถัดไป"
+        >
+          <ChevronRight />
+        </Button>
       </div>
 
-      {/* Summary — 3-card grid + progress */}
       {loading ? (
         <SummarySkeleton />
       ) : (
@@ -156,7 +154,7 @@ export function MonthView({
           <Info className="text-blue-700" />
           <AlertDescription className="flex flex-col gap-2 text-blue-900 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
             <span>
-              มีรายการจ่ายประจำ active{" "}
+              มีรายการประจำ active{" "}
               <span className="font-semibold">{pendingTemplates.length}</span>{" "}
               รายการ ยังไม่ได้ดึงเข้าเดือนนี้
             </span>
@@ -172,28 +170,41 @@ export function MonthView({
         </Alert>
       )}
 
-      {/* Item list */}
       {loading ? (
         <RowSkeletonList count={5} />
       ) : items.length === 0 ? (
         <Card className="px-6 py-10 text-center text-sm text-muted-foreground">
           ยังไม่มีรายการเดือนนี้
           {pendingTemplates.length > 0
-            ? " — กด \"ดึงรายการ\" ด้านบนหรือ \"เพิ่มรายการ\""
-            : " — กด \"เพิ่มรายการ\""}
+            ? " — กด \"ดึงรายการ\" ด้านบนเพื่อนำเข้าจากรายการประจำ"
+            : " — เพิ่มรายการในแท็บ \"ตั้งค่ารายการประจำ\" ก่อน"}
         </Card>
       ) : (
         <div className="flex flex-col gap-2">
-          {items.map((i) => (
-            <ItemRow
-              key={i.id}
-              item={i}
-              category={categoryById.get(i.categoryId)}
-              onTogglePaid={() => onTogglePaid(i.id)}
-              onUpdateAmount={(amt) => onUpdateAmount(i.id, amt)}
-              onDelete={() => onDelete(i.id)}
-            />
-          ))}
+          {items.map((i) => {
+            const template = i.sourceId
+              ? templatesById.get(i.sourceId) ?? null
+              : null;
+            return (
+              <ItemRow
+                key={i.id}
+                item={i}
+                category={categoryById.get(i.categoryId)}
+                template={template}
+                onTogglePaid={() => onTogglePaid(i.id)}
+                onRequestEditAmount={(nextAmount) =>
+                  onRequestEditAmount({
+                    ledgerId: i.id,
+                    templateId: template?.id ?? null,
+                    templateHasAmount:
+                      template !== null && template.defaultAmount !== null,
+                    nextAmount,
+                  })
+                }
+                onDelete={() => onDelete(i.id)}
+              />
+            );
+          })}
         </div>
       )}
     </div>
@@ -242,7 +253,10 @@ function RowSkeletonList({ count }: { count: number }) {
             <Skeleton className="h-5 w-5 rounded-full" />
             <div className="min-w-0 flex-1 space-y-2">
               <Skeleton className="h-4 w-2/5" />
-              <Skeleton className="h-3 w-24" />
+              <div className="flex gap-1.5">
+                <Skeleton className="h-4 w-16 rounded-full" />
+                <Skeleton className="h-4 w-20 rounded-full" />
+              </div>
             </div>
             <Skeleton className="hidden h-5 w-14 rounded-full sm:block" />
             <Skeleton className="h-7 w-24" />
@@ -277,17 +291,47 @@ function Stat({
   );
 }
 
+function CycleBadge({ template }: { template: RecurringTemplate | null }) {
+  if (!template) {
+    return (
+      <Badge variant="outline" className="border-gray-300 text-muted-foreground">
+        เพิ่มเอง
+      </Badge>
+    );
+  }
+  if (template.billingCycle === "yearly") {
+    return (
+      <Badge
+        variant="outline"
+        className="border-amber-300 bg-amber-50 text-amber-700"
+      >
+        รายปี
+      </Badge>
+    );
+  }
+  return (
+    <Badge
+      variant="outline"
+      className="border-blue-300 bg-blue-50 text-blue-700"
+    >
+      รายเดือน
+    </Badge>
+  );
+}
+
 function ItemRow({
   item,
   category,
+  template,
   onTogglePaid,
-  onUpdateAmount,
+  onRequestEditAmount,
   onDelete,
 }: {
   item: LedgerEntry;
   category?: Category;
+  template: RecurringTemplate | null;
   onTogglePaid: () => void;
-  onUpdateAmount: (amt: string | null) => void;
+  onRequestEditAmount: (nextAmount: string | null) => void;
   onDelete: () => void;
 }) {
   const [editing, setEditing] = useState(false);
@@ -299,12 +343,22 @@ function ItemRow({
   };
   const commit = () => {
     const trimmed = draft.trim();
+    let nextAmount: string | null;
     if (trimmed === "") {
-      onUpdateAmount(null);
+      nextAmount = null;
     } else {
       const n = Number(trimmed);
-      onUpdateAmount(Number.isFinite(n) ? n.toFixed(2) : null);
+      if (!Number.isFinite(n) || n < 0) {
+        setEditing(false);
+        return;
+      }
+      nextAmount = n.toFixed(2);
     }
+    if (nextAmount === item.amount) {
+      setEditing(false);
+      return;
+    }
+    onRequestEditAmount(nextAmount);
     setEditing(false);
   };
 
@@ -334,7 +388,16 @@ function ItemRow({
             {item.name}
           </div>
           <div className="mt-0.5 flex flex-wrap items-center gap-1.5">
+            <CycleBadge template={template} />
             <CategoryBadge category={category} />
+            {item.amount === null && (
+              <Badge
+                variant="outline"
+                className="border-gray-300 text-muted-foreground"
+              >
+                กรอกทีหลัง
+              </Badge>
+            )}
           </div>
         </div>
 

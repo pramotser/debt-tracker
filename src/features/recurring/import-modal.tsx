@@ -28,7 +28,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { formatMoney, formatYearMonth } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
-import type { SubscriptionTemplate, YearMonth } from "./types";
+import type { RecurringTemplate, YearMonth } from "./types";
 
 type CycleFilter = "all" | "monthly" | "yearly";
 
@@ -37,7 +37,7 @@ function TemplateList({
   selected,
   toggle,
 }: {
-  templates: SubscriptionTemplate[];
+  templates: RecurringTemplate[];
   selected: Set<string>;
   toggle: (id: string) => void;
 }) {
@@ -73,9 +73,17 @@ function TemplateList({
               >
                 {t.billingCycle === "yearly" ? "รายปี" : "รายเดือน"}
               </Badge>
+              {t.defaultAmount === null && (
+                <Badge
+                  variant="outline"
+                  className="border-gray-300 text-muted-foreground"
+                >
+                  กรอกทีหลัง
+                </Badge>
+              )}
             </div>
             <span className="text-sm font-semibold tabular-nums">
-              {formatMoney(t.defaultAmount)}
+              {t.defaultAmount === null ? "—" : formatMoney(t.defaultAmount)}
             </span>
           </Label>
         );
@@ -168,7 +176,7 @@ export function ImportModal({
   open: boolean;
   onOpenChange: (open: boolean) => void;
   ym: YearMonth;
-  pendingTemplates: SubscriptionTemplate[];
+  pendingTemplates: RecurringTemplate[];
   onSubmit: (templateIds: string[]) => void;
 }) {
   const isMobile = useIsMobile();
@@ -229,9 +237,17 @@ export function ImportModal({
 
   const selectedTotal = useMemo(() => {
     return pendingTemplates
-      .filter((t) => selected.has(t.id))
+      .filter((t) => selected.has(t.id) && t.defaultAmount !== null)
       .reduce((sum, t) => sum + Number(t.defaultAmount), 0);
   }, [pendingTemplates, selected]);
+
+  const blankCount = useMemo(
+    () =>
+      pendingTemplates.filter(
+        (t) => selected.has(t.id) && t.defaultAmount === null
+      ).length,
+    [pendingTemplates, selected]
+  );
 
   const canSubmit = selected.size > 0;
 
@@ -244,11 +260,14 @@ export function ImportModal({
   const titleNode = (
     <span className="flex items-center gap-2">
       <Download className="size-4 text-primary" aria-hidden />
-      ดึงรายการสมัครเข้าเดือน {formatYearMonth(ym.year, ym.month)}
+      ดึงรายการประจำเข้าเดือน {formatYearMonth(ym.year, ym.month)}
     </span>
   );
-  const descriptionText = "เลือกรายการที่ต้องการบันทึกลง — แก้ไขจำนวนได้ภายหลัง";
-  const summaryText = `เลือก ${selected.size} รายการ · รวม ฿${formatMoney(selectedTotal.toFixed(2))}`;
+  const descriptionText =
+    "เลือกรายการที่ต้องการบันทึกลง — แก้ไขจำนวนได้ภายหลัง";
+  const blankText =
+    blankCount > 0 ? ` · กรอกทีหลัง ${blankCount} รายการ` : "";
+  const summaryText = `เลือก ${selected.size} รายการ · รวม ${formatMoney(selectedTotal.toFixed(2))}${blankText}`;
 
   const filterBlock = (
     <CycleFilterChips
