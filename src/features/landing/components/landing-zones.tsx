@@ -1,4 +1,5 @@
-import { LandingMonthlyDemoStatic } from "./landing-monthly-demo-static";
+import { LandingMonthlyDemo } from "./landing-monthly-demo";
+import { RevealOnScroll } from "./reveal-on-scroll";
 
 type Zone = {
   title: string;
@@ -64,7 +65,7 @@ export function LandingZones() {
   return (
     <section id="zones" className="py-14 sm:py-[70px]">
       <div className="mx-auto max-w-[1140px] px-6">
-        <div className="mb-10 max-w-[48ch]">
+        <RevealOnScroll className="mb-10 max-w-[48ch]">
           <div className="mb-2.5 text-[13px] font-semibold uppercase tracking-[0.04em] text-[#2E9E6B]">
             มีอะไรในแอป
           </div>
@@ -74,11 +75,11 @@ export function LandingZones() {
           <p className="mt-3 text-[17px] text-[#4B5B73]">
             ทุกอย่างที่เงินไหลออกอยู่ในแอปเดียว แบ่งเป็น 5 ส่วน ใช้ต่อกันเป็นเส้นเดียว
           </p>
-        </div>
+        </RevealOnScroll>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           {/* feature zone: monthly cost + interactive demo */}
-          <div className="rounded-3xl border border-foreground/10 bg-card p-6 shadow-[0_1px_2px_rgba(22,36,63,0.04),0_10px_26px_-18px_rgba(22,36,63,0.2)] sm:col-span-2 sm:grid sm:grid-cols-[1.1fr_0.9fr] sm:items-center sm:gap-6">
+          <RevealOnScroll className="rounded-3xl border border-foreground/10 bg-card p-6 shadow-[0_1px_2px_rgba(22,36,63,0.04),0_10px_26px_-18px_rgba(22,36,63,0.2)] sm:col-span-2 sm:grid sm:grid-cols-[1.1fr_0.9fr] sm:items-center sm:gap-6">
             <div>
               <ZoneIcon bg="#E4F3EC" color="#2E9E6B">
                 <rect x="3" y="4" width="18" height="17" rx="2" />
@@ -103,12 +104,14 @@ export function LandingZones() {
               </div>
             </div>
             <div className="mt-5 sm:mt-0">
-              <LandingMonthlyDemoStatic />
+              <LandingMonthlyDemo />
             </div>
-          </div>
+          </RevealOnScroll>
 
           {ZONES.map((z) => (
-            <ZoneCard key={z.title} zone={z} />
+            <RevealOnScroll key={z.title}>
+              <ZoneCard zone={z} />
+            </RevealOnScroll>
           ))}
         </div>
       </div>

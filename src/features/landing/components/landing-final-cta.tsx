@@ -1,13 +1,14 @@
 import Link from "next/link";
 
 import { BrandMark } from "./brand-mark";
+import { RevealOnScroll } from "./reveal-on-scroll";
 
 export function LandingFinalCta() {
   return (
     <>
       <section className="pb-3">
         <div className="mx-auto max-w-[1140px] px-6">
-          <div className="mx-auto max-w-[640px] py-4 text-center">
+          <RevealOnScroll className="mx-auto max-w-[640px] py-4 text-center">
             <h2 className="mx-auto mb-2.5 max-w-[22ch] text-[clamp(25px,3.1vw,34px)] font-bold leading-[1.22] tracking-[-0.01em]">
               อยากลองคุมเงินแบบเห็นภาพไหม
             </h2>
@@ -28,7 +29,7 @@ export function LandingFinalCta() {
                 เข้าสู่ระบบ
               </Link>
             </div>
-          </div>
+          </RevealOnScroll>
         </div>
       </section>
 

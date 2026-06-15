@@ -1,10 +1,12 @@
 import { FRIEND_STEPS } from "../constants";
 
+import { RevealOnScroll } from "./reveal-on-scroll";
+
 export function LandingFriendSteps() {
   return (
     <section className="pb-14 sm:pb-[70px]">
       <div className="mx-auto max-w-[1140px] px-6">
-        <div className="relative overflow-hidden rounded-[28px] bg-foreground px-6 py-12 text-background sm:px-12 sm:py-[50px]">
+        <RevealOnScroll className="relative overflow-hidden rounded-[28px] bg-foreground px-6 py-12 text-background sm:px-12 sm:py-[50px]">
           <div className="pointer-events-none absolute -right-24 -top-24 size-[320px] rounded-full bg-[radial-gradient(circle,rgba(46,158,107,0.3),transparent_65%)]" />
           <div className="relative">
             <div className="mb-2.5 text-[13px] font-semibold uppercase tracking-[0.04em] text-[#7FE0C0]">
@@ -31,7 +33,7 @@ export function LandingFriendSteps() {
               ))}
             </div>
           </div>
-        </div>
+        </RevealOnScroll>
       </div>
     </section>
   );
