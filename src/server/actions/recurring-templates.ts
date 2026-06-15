@@ -6,20 +6,20 @@ import { z } from "zod";
 
 import { db } from "@/db";
 import {
-  SUBSCRIPTION_CYCLES,
-  subscriptionTemplates,
-  type SubscriptionTemplate,
+  CYCLE_TYPES,
+  recurringTemplates,
+  type RecurringTemplate,
 } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
 
-const PAGE_PATH = "/subscription";
+const PAGE_PATH = "/recurring";
 
 const amountSchema = z
   .string()
   .regex(/^\d+(\.\d{1,2})?$/, "amount must be a number with up to 2 decimals");
 
 const idSchema = z.string().uuid();
-const cycleSchema = z.enum(SUBSCRIPTION_CYCLES);
+const cycleSchema = z.enum(CYCLE_TYPES);
 const renewDateSchema = z
   .string()
   .regex(/^\d{4}-\d{2}-\d{2}$/, "renew_date must be YYYY-MM-DD")
@@ -28,18 +28,18 @@ const renewDateSchema = z
 const upsertSchema = z.object({
   name: z.string().trim().min(1).max(120),
   categoryId: z.string().trim().min(1),
-  defaultAmount: amountSchema,
+  defaultAmount: amountSchema.nullable(),
   billingCycle: cycleSchema,
   renewDate: renewDateSchema,
 });
 
-export async function createSubscriptionTemplate(
+export async function createRecurringTemplate(
   input: z.infer<typeof upsertSchema>
-): Promise<SubscriptionTemplate> {
+): Promise<RecurringTemplate> {
   const parsed = upsertSchema.parse(input);
   const user = await getCurrentUser();
   const [row] = await db
-    .insert(subscriptionTemplates)
+    .insert(recurringTemplates)
     .values({
       userId: user.id,
       categoryId: parsed.categoryId,
@@ -53,15 +53,15 @@ export async function createSubscriptionTemplate(
   return row;
 }
 
-export async function updateSubscriptionTemplate(
+export async function updateRecurringTemplate(
   id: string,
   input: z.infer<typeof upsertSchema>
-): Promise<SubscriptionTemplate> {
+): Promise<RecurringTemplate> {
   const parsedId = idSchema.parse(id);
   const parsed = upsertSchema.parse(input);
   const user = await getCurrentUser();
   const [row] = await db
-    .update(subscriptionTemplates)
+    .update(recurringTemplates)
     .set({
       categoryId: parsed.categoryId,
       name: parsed.name,
@@ -72,8 +72,8 @@ export async function updateSubscriptionTemplate(
     })
     .where(
       and(
-        eq(subscriptionTemplates.id, parsedId),
-        eq(subscriptionTemplates.userId, user.id)
+        eq(recurringTemplates.id, parsedId),
+        eq(recurringTemplates.userId, user.id)
       )
     )
     .returning();
@@ -82,19 +82,19 @@ export async function updateSubscriptionTemplate(
   return row;
 }
 
-export async function toggleSubscriptionTemplateActive(
+export async function toggleRecurringTemplateActive(
   id: string,
   active: boolean
-): Promise<SubscriptionTemplate> {
+): Promise<RecurringTemplate> {
   const parsedId = idSchema.parse(id);
   const user = await getCurrentUser();
   const [row] = await db
-    .update(subscriptionTemplates)
+    .update(recurringTemplates)
     .set({ active, updatedAt: new Date() })
     .where(
       and(
-        eq(subscriptionTemplates.id, parsedId),
-        eq(subscriptionTemplates.userId, user.id)
+        eq(recurringTemplates.id, parsedId),
+        eq(recurringTemplates.userId, user.id)
       )
     )
     .returning();
@@ -103,15 +103,38 @@ export async function toggleSubscriptionTemplateActive(
   return row;
 }
 
-export async function deleteSubscriptionTemplate(id: string): Promise<void> {
+export async function updateRecurringTemplateDefaultAmount(
+  id: string,
+  defaultAmount: string | null
+): Promise<RecurringTemplate> {
+  const parsedId = idSchema.parse(id);
+  const parsedAmount =
+    defaultAmount === null ? null : amountSchema.parse(defaultAmount);
+  const user = await getCurrentUser();
+  const [row] = await db
+    .update(recurringTemplates)
+    .set({ defaultAmount: parsedAmount, updatedAt: new Date() })
+    .where(
+      and(
+        eq(recurringTemplates.id, parsedId),
+        eq(recurringTemplates.userId, user.id)
+      )
+    )
+    .returning();
+  if (!row) throw new Error("template not found");
+  revalidatePath(PAGE_PATH);
+  return row;
+}
+
+export async function deleteRecurringTemplate(id: string): Promise<void> {
   const parsedId = idSchema.parse(id);
   const user = await getCurrentUser();
   await db
-    .delete(subscriptionTemplates)
+    .delete(recurringTemplates)
     .where(
       and(
-        eq(subscriptionTemplates.id, parsedId),
-        eq(subscriptionTemplates.userId, user.id)
+        eq(recurringTemplates.id, parsedId),
+        eq(recurringTemplates.userId, user.id)
       )
     );
   revalidatePath(PAGE_PATH);

@@ -6,13 +6,14 @@ import { z } from "zod";
 
 import { db } from "@/db";
 import {
-  fixedCostTemplates,
   ledgerEntries,
+  recurringTemplates,
   type LedgerEntry,
 } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
 
-const PAGE_PATH = "/monthly-cost";
+const PAGE_PATH = "/recurring";
+const SOURCE_TYPE = "recurring_template";
 
 const amountSchema = z
   .string()
@@ -22,39 +23,7 @@ const idSchema = z.string().uuid();
 const yearSchema = z.number().int().min(1970).max(9999);
 const monthSchema = z.number().int().min(1).max(12);
 
-const createSchema = z.object({
-  name: z.string().trim().min(1).max(120),
-  categoryId: z.string().trim().min(1),
-  amount: amountSchema.nullable(),
-  year: yearSchema,
-  month: monthSchema,
-});
-
-export async function createLedgerEntry(
-  input: z.infer<typeof createSchema>
-): Promise<LedgerEntry> {
-  const parsed = createSchema.parse(input);
-  const user = await getCurrentUser();
-  const [row] = await db
-    .insert(ledgerEntries)
-    .values({
-      userId: user.id,
-      categoryId: parsed.categoryId,
-      sourceType: null,
-      sourceId: null,
-      type: "ONE_TIME_COST",
-      name: parsed.name,
-      amount: parsed.amount,
-      year: parsed.year,
-      month: parsed.month,
-      paid: false,
-    })
-    .returning();
-  revalidatePath(PAGE_PATH);
-  return row;
-}
-
-export async function toggleLedgerEntryPaid(
+export async function toggleRecurringPaid(
   id: string,
   paid: boolean
 ): Promise<LedgerEntry> {
@@ -68,7 +37,11 @@ export async function toggleLedgerEntryPaid(
       updatedAt: new Date(),
     })
     .where(
-      and(eq(ledgerEntries.id, parsedId), eq(ledgerEntries.userId, user.id))
+      and(
+        eq(ledgerEntries.id, parsedId),
+        eq(ledgerEntries.userId, user.id),
+        eq(ledgerEntries.sourceType, SOURCE_TYPE)
+      )
     )
     .returning();
   if (!row) throw new Error("entry not found");
@@ -76,7 +49,7 @@ export async function toggleLedgerEntryPaid(
   return row;
 }
 
-export async function updateLedgerEntryAmount(
+export async function updateRecurringAmount(
   id: string,
   amount: string | null
 ): Promise<LedgerEntry> {
@@ -87,7 +60,11 @@ export async function updateLedgerEntryAmount(
     .update(ledgerEntries)
     .set({ amount: parsedAmount, updatedAt: new Date() })
     .where(
-      and(eq(ledgerEntries.id, parsedId), eq(ledgerEntries.userId, user.id))
+      and(
+        eq(ledgerEntries.id, parsedId),
+        eq(ledgerEntries.userId, user.id),
+        eq(ledgerEntries.sourceType, SOURCE_TYPE)
+      )
     )
     .returning();
   if (!row) throw new Error("entry not found");
@@ -95,8 +72,8 @@ export async function updateLedgerEntryAmount(
   return row;
 }
 
-// client เรียกผ่าน server action ตอนเปลี่ยนเดือน — ไม่ revalidate (client เก็บ cache เอง)
-export async function fetchFixCostEntriesByMonth(
+// client เรียกตอนเปลี่ยนเดือน — ไม่ revalidate (client เก็บ cache เอง)
+export async function fetchRecurringEntriesByMonth(
   year: number,
   month: number
 ): Promise<LedgerEntry[]> {
@@ -111,25 +88,31 @@ export async function fetchFixCostEntriesByMonth(
         eq(ledgerEntries.userId, user.id),
         eq(ledgerEntries.year, parsedYear),
         eq(ledgerEntries.month, parsedMonth),
-        inArray(ledgerEntries.type, ["FIXED_COST", "ONE_TIME_COST"])
+        eq(ledgerEntries.type, "FIXED_COST"),
+        eq(ledgerEntries.sourceType, SOURCE_TYPE)
       )
     )
     .orderBy(asc(ledgerEntries.createdAt));
 }
 
-export async function deleteLedgerEntry(id: string): Promise<void> {
+export async function deleteRecurringLedger(id: string): Promise<void> {
   const parsedId = idSchema.parse(id);
   const user = await getCurrentUser();
   await db
     .delete(ledgerEntries)
     .where(
-      and(eq(ledgerEntries.id, parsedId), eq(ledgerEntries.userId, user.id))
+      and(
+        eq(ledgerEntries.id, parsedId),
+        eq(ledgerEntries.userId, user.id),
+        eq(ledgerEntries.sourceType, SOURCE_TYPE)
+      )
     );
   revalidatePath(PAGE_PATH);
 }
 
-// import template ที่เลือกเข้าเดือนนั้น · skip template ที่มี ledger row อยู่แล้ว (เทียบจาก sourceId)
-export async function importFixCostTemplatesToMonth(
+// import template ที่เลือกเข้าเดือนนั้น · ทุก row ลง type=FIXED_COST + source_type='recurring_template'
+// กันดึงซ้ำ: เช็คก่อนว่า (source_type, source_id, year, month) มีอยู่หรือยัง
+export async function importRecurringToMonth(
   templateIds: string[],
   year: number,
   month: number
@@ -142,11 +125,11 @@ export async function importFixCostTemplatesToMonth(
   const [templates, existing] = await Promise.all([
     db
       .select()
-      .from(fixedCostTemplates)
+      .from(recurringTemplates)
       .where(
         and(
-          eq(fixedCostTemplates.userId, user.id),
-          inArray(fixedCostTemplates.id, parsedIds)
+          eq(recurringTemplates.userId, user.id),
+          inArray(recurringTemplates.id, parsedIds)
         )
       ),
     db
@@ -157,8 +140,7 @@ export async function importFixCostTemplatesToMonth(
           eq(ledgerEntries.userId, user.id),
           eq(ledgerEntries.year, parsedYear),
           eq(ledgerEntries.month, parsedMonth),
-          eq(ledgerEntries.type, "FIXED_COST"),
-          eq(ledgerEntries.sourceType, "fixed_cost_template")
+          eq(ledgerEntries.sourceType, SOURCE_TYPE)
         )
       ),
   ]);
@@ -172,7 +154,7 @@ export async function importFixCostTemplatesToMonth(
     .map((t) => ({
       userId: user.id,
       categoryId: t.categoryId,
-      sourceType: "fixed_cost_template",
+      sourceType: SOURCE_TYPE,
       sourceId: t.id,
       type: "FIXED_COST" as const,
       name: t.name,

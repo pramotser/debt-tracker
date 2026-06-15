@@ -1,5 +1,5 @@
 // Design tokens สถานะรวมทั้งโปรเจ็กต์
-// — paid/due ใช้ทุก list รายการจ่าย (monthly-cost / subscription / credit-cards statement)
+// — paid/due ใช้ทุก list รายการจ่าย (recurring / credit-cards statement)
 // — active/nearEnd/settle/off ใช้กับแผนผ่อน + การ์ดบัตรเครดิต
 
 export type StatusKey =

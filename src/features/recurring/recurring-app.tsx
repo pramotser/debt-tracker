@@ -20,47 +20,63 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  deleteSubscriptionLedger,
-  fetchSubscriptionEntriesByMonth,
-  importSubscriptionsToMonth,
-  toggleSubscriptionPaid,
-  updateSubscriptionAmount,
-} from "@/server/actions/subscription-ledger";
-import {
-  createSubscriptionTemplate,
-  deleteSubscriptionTemplate,
-  toggleSubscriptionTemplateActive,
-  updateSubscriptionTemplate,
-} from "@/server/actions/subscription-templates";
+import { formatMoney } from "@/lib/format";
 import { shiftMonth, ymKey } from "@/lib/month";
+import {
+  deleteRecurringLedger,
+  fetchRecurringEntriesByMonth,
+  importRecurringToMonth,
+  toggleRecurringPaid,
+  updateRecurringAmount,
+} from "@/server/actions/recurring-ledger";
+import {
+  createRecurringTemplate,
+  deleteRecurringTemplate,
+  toggleRecurringTemplateActive,
+  updateRecurringTemplate,
+  updateRecurringTemplateDefaultAmount,
+} from "@/server/actions/recurring-templates";
 
 import { ImportModal } from "./import-modal";
-import { MonthView } from "./month-view";
-import { TemplateDialog, type TemplateDraft } from "./template-dialog";
+import { MonthView, type AmountEditRequest } from "./month-view";
+import {
+  TemplateDialog,
+  type RecurringTemplateDraft,
+} from "./template-dialog";
 import { TemplateView } from "./template-view";
 import type {
   Category,
   LedgerEntry,
-  SubscriptionTemplate,
+  RecurringTemplate,
   YearMonth,
 } from "./types";
 
-export function SubscriptionApp({
+type PendingAmountEdit = AmountEditRequest & { currentAmount: string | null };
+
+export function RecurringApp({
   initialTemplates,
   initialEntries,
   categories,
   ym: initialYm,
 }: {
-  initialTemplates: SubscriptionTemplate[];
+  initialTemplates: RecurringTemplate[];
   initialEntries: LedgerEntry[];
   categories: Category[];
   ym: YearMonth;
 }) {
   const [ym, setYm] = useState<YearMonth>(initialYm);
   const [templates, setTemplates] =
-    useState<SubscriptionTemplate[]>(initialTemplates);
+    useState<RecurringTemplate[]>(initialTemplates);
   const [entries, setEntries] = useState<LedgerEntry[]>(initialEntries);
   const [, startMutation] = useTransition();
   const [isMonthLoading, startMonthChange] = useTransition();
@@ -89,7 +105,7 @@ export function SubscriptionApp({
 
   const [templateDialogOpen, setTemplateDialogOpen] = useState(false);
   const [editingTemplate, setEditingTemplate] =
-    useState<SubscriptionTemplate | null>(null);
+    useState<RecurringTemplate | null>(null);
   const [importOpen, setImportOpen] = useState(false);
   const [dismissedMonths, setDismissedMonths] = useState<Set<string>>(
     () => new Set()
@@ -100,6 +116,8 @@ export function SubscriptionApp({
   const [pendingDeleteLedgerId, setPendingDeleteLedgerId] = useState<
     string | null
   >(null);
+  const [pendingAmountEdit, setPendingAmountEdit] =
+    useState<PendingAmountEdit | null>(null);
 
   const navigateMonth = (delta: number) => {
     const next = shiftMonth(ym, delta);
@@ -117,10 +135,7 @@ export function SubscriptionApp({
     setEntries([]);
     startMonthChange(async () => {
       try {
-        const rows = await fetchSubscriptionEntriesByMonth(
-          next.year,
-          next.month
-        );
+        const rows = await fetchRecurringEntriesByMonth(next.year, next.month);
         monthCacheRef.current.set(key, rows);
         if (
           ymRef.current.year === next.year &&
@@ -130,7 +145,7 @@ export function SubscriptionApp({
         }
       } catch (err) {
         toast.error("โหลดเดือนไม่สำเร็จ");
-        console.error("fetchSubscriptionEntriesByMonth failed", err);
+        console.error("fetchRecurringEntriesByMonth failed", err);
       }
     });
   };
@@ -144,7 +159,7 @@ export function SubscriptionApp({
   const pendingTemplates = useMemo(() => {
     const usedSourceIds = new Set(
       entries
-        .filter((e) => e.sourceType === "subscription_template")
+        .filter((e) => e.sourceType === "recurring_template")
         .map((e) => e.sourceId)
         .filter((v): v is string => v !== null)
     );
@@ -176,10 +191,10 @@ export function SubscriptionApp({
     );
     startMutation(async () => {
       try {
-        await toggleSubscriptionPaid(id, next);
+        await toggleRecurringPaid(id, next);
       } catch (err) {
         toast.error("บันทึกไม่สำเร็จ");
-        console.error("toggleSubscriptionPaid failed", err);
+        console.error("toggleRecurringPaid failed", err);
         mutateCurrentMonth((p) =>
           p.map((e) =>
             e.id === id
@@ -191,23 +206,76 @@ export function SubscriptionApp({
     });
   };
 
-  const handleUpdateAmount = (id: string, amount: string) => {
+  const commitLedgerAmount = (id: string, nextAmount: string | null) => {
     const prev = entries.find((e) => e.id === id);
     if (!prev) return;
     mutateCurrentMonth((p) =>
-      p.map((e) => (e.id === id ? { ...e, amount } : e))
+      p.map((e) => (e.id === id ? { ...e, amount: nextAmount } : e))
     );
     startMutation(async () => {
       try {
-        await updateSubscriptionAmount(id, amount);
+        await updateRecurringAmount(id, nextAmount);
       } catch (err) {
         toast.error("บันทึกไม่สำเร็จ");
-        console.error("updateSubscriptionAmount failed", err);
+        console.error("updateRecurringAmount failed", err);
         mutateCurrentMonth((p) =>
           p.map((e) => (e.id === id ? { ...e, amount: prev.amount } : e))
         );
       }
     });
+  };
+
+  const commitTemplateDefaultAmount = (
+    id: string,
+    nextAmount: string | null
+  ) => {
+    const target = templates.find((t) => t.id === id);
+    if (!target) return;
+    const prevAmount = target.defaultAmount;
+    setTemplates((p) =>
+      p.map((t) => (t.id === id ? { ...t, defaultAmount: nextAmount } : t))
+    );
+    startMutation(async () => {
+      try {
+        await updateRecurringTemplateDefaultAmount(id, nextAmount);
+      } catch (err) {
+        toast.error("อัปเดต template ไม่สำเร็จ");
+        console.error("updateRecurringTemplateDefaultAmount failed", err);
+        setTemplates((p) =>
+          p.map((t) =>
+            t.id === id ? { ...t, defaultAmount: prevAmount } : t
+          )
+        );
+      }
+    });
+  };
+
+  // 3-way confirm: template มียอดตั้งไว้ → ถามก่อนแก้
+  // template ไม่มียอด / ไม่มี template → save ทันที
+  const handleRequestEditAmount = (req: AmountEditRequest) => {
+    const target = entries.find((e) => e.id === req.ledgerId);
+    if (!target) return;
+    if (!req.templateHasAmount || !req.templateId) {
+      commitLedgerAmount(req.ledgerId, req.nextAmount);
+      return;
+    }
+    setPendingAmountEdit({ ...req, currentAmount: target.amount });
+  };
+
+  const applyAmountEditMonthOnly = () => {
+    if (!pendingAmountEdit) return;
+    commitLedgerAmount(pendingAmountEdit.ledgerId, pendingAmountEdit.nextAmount);
+    setPendingAmountEdit(null);
+  };
+
+  const applyAmountEditAlsoTemplate = () => {
+    if (!pendingAmountEdit || !pendingAmountEdit.templateId) return;
+    commitLedgerAmount(pendingAmountEdit.ledgerId, pendingAmountEdit.nextAmount);
+    commitTemplateDefaultAmount(
+      pendingAmountEdit.templateId,
+      pendingAmountEdit.nextAmount
+    );
+    setPendingAmountEdit(null);
   };
 
   const confirmDeleteLedger = () => {
@@ -218,10 +286,10 @@ export function SubscriptionApp({
     setPendingDeleteLedgerId(null);
     startMutation(async () => {
       try {
-        await deleteSubscriptionLedger(id);
+        await deleteRecurringLedger(id);
       } catch (err) {
         toast.error("บันทึกไม่สำเร็จ");
-        console.error("deleteSubscriptionLedger failed", err);
+        console.error("deleteRecurringLedger failed", err);
         if (prev) mutateCurrentMonth((p) => [...p, prev]);
       }
     });
@@ -232,7 +300,7 @@ export function SubscriptionApp({
     if (templateIds.length === 0) return;
     startMutation(async () => {
       try {
-        const added = await importSubscriptionsToMonth(
+        const added = await importRecurringToMonth(
           templateIds,
           ym.year,
           ym.month
@@ -240,13 +308,13 @@ export function SubscriptionApp({
         mutateCurrentMonth((p) => [...p, ...added]);
       } catch (err) {
         toast.error("บันทึกไม่สำเร็จ");
-        console.error("importSubscriptionsToMonth failed", err);
+        console.error("importRecurringToMonth failed", err);
       }
     });
   };
 
   // === template mutations ===
-  const handleSubmitTemplate = (d: TemplateDraft) => {
+  const handleSubmitTemplate = (d: RecurringTemplateDraft) => {
     if (editingTemplate) {
       const id = editingTemplate.id;
       const prev = editingTemplate;
@@ -268,11 +336,11 @@ export function SubscriptionApp({
       setEditingTemplate(null);
       startMutation(async () => {
         try {
-          const row = await updateSubscriptionTemplate(id, d);
+          const row = await updateRecurringTemplate(id, d);
           setTemplates((p) => p.map((t) => (t.id === id ? row : t)));
         } catch (err) {
           toast.error("บันทึกไม่สำเร็จ");
-          console.error("updateSubscriptionTemplate failed", err);
+          console.error("updateRecurringTemplate failed", err);
           setTemplates((p) => p.map((t) => (t.id === id ? prev : t)));
         }
       });
@@ -282,7 +350,7 @@ export function SubscriptionApp({
     // create
     const tempId = `tmp-${Date.now()}`;
     const now = new Date();
-    const optimistic: SubscriptionTemplate = {
+    const optimistic: RecurringTemplate = {
       id: tempId,
       userId: "",
       categoryId: d.categoryId,
@@ -297,11 +365,11 @@ export function SubscriptionApp({
     setTemplates((p) => [...p, optimistic]);
     startMutation(async () => {
       try {
-        const row = await createSubscriptionTemplate(d);
+        const row = await createRecurringTemplate(d);
         setTemplates((p) => p.map((t) => (t.id === tempId ? row : t)));
       } catch (err) {
         toast.error("บันทึกไม่สำเร็จ");
-        console.error("createSubscriptionTemplate failed", err);
+        console.error("createRecurringTemplate failed", err);
         setTemplates((p) => p.filter((t) => t.id !== tempId));
       }
     });
@@ -316,10 +384,10 @@ export function SubscriptionApp({
     );
     startMutation(async () => {
       try {
-        await toggleSubscriptionTemplateActive(id, next);
+        await toggleRecurringTemplateActive(id, next);
       } catch (err) {
         toast.error("บันทึกไม่สำเร็จ");
-        console.error("toggleSubscriptionTemplateActive failed", err);
+        console.error("toggleRecurringTemplateActive failed", err);
         setTemplates((p) =>
           p.map((t) => (t.id === id ? { ...t, active: !next } : t))
         );
@@ -335,10 +403,10 @@ export function SubscriptionApp({
     setPendingDeleteTemplateId(null);
     startMutation(async () => {
       try {
-        await deleteSubscriptionTemplate(id);
+        await deleteRecurringTemplate(id);
       } catch (err) {
         toast.error("บันทึกไม่สำเร็จ");
-        console.error("deleteSubscriptionTemplate failed", err);
+        console.error("deleteRecurringTemplate failed", err);
         if (prev) setTemplates((p) => [...p, prev]);
       }
     });
@@ -351,10 +419,13 @@ export function SubscriptionApp({
     (e) => e.id === pendingDeleteLedgerId
   );
 
+  const formatAmountLabel = (amount: string | null) =>
+    amount === null ? "(ไม่ตั้งยอด)" : formatMoney(amount);
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold">สมาชิก/บริการ</h1>
+        <h1 className="text-2xl font-bold">รายการประจำ</h1>
       </div>
 
       <Tabs defaultValue="month">
@@ -366,13 +437,13 @@ export function SubscriptionApp({
             value="month"
             className="-mb-px flex-none rounded-none border-0 border-b-2 border-transparent bg-transparent px-0 pt-2 pb-3 text-sm font-medium text-muted-foreground after:hidden data-active:border-primary! data-active:bg-transparent! data-active:font-semibold data-active:text-primary!"
           >
-            รายการจ่ายรายเดือน
+            รายการเดือนนี้
           </TabsTrigger>
           <TabsTrigger
             value="tpl"
             className="-mb-px flex-none rounded-none border-0 border-b-2 border-transparent bg-transparent px-0 pt-2 pb-3 text-sm font-medium text-muted-foreground after:hidden data-active:border-primary! data-active:bg-transparent! data-active:font-semibold data-active:text-primary!"
           >
-            รายการสมัคร
+            ตั้งค่ารายการประจำ
           </TabsTrigger>
         </TabsList>
 
@@ -396,7 +467,7 @@ export function SubscriptionApp({
               })
             }
             onTogglePaid={handleTogglePaid}
-            onUpdateAmount={handleUpdateAmount}
+            onRequestEditAmount={handleRequestEditAmount}
             onDelete={(id) => setPendingDeleteLedgerId(id)}
           />
         </TabsContent>
@@ -446,9 +517,9 @@ export function SubscriptionApp({
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>ลบบริการ?</AlertDialogTitle>
+            <AlertDialogTitle>ลบรายการประจำ?</AlertDialogTitle>
             <AlertDialogDescription>
-              ลบ &quot;{pendingDeleteTemplate?.name}&quot; ออกจากรายการสมัคร
+              ลบ &quot;{pendingDeleteTemplate?.name}&quot; ออกจากรายการประจำ
               รายการที่เคยดึงเข้าเดือนแล้วจะไม่ถูกลบ
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -480,6 +551,44 @@ export function SubscriptionApp({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog
+        open={pendingAmountEdit !== null}
+        onOpenChange={(o) => !o && setPendingAmountEdit(null)}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>แก้ยอดเดือนนี้ — อัปเดต template ด้วยมั้ย?</DialogTitle>
+            <DialogDescription>
+              {pendingAmountEdit
+                ? `ยอดเดิม ${formatAmountLabel(pendingAmountEdit.currentAmount)} → ยอดใหม่ ${formatAmountLabel(pendingAmountEdit.nextAmount)}`
+                : null}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex-col gap-2 sm:flex-col sm:gap-2">
+            <Button
+              className="w-full"
+              onClick={applyAmountEditMonthOnly}
+            >
+              แก้เฉพาะเดือนนี้
+            </Button>
+            <Button
+              className="w-full"
+              variant="secondary"
+              onClick={applyAmountEditAlsoTemplate}
+            >
+              อัปเดต template ด้วย
+            </Button>
+            <Button
+              className="w-full"
+              variant="ghost"
+              onClick={() => setPendingAmountEdit(null)}
+            >
+              ยกเลิก
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

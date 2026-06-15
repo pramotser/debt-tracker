@@ -1,7 +1,7 @@
-import { SubscriptionApp } from "@/features/subscription/subscription-app";
+import { RecurringApp } from "@/features/recurring/recurring-app";
 import { getCategories } from "@/server/queries/categories";
-import { listSubscriptionEntriesByMonth } from "@/server/queries/ledger-entries";
-import { listSubscriptionTemplates } from "@/server/queries/subscription-templates";
+import { listRecurringEntriesByMonth } from "@/server/queries/ledger-entries";
+import { listRecurringTemplates } from "@/server/queries/recurring-templates";
 
 function parseYm(searchParams: Record<string, string | string[] | undefined>) {
   const yRaw = Array.isArray(searchParams.y) ? searchParams.y[0] : searchParams.y;
@@ -20,7 +20,7 @@ function parseYm(searchParams: Record<string, string | string[] | undefined>) {
   return { year, month };
 }
 
-export default async function SubscriptionPage({
+export default async function RecurringPage({
   searchParams,
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -28,12 +28,12 @@ export default async function SubscriptionPage({
   const sp = await searchParams;
   const ym = parseYm(sp);
   const [templates, entries, categories] = await Promise.all([
-    listSubscriptionTemplates(),
-    listSubscriptionEntriesByMonth(ym.year, ym.month),
+    listRecurringTemplates(),
+    listRecurringEntriesByMonth(ym.year, ym.month),
     getCategories(),
   ]);
   return (
-    <SubscriptionApp
+    <RecurringApp
       initialTemplates={templates}
       initialEntries={entries}
       categories={categories}
