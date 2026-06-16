@@ -154,20 +154,22 @@ export function AddItemDialog({
       เพิ่มรายการ
     </span>
   );
-  const descriptionText = "รายการครั้งเดียวสำหรับเดือนนี้ — จำนวนเงินใส่ทีหลังได้";
 
   if (isMobile) {
     return (
       <Sheet open={open} onOpenChange={onOpenChange}>
         <SheetContent
           side="bottom"
-          className="max-h-[90dvh] rounded-t-2xl px-5 pt-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]"
+          showCloseButton={false}
+          className="max-h-[85dvh] gap-5 rounded-t-2xl px-5 pt-1 pb-[max(1.5rem,env(safe-area-inset-bottom))]"
         >
-          <SheetHeader className="px-0 pt-0">
-            <SheetTitle>{titleNode}</SheetTitle>
-            <SheetDescription>{descriptionText}</SheetDescription>
+          <SheetHeader className="gap-1 px-0 pt-2 pb-0">
+            <SheetTitle className="text-lg">{titleNode}</SheetTitle>
+            <SheetDescription className="text-xs">
+              รายการครั้งเดียว · ใส่ยอดทีหลังได้
+            </SheetDescription>
           </SheetHeader>
-          <div className="flex-1 overflow-y-auto">
+          <div className="-mx-3 flex-1 overflow-y-auto px-3">
             <ItemFormFields
               name={name}
               setName={setName}
@@ -179,21 +181,21 @@ export function AddItemDialog({
               idPrefix="item-m"
             />
           </div>
-          <SheetFooter className="flex-col gap-2 px-0 pb-0">
+          <SheetFooter className="gap-1 px-0 pb-0">
             <Button
               onClick={handleSubmit}
               disabled={!canSubmit}
-              className="h-11 w-full"
+              className="h-12 w-full text-base"
             >
               บันทึก
             </Button>
-            <Button
-              variant="ghost"
+            <button
+              type="button"
               onClick={() => onOpenChange(false)}
-              className="h-11 w-full"
+              className="mx-auto py-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
             >
               ยกเลิก
-            </Button>
+            </button>
           </SheetFooter>
         </SheetContent>
       </Sheet>
@@ -205,9 +207,11 @@ export function AddItemDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{titleNode}</DialogTitle>
-          <DialogDescription>{descriptionText}</DialogDescription>
+          <DialogDescription>
+            รายการครั้งเดียวสำหรับเดือนนี้ — จำนวนเงินใส่ทีหลังได้
+          </DialogDescription>
         </DialogHeader>
-        <div className="max-h-[70vh] overflow-y-auto">
+        <div className="-mx-3 max-h-[70vh] overflow-y-auto px-3">
           <ItemFormFields
             name={name}
             setName={setName}

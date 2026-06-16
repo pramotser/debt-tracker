@@ -148,7 +148,7 @@ const CategoryOption = function CategoryOption({
           <Check className="h-[10px] w-[10px] text-white" strokeWidth={3} />
         </span>
       </span>
-      <span className="line-clamp-2 text-center text-[11px] leading-tight">
+      <span className="line-clamp-2 text-center text-[11px] leading-snug">
         {category.name}
       </span>
     </button>

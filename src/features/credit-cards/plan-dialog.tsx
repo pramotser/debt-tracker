@@ -514,7 +514,7 @@ export function PlanDialog({
             <SheetTitle>{titleNode}</SheetTitle>
             <SheetDescription>{descriptionText}</SheetDescription>
           </SheetHeader>
-          <div className="flex-1 overflow-y-auto">
+          <div className="-mx-3 flex-1 overflow-y-auto px-3">
             <PlanFormFields {...formState} />
           </div>
           <SheetFooter className="flex-col gap-2 px-0 pb-0">
@@ -545,7 +545,7 @@ export function PlanDialog({
           <DialogTitle>{titleNode}</DialogTitle>
           <DialogDescription>{descriptionText}</DialogDescription>
         </DialogHeader>
-        <div className="max-h-[70vh] overflow-y-auto">
+        <div className="-mx-3 max-h-[70vh] overflow-y-auto px-3">
           <PlanFormFields {...formState} />
         </div>
         <DialogFooter>

@@ -334,7 +334,7 @@ export function CardDialog({
             <SheetTitle>{titleNode}</SheetTitle>
             <SheetDescription>{descriptionText}</SheetDescription>
           </SheetHeader>
-          <div className="flex-1 overflow-y-auto">
+          <div className="-mx-3 flex-1 overflow-y-auto px-3">
             <CardFormFields
               banks={banks}
               name={name}
