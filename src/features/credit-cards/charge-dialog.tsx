@@ -214,7 +214,7 @@ export function ChargeDialog({
             <SheetTitle>{titleNode}</SheetTitle>
             <SheetDescription>{descriptionText}</SheetDescription>
           </SheetHeader>
-          <div className="flex-1 overflow-y-auto">
+          <div className="-mx-3 flex-1 overflow-y-auto px-3">
             <ChargeFormFields
               cardId={cardId}
               setCardId={setCardId}
@@ -257,7 +257,7 @@ export function ChargeDialog({
           <DialogTitle>{titleNode}</DialogTitle>
           <DialogDescription>{descriptionText}</DialogDescription>
         </DialogHeader>
-        <div className="max-h-[70vh] overflow-y-auto">
+        <div className="-mx-3 max-h-[70vh] overflow-y-auto px-3">
           <ChargeFormFields
             cardId={cardId}
             setCardId={setCardId}
