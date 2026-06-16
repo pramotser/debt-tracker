@@ -7,7 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 export default function Loading() {
   return (
     <div className="flex flex-col gap-4" aria-busy aria-live="polite">
-      <h1 className="text-2xl font-bold">รายการประจำ</h1>
+      <h1 className="text-2xl font-bold">รายการค่าใช้จ่าย</h1>
 
       {/* tabs */}
       <div className="flex gap-6 border-b border-border pb-3">
