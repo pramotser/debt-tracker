@@ -41,11 +41,14 @@ function SheetContent({
   children,
   side = "right",
   showCloseButton = true,
+  showGrabHandle,
   ...props
 }: SheetPrimitive.Popup.Props & {
   side?: "top" | "right" | "bottom" | "left"
   showCloseButton?: boolean
+  showGrabHandle?: boolean
 }) {
+  const renderGrabHandle = showGrabHandle ?? side === "bottom"
   return (
     <SheetPortal>
       <SheetOverlay />
@@ -58,6 +61,13 @@ function SheetContent({
         )}
         {...props}
       >
+        {renderGrabHandle && (
+          <div
+            aria-hidden
+            data-slot="sheet-grab-handle"
+            className="mx-auto mt-2 h-1 w-9 shrink-0 rounded-full bg-muted-foreground/30"
+          />
+        )}
         {children}
         {showCloseButton && (
           <SheetPrimitive.Close
