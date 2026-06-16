@@ -1,6 +1,6 @@
 "use server";
 
-import { and, asc, eq, inArray } from "drizzle-orm";
+import { and, asc, eq, inArray, isNull, or } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
@@ -15,10 +15,25 @@ import { getCurrentUser } from "@/lib/auth";
 const PAGE_PATH = "/recurring";
 const SOURCE_TYPE = "recurring_template";
 
+// scope ของหน้านี้ = ทั้ง template-imported (FIXED_COST + source=recurring_template)
+// และ ad-hoc one-time entry (ONE_TIME_COST + source=null)
+const pageScope = or(
+  and(
+    eq(ledgerEntries.type, "FIXED_COST"),
+    eq(ledgerEntries.sourceType, SOURCE_TYPE)
+  ),
+  and(
+    eq(ledgerEntries.type, "ONE_TIME_COST"),
+    isNull(ledgerEntries.sourceType)
+  )
+);
+
 const amountSchema = z
   .string()
   .regex(/^\d+(\.\d{1,2})?$/, "amount must be a number with up to 2 decimals");
 
+const nameSchema = z.string().trim().min(1).max(120);
+const categoryIdSchema = z.string().trim().min(1);
 const idSchema = z.string().uuid();
 const yearSchema = z.number().int().min(1970).max(9999);
 const monthSchema = z.number().int().min(1).max(12);
@@ -40,7 +55,7 @@ export async function toggleRecurringPaid(
       and(
         eq(ledgerEntries.id, parsedId),
         eq(ledgerEntries.userId, user.id),
-        eq(ledgerEntries.sourceType, SOURCE_TYPE)
+        pageScope
       )
     )
     .returning();
@@ -63,7 +78,7 @@ export async function updateRecurringAmount(
       and(
         eq(ledgerEntries.id, parsedId),
         eq(ledgerEntries.userId, user.id),
-        eq(ledgerEntries.sourceType, SOURCE_TYPE)
+        pageScope
       )
     )
     .returning();
@@ -88,8 +103,7 @@ export async function fetchRecurringEntriesByMonth(
         eq(ledgerEntries.userId, user.id),
         eq(ledgerEntries.year, parsedYear),
         eq(ledgerEntries.month, parsedMonth),
-        eq(ledgerEntries.type, "FIXED_COST"),
-        eq(ledgerEntries.sourceType, SOURCE_TYPE)
+        pageScope
       )
     )
     .orderBy(asc(ledgerEntries.createdAt));
@@ -104,10 +118,44 @@ export async function deleteRecurringLedger(id: string): Promise<void> {
       and(
         eq(ledgerEntries.id, parsedId),
         eq(ledgerEntries.userId, user.id),
-        eq(ledgerEntries.sourceType, SOURCE_TYPE)
+        pageScope
       )
     );
   revalidatePath(PAGE_PATH);
+}
+
+export async function createOneTimeEntry(input: {
+  name: string;
+  categoryId: string;
+  amount: string | null;
+  year: number;
+  month: number;
+}): Promise<LedgerEntry> {
+  const parsedName = nameSchema.parse(input.name);
+  const parsedCategoryId = categoryIdSchema.parse(input.categoryId);
+  const parsedAmount =
+    input.amount === null ? null : amountSchema.parse(input.amount);
+  const parsedYear = yearSchema.parse(input.year);
+  const parsedMonth = monthSchema.parse(input.month);
+  const user = await getCurrentUser();
+  const [row] = await db
+    .insert(ledgerEntries)
+    .values({
+      userId: user.id,
+      categoryId: parsedCategoryId,
+      sourceType: null,
+      sourceId: null,
+      type: "ONE_TIME_COST",
+      name: parsedName,
+      amount: parsedAmount,
+      year: parsedYear,
+      month: parsedMonth,
+      paid: false,
+    })
+    .returning();
+  if (!row) throw new Error("insert failed");
+  revalidatePath(PAGE_PATH);
+  return row;
 }
 
 // import template ที่เลือกเข้าเดือนนั้น · ทุก row ลง type=FIXED_COST + source_type='recurring_template'
