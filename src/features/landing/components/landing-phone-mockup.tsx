@@ -30,7 +30,7 @@ export function LandingPhoneMockup() {
             <h3 className="mb-3 text-[21px] font-bold text-[#16243F]">Dashboard</h3>
 
             <div className="mb-3.5 flex gap-4 border-b border-[#E4EAE7] pb-2.5 text-[12.5px] text-[#8A99AD]">
-              <span>เดือนนี้ต้องจ่ายอะไร</span>
+              <span>เดือนนี้ต้องจ่ายอะไรบ้าง</span>
               <span className="relative font-semibold text-[#16243F]">
                 ภาพรวมรายจ่าย
                 <span className="absolute -bottom-2.5 left-0 right-0 h-[2.5px] rounded-sm bg-[#16243F]" />
@@ -125,7 +125,7 @@ export function LandingPhoneMockup() {
               <rect x="3" y="14" width="7" height="7" rx="1.5" />
               <rect x="14" y="14" width="7" height="7" rx="1.5" />
             </NavItem>
-            <NavItem label="รายการประจำ">
+            <NavItem label="รายการค่าใช้จ่าย">
               <rect x="3" y="4" width="18" height="17" rx="2" />
               <path d="M3 9h18M8 2v4M16 2v4M8 14h4M8 17h6" strokeLinecap="round" />
             </NavItem>
@@ -174,18 +174,18 @@ function NavItem({
 }) {
   return (
     <div
-      className={`flex flex-col items-center gap-1 ${active ? "font-semibold text-[#16243F]" : ""}`}
+      aria-label={label}
+      className={`flex flex-col items-center justify-center ${active ? "text-[#16243F]" : ""}`}
     >
       <svg
         viewBox="0 0 24 24"
         fill="none"
         stroke="currentColor"
         strokeWidth={2}
-        className="size-[17px]"
+        className="size-[22px]"
       >
         {children}
       </svg>
-      {label}
     </div>
   );
 }

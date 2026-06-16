@@ -25,12 +25,16 @@ export const CATEGORY_FLOW = [
 ];
 
 export const INSTALLMENT_DEMO = {
-  name: "iPad",
+  name: "iPad Air",
   card: "UOB Premier",
-  current: 1,
+  cardLast4: "4821",
+  category: { name: "ของใช้ส่วนตัว", bg: "#DBEAFE", fg: "#1E40AF" },
+  paid: 1,
+  current: 2,
   total: 10,
   remaining: 30474,
   monthlyAmount: 3386,
+  expectedEnd: "2027/02",
 };
 
 export const FRIEND_STEPS = [
