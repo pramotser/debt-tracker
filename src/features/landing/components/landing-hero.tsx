@@ -7,18 +7,18 @@ export function LandingHero() {
     <section className="pb-9 pt-10 sm:pb-9 sm:pt-[60px]">
       <div className="mx-auto grid max-w-[1140px] grid-cols-1 items-center gap-10 px-6 sm:grid-cols-[1.02fr_0.98fr] sm:gap-[52px]">
         <div>
-          <span className="mb-5 inline-flex items-center gap-2 rounded-full bg-[#E4F3EC] px-3 py-1.5 text-[13px] font-medium text-[#2E9E6B]">
+          {/* <span className="mb-5 inline-flex items-center gap-2 rounded-full bg-[#E4F3EC] px-3 py-1.5 text-[13px] font-medium text-[#2E9E6B]">
             <span className="size-[7px] rounded-full bg-[#2E9E6B]" />
             แอปไว้ใช้เอง · เปิดให้เพื่อนลอง
-          </span>
+          </span> */}
           <h1 className="mb-4 text-[clamp(32px,4.4vw,50px)] font-bold leading-[1.14] tracking-[-0.01em]">
-            หนี้ ผ่อน บัตร
+            รายจ่าย ผ่อนบัตรเครดิต
             <br />
             <span className="text-[#2E9E6B]">รู้หมด</span> ในที่เดียว
           </h1>
           <p className="mb-7 max-w-[40ch] text-[17.5px] text-[#4B5B73]">
-            ผมทำแอปนี้ไว้คุมเงินตัวเอง — ค่าใช้จ่ายประจำ ยอดผ่อน บิลบัตรเครดิต
-            รวมไว้ที่เดียว เห็นเป็นกราฟว่าเดือนนี้เงินไหลไปไหน
+            ผมทำแอปนี้ไว้คุมรายจ่ายตัวเอง — ค่าใช้จ่ายประจำ ยอดผ่อน บิลบัตรเครดิต
+            รวมไว้ที่เดียว เห็นเป็นภาพโดยรวมรายจ่าย ว่าเงินไหลไปไหน
             เหลือต้องจ่ายอีกเท่าไหร่
           </p>
 
