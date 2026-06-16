@@ -20,7 +20,7 @@ type NavLink = { href: string; label: string; icon: LucideIcon };
 
 const mainLinks: NavLink[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/recurring", label: "รายการประจำ", icon: ListChecks },
+  { href: "/recurring", label: "รายการค่าใช้จ่าย", icon: ListChecks },
   { href: "/credit-cards", label: "บัตรเครดิต", icon: CreditCard },
 ];
 

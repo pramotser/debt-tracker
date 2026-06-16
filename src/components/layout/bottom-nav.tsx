@@ -16,7 +16,7 @@ type NavLink = { href: string; label: string; icon: LucideIcon };
 
 const links: NavLink[] = [
   { href: "/dashboard", label: "หน้าหลัก", icon: LayoutDashboard },
-  { href: "/recurring", label: "รายการประจำ", icon: ListChecks },
+  { href: "/recurring", label: "รายการค่าใช้จ่าย", icon: ListChecks },
   { href: "/credit-cards", label: "บัตร", icon: CreditCard },
   { href: "/settings", label: "ตั้งค่า", icon: Settings },
 ];
@@ -43,14 +43,14 @@ export function BottomNav() {
           <Link
             key={l.href}
             href={l.href}
+            aria-label={l.label}
             aria-current={active ? "page" : undefined}
             className={cn(
-              "flex flex-1 flex-col items-center justify-center gap-1 transition-colors",
+              "flex flex-1 items-center justify-center transition-colors",
               active ? "text-primary" : "text-muted-foreground"
             )}
           >
-            <Icon className="size-[22px]" aria-hidden />
-            <span className="text-[10px] leading-none">{l.label}</span>
+            <Icon className="size-7" aria-hidden />
           </Link>
         );
       })}
