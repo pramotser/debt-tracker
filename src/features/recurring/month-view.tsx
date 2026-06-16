@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronLeft, ChevronRight, Info, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Info, Plus, Trash2 } from "lucide-react";
 
 import { CategoryBadge } from "@/components/shared/category-badge";
 import { StatusBadge } from "@/components/shared/status-badge";
@@ -47,6 +47,7 @@ export function MonthView({
   bannerDismissed,
   onPrev,
   onNext,
+  onAdd,
   onOpenImport,
   onDismissBanner,
   onTogglePaid,
@@ -62,6 +63,7 @@ export function MonthView({
   bannerDismissed: boolean;
   onPrev: () => void;
   onNext: () => void;
+  onAdd: () => void;
   onOpenImport: () => void;
   onDismissBanner: () => void;
   onTogglePaid: (id: string) => void;
@@ -98,6 +100,10 @@ export function MonthView({
           aria-label="เดือนถัดไป"
         >
           <ChevronRight />
+        </Button>
+        <Button onClick={onAdd} className="ml-auto">
+          <Plus />
+          เพิ่มรายการ
         </Button>
       </div>
 
@@ -176,8 +182,8 @@ export function MonthView({
         <Card className="px-6 py-10 text-center text-sm text-muted-foreground">
           ยังไม่มีรายการเดือนนี้
           {pendingTemplates.length > 0
-            ? " — กด \"ดึงรายการ\" ด้านบนเพื่อนำเข้าจากรายการประจำ"
-            : " — เพิ่มรายการในแท็บ \"ตั้งค่ารายการประจำ\" ก่อน"}
+            ? " — กด \"ดึงรายการ\" ด้านบน หรือ \"เพิ่มรายการ\""
+            : " — กด \"เพิ่มรายการ\" ด้านบน"}
         </Card>
       ) : (
         <div className="flex flex-col gap-2">

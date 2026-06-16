@@ -33,16 +33,32 @@ export function LandingFinalCta() {
         </div>
       </section>
 
-      <footer className="mt-14 border-t border-foreground/10 py-10">
-        <div className="mx-auto flex max-w-[1140px] flex-wrap items-center justify-between gap-4 px-6 text-[14px] text-[#8A99AD]">
-          <Link href="/" className="flex items-center gap-2.5 text-[15px] text-foreground">
+  <footer className="mt-14 border-t border-foreground/10">
+    <div className="mx-auto max-w-[1140px] px-6 py-12">
+      <div className="flex flex-col gap-8 md:flex-row md:items-start md:justify-between">
+        {/* Brand + description */}
+        <div className="max-w-sm">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2.5 text-[15px] text-foreground transition-opacity hover:opacity-80"
+          >
             <BrandMark />
             <span className="font-semibold">Debt Tracker</span>
           </Link>
-          <div>โปรเจกต์ส่วนตัว · เปิดให้เพื่อนลอง</div>
-          <div>© 2026</div>
+          <p className="mt-3 text-[14px] leading-relaxed text-[#8A99AD]">
+            Debt Tracker เป็นแอปฟรีที่ผมทำไว้ใช้เอง
+            เพื่อคุมรายจ่ายและหนี้ของตัวเองครับ
+          </p>
         </div>
-      </footer>
+
+        {/* Copyright */}
+        <div className="text-[13px] text-[#8A99AD] md:text-right">
+          <p>Everything Group</p>
+          <p className="mt-1 text-[#8A99AD]/70">&copy; 2026 สงวนลิขสิทธิ์</p>
+        </div>
+      </div>
+    </div>
+  </footer>
     </>
   );
 }
