@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Debt Tracker — หนี้ ผ่อน บัตร ซับ รู้หมดในที่เดียว</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F1F3F5;            /* iOS light gray พื้นแอปจริง */
+    --paper:#F6F8F9;
+    --card:#FFFFFF;
+    --ink:#16243F;          /* navy เกือบดำ — หัวข้อ/ปุ่ม */
+    --ink-2:#1B2A45;
+    --ink-soft:#4B5B73;
+    --ink-faint:#8A99AD;
+    --green:#2E9E6B;        /* จ่ายแล้ว / ค่าใช้จ่ายรายเดือน */
+    --green-deep:#1F5C3D;
+    --green-bg:#E4F3EC;
+    --amber:#DD7A2E;        /* ค้างจ่าย */
+    --amber-bg:#FBEEDD;
+    --blue:#2E50C8;         /* การ์ดบัตร */
+    --blue-2:#3C63E0;
+    --cat-credit:#E5484D;
+    --cat-bill:#E8973C;
+    --cat-fun:#7C5CE0;
+    --line:#E4EAE7;
+    --line-2:#D7E0DB;
+    --radius-xl:28px;
+    --radius-lg:22px;
+    --radius:16px;
+    --shadow:0 1px 2px rgba(22,36,63,.05), 0 18px 44px -26px rgba(22,36,63,.26);
+    --shadow-soft:0 1px 2px rgba(22,36,63,.04), 0 10px 26px -18px rgba(22,36,63,.2);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{font-family:"IBM Plex Sans Thai",system-ui,sans-serif;background:var(--bg);color:var(--ink);line-height:1.6;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+  .num{font-family:"IBM Plex Mono",monospace;font-feature-settings:"tnum"}
+  .wrap{max-width:1140px;margin:0 auto;padding:0 24px}
+  a{color:inherit;text-decoration:none}
+
+  /* header */
+  header{position:sticky;top:0;z-index:50;backdrop-filter:saturate(150%) blur(10px);background:rgba(241,243,245,.8);transition:border-color .25s,background .25s;border-bottom:1px solid transparent}
+  header.scrolled{border-color:var(--line);background:rgba(241,243,245,.94)}
+  .nav{display:flex;align-items:center;justify-content:space-between;height:66px}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:600;font-size:18px}
+  .mark{width:30px;height:30px;border-radius:9px;background:var(--ink);display:grid;place-items:center;flex:0 0 auto}
+  .mark span{display:block;width:14px;height:2.4px;border-radius:2px;background:#fff;box-shadow:0 5px 0 #fff,0 -5px 0 var(--green)}
+  .nav-actions{display:flex;align-items:center;gap:8px}
+  .btn{font-family:inherit;font-size:15px;font-weight:500;cursor:pointer;border-radius:12px;padding:10px 18px;border:1px solid transparent;transition:transform .15s,box-shadow .2s,background .2s,color .2s;display:inline-flex;align-items:center;gap:8px;white-space:nowrap}
+  .btn:active{transform:translateY(1px)}
+  .btn-ghost{color:var(--ink);background:transparent}
+  .btn-ghost:hover{background:#E7EBEE}
+  .btn-primary{background:var(--ink);color:#fff;box-shadow:0 8px 20px -10px rgba(22,36,63,.55)}
+  .btn-primary:hover{transform:translateY(-1px);box-shadow:0 12px 26px -10px rgba(22,36,63,.6)}
+  .btn-lg{padding:14px 26px;font-size:16px;border-radius:14px}
+
+  /* hero */
+  .hero{padding:60px 0 36px}
+  .hero-grid{display:grid;grid-template-columns:1.02fr .98fr;gap:52px;align-items:center}
+  .eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:500;color:var(--green);background:var(--green-bg);padding:6px 13px;border-radius:999px;margin-bottom:22px}
+  .eyebrow .dot{width:7px;height:7px;border-radius:50%;background:var(--green)}
+  h1{font-size:clamp(32px,4.4vw,50px);line-height:1.14;font-weight:700;letter-spacing:-.01em;margin-bottom:18px}
+  h1 .hl{color:var(--green)}
+  .lede{font-size:17.5px;color:var(--ink-soft);max-width:40ch;margin-bottom:28px}
+  .hero-cta{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+  .hero-note{margin-top:16px;font-size:13.5px;color:var(--ink-faint);display:flex;align-items:center;gap:7px}
+
+  .anim{opacity:0;transform:translateY(14px);animation:rise .7s cubic-bezier(.22,.61,.36,1) forwards}
+  .a1{animation-delay:.04s}.a2{animation-delay:.12s}.a3{animation-delay:.2s}.a4{animation-delay:.28s}.a5{animation-delay:.16s}
+  @keyframes rise{to{opacity:1;transform:none}}
+
+  /* phone mockup */
+  .phone-stage{display:flex;justify-content:center;position:relative}
+  .phone-stage::before{content:"";position:absolute;width:330px;height:330px;border-radius:50%;background:radial-gradient(circle,rgba(46,158,107,.16),transparent 68%);top:50%;left:50%;transform:translate(-50%,-50%)}
+  .phone{width:300px;background:#0d1421;border-radius:42px;padding:11px;box-shadow:0 40px 80px -30px rgba(22,36,63,.5),0 0 0 1px rgba(22,36,63,.06);position:relative;z-index:1}
+  .screen{background:var(--bg);border-radius:32px;overflow:hidden;height:600px;position:relative;display:flex;flex-direction:column}
+  .notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:120px;height:26px;background:#0d1421;border-radius:0 0 16px 16px;z-index:5}
+  .scr-body{flex:1;overflow:hidden;padding:30px 16px 0}
+  .scr-title{font-size:21px;font-weight:700;margin-bottom:12px}
+  .scr-tabs{display:flex;gap:16px;font-size:12.5px;color:var(--ink-faint);border-bottom:1px solid var(--line);padding-bottom:9px;margin-bottom:14px}
+  .scr-tabs .on{color:var(--ink);font-weight:600;position:relative}
+  .scr-tabs .on::after{content:"";position:absolute;left:0;right:0;bottom:-10px;height:2.5px;background:var(--ink);border-radius:2px}
+  .mini-card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:13px;margin-bottom:11px;box-shadow:var(--shadow-soft)}
+  .mc-title{font-size:13px;font-weight:600;margin-bottom:10px}
+  /* donut */
+  .donut-row{display:flex;align-items:center;gap:14px}
+  .donut{width:90px;height:90px;border-radius:50%;flex:0 0 auto;background:conic-gradient(var(--green) 0 51%,var(--ink) 51% 99%,#E8B53C 99% 100%);display:grid;place-items:center}
+  .donut::after{content:"";width:54px;height:54px;border-radius:50%;background:var(--card)}
+  .legend{font-size:11px;flex:1}
+  .legend div{display:flex;align-items:center;gap:6px;margin-bottom:7px;color:var(--ink-soft)}
+  .legend .lv{margin-left:auto;font-weight:600;color:var(--ink)}
+  .legend .sw{width:9px;height:9px;border-radius:3px;flex:0 0 auto}
+  /* flow bars */
+  .flow{margin-bottom:9px}
+  .flow .fr{display:flex;align-items:center;gap:8px;font-size:11.5px;margin-bottom:3px}
+  .flow .fi{width:18px;height:18px;border-radius:6px;display:grid;place-items:center;color:#fff;font-size:9px}
+  .flow .fa{margin-left:auto;font-weight:600;font-size:11px}
+  .flow .bar{height:5px;border-radius:99px;background:var(--line-2);overflow:hidden;margin-bottom:9px}
+  .flow .bar i{display:block;height:100%;background:var(--ink);border-radius:99px}
+  /* install */
+  .inst-top{display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px}
+  .inst-sub{display:flex;justify-content:space-between;font-size:10.5px;color:var(--ink-faint);margin-bottom:8px}
+  .inst-bar{height:7px;border-radius:99px;background:var(--line-2);overflow:hidden}
+  .inst-bar i{display:block;height:100%;width:13%;background:var(--ink);border-radius:99px}
+  /* phone nav */
+  .scr-nav{display:flex;justify-content:space-around;padding:8px 4px 12px;background:var(--card);border-top:1px solid var(--line);font-size:9px;color:var(--ink-faint)}
+  .scr-nav div{display:flex;flex-direction:column;align-items:center;gap:3px}
+  .scr-nav .on{color:var(--ink);font-weight:600}
+  .scr-nav svg{width:17px;height:17px}
+
+  /* sections */
+  .sec-pad{padding:70px 0}
+  .sec-head{max-width:48ch;margin-bottom:40px}
+  .sec-eyebrow{font-size:13px;font-weight:600;color:var(--green);letter-spacing:.04em;text-transform:uppercase;margin-bottom:11px}
+  h2{font-size:clamp(25px,3.1vw,34px);line-height:1.22;font-weight:700;letter-spacing:-.01em}
+  .sec-head p{color:var(--ink-soft);font-size:17px;margin-top:13px}
+
+  /* zones grid */
+  .zones{display:grid;grid-template-columns:repeat(2,1fr);gap:18px}
+  .zone{background:var(--card);border:1px solid var(--line);border-radius:var(--radius-lg);padding:26px;box-shadow:var(--shadow-soft);transition:transform .2s,box-shadow .2s;position:relative;overflow:hidden}
+  .zone:hover{transform:translateY(-3px);box-shadow:0 1px 2px rgba(22,36,63,.04),0 24px 46px -28px rgba(22,36,63,.3)}
+  .zone.feature{grid-column:span 2;display:grid;grid-template-columns:1.1fr .9fr;gap:24px;align-items:center}
+  .z-icon{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;margin-bottom:16px;background:var(--green-bg);color:var(--green)}
+  .zone h3{font-size:19px;font-weight:600;margin-bottom:8px}
+  .zone p{color:var(--ink-soft);font-size:15px}
+  .z-tags{display:flex;flex-wrap:wrap;gap:7px;margin-top:14px}
+  .z-tag{font-size:12.5px;padding:5px 11px;border-radius:99px;background:var(--paper);border:1px solid var(--line);color:var(--ink-soft)}
+
+  /* visual chips inside feature zone */
+  .demo-box{background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:16px}
+  .summary-mini{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:12px}
+  .sm{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px 13px}
+  .sm .k{font-size:11px;color:var(--ink-faint)}
+  .sm .v{font-size:16px;font-weight:600;margin-top:2px}
+  .sm .v.green{color:var(--green)}.sm .v.amber{color:var(--amber)}
+  .li{display:flex;align-items:center;gap:11px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px 13px;margin-bottom:8px;cursor:pointer}
+  .li:last-child{margin-bottom:0}
+  .li .ck{width:20px;height:20px;border-radius:50%;border:2px solid var(--line-2);flex:0 0 auto;display:grid;place-items:center;transition:.2s}
+  .li .ck svg{width:11px;height:11px;opacity:0;transition:.2s}
+  .li.paid .ck{background:var(--green);border-color:var(--green)}
+  .li.paid .ck svg{opacity:1}
+  .li .nm{flex:1;font-size:14px}
+  .li .am{font-size:14px;font-weight:600}
+  .li.paid .nm{color:var(--ink-faint);text-decoration:line-through}
+  .li.paid .am{color:var(--ink-faint)}
+  .cat-pill{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;color:var(--ink-soft);background:var(--paper);border:1px solid var(--line);padding:2px 7px;border-radius:99px;margin-left:7px}
+  .cat-dot{width:13px;height:13px;border-radius:4px;display:inline-grid;place-items:center;font-size:7px;color:#fff}
+
+  /* how / friend steps */
+  .friend{background:var(--ink);border-radius:var(--radius-xl);padding:50px 46px;color:#fff;position:relative;overflow:hidden}
+  .friend::after{content:"";position:absolute;right:-90px;top:-90px;width:320px;height:320px;border-radius:50%;background:radial-gradient(circle,rgba(46,158,107,.3),transparent 65%)}
+  .friend .sec-eyebrow{color:#7FE0C0}
+  .friend h2{color:#fff;max-width:24ch}
+  .friend p{color:#B9C4D4;font-size:16px;margin-top:12px;max-width:46ch}
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:28px;margin-top:36px;position:relative}
+  .step .no{font-family:"IBM Plex Mono",monospace;font-size:13px;color:#7FE0C0;font-weight:600;margin-bottom:13px;display:flex;align-items:center;gap:10px}
+  .step .no::after{content:"";flex:1;height:1px;background:rgba(255,255,255,.16)}
+  .step h4{font-size:17px;font-weight:600;margin-bottom:7px;color:#fff}
+  .step p{color:#B9C4D4;font-size:14.5px;margin:0;max-width:none}
+
+  /* final */
+  .cta-band{text-align:center;padding:14px 0 4px}
+  .cta-band h2{max-width:22ch;margin:0 auto 10px}
+  .cta-band p{color:var(--ink-soft);font-size:16.5px;margin-bottom:26px}
+
+  footer{padding:40px 0;border-top:1px solid var(--line);margin-top:60px}
+  .foot{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;color:var(--ink-faint);font-size:14px}
+  .foot .brand{font-size:15px;color:var(--ink)}
+
+  .reveal{opacity:0;transform:translateY(22px);transition:opacity .7s,transform .7s cubic-bezier(.22,.61,.36,1)}
+  .reveal.in{opacity:1;transform:none}
+
+  @media (max-width:880px){
+    .hero-grid{grid-template-columns:1fr;gap:38px}
+    .lede{max-width:none}
+    .zones{grid-template-columns:1fr}
+    .zone.feature{grid-column:span 1;grid-template-columns:1fr}
+    .steps{grid-template-columns:1fr;gap:22px}
+    .friend{padding:38px 24px}
+    .hero{padding:40px 0 20px}
+    .sec-pad{padding:54px 0}
+  }
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.anim,.reveal{opacity:1;transform:none}}
+</style>
+</head>
+<body>
+
+<header id="hdr">
+  <div class="wrap nav">
+    <a class="brand" href="#"><span class="mark"><span></span></span>Debt Tracker</a>
+    <div class="nav-actions">
+      <a class="btn btn-ghost" href="https://debt-tracker-xi-eosin.vercel.app/login">เข้าสู่ระบบ</a>
+      <a class="btn btn-primary" href="https://debt-tracker-xi-eosin.vercel.app/register">สมัคร</a>
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- HERO -->
+  <section class="hero">
+    <div class="wrap hero-grid">
+      <div>
+        <span class="eyebrow anim a1"><span class="dot"></span> แอปไว้ใช้เอง · เปิดให้เพื่อนลอง</span>
+        <h1 class="anim a2">หนี้ ผ่อน บัตร ซับ<br><span class="hl">รู้หมด</span> ในที่เดียว</h1>
+        <p class="lede anim a3">ผมทำแอปนี้ไว้คุมเงินตัวเอง — ค่าใช้จ่ายประจำ ยอดผ่อน บิลบัตรเครดิต ค่าสมาชิกรายเดือน รวมไว้ที่เดียว เห็นเป็นกราฟว่าเดือนนี้เงินไหลไปไหน เหลือต้องจ่ายอีกเท่าไหร่</p>
+        <div class="hero-cta anim a4">
+          <a class="btn btn-primary btn-lg" href="https://debt-tracker-xi-eosin.vercel.app/register">เข้าไปลองดู</a>
+          <a class="btn btn-ghost btn-lg" href="#zones">มีอะไรในแอปบ้าง</a>
+        </div>
+        <div class="hero-note anim a4">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="#2E9E6B" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          มีบัญชีแล้วก็ <a href="https://debt-tracker-xi-eosin.vercel.app/login" style="color:var(--green);font-weight:500">เข้าสู่ระบบ</a> ได้เลย
+        </div>
+      </div>
+
+      <!-- phone mockup: Dashboard จริง -->
+      <div class="phone-stage anim a5">
+        <div class="phone">
+          <span class="notch"></span>
+          <div class="screen">
+            <div class="scr-body">
+              <div class="scr-title">Dashboard</div>
+              <div class="scr-tabs"><span>เดือนนี้ต้องจ่ายอะไร</span><span class="on">ภาพรวมรายจ่าย</span></div>
+
+              <div class="mini-card">
+                <div class="mc-title">รายจ่ายตามประเภท</div>
+                <div class="donut-row">
+                  <div class="donut"></div>
+                  <div class="legend">
+                    <div><span class="sw" style="background:var(--green)"></span>ค่าใช้จ่ายรายเดือน<span class="lv num">51%</span></div>
+                    <div><span class="sw" style="background:var(--ink)"></span>ผ่อนบัตรเครดิต<span class="lv num">48%</span></div>
+                    <div><span class="sw" style="background:#E8B53C"></span>Subscription<span class="lv num">1%</span></div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="mini-card">
+                <div class="mc-title">เงินไหลไปหมวดไหน</div>
+                <div class="flow">
+                  <div class="fr"><span class="fi" style="background:var(--cat-credit)">฿</span>สินเชื่อ/เช่าซื้อ<span class="fa num">35,035</span></div>
+                  <div class="bar"><i style="width:100%"></i></div>
+                  <div class="fr"><span class="fi" style="background:var(--cat-credit)">🎁</span>ของขวัญ/บริจาค<span class="fa num">33,860</span></div>
+                  <div class="bar"><i style="width:96%"></i></div>
+                  <div class="fr"><span class="fi" style="background:var(--cat-bill)">💧</span>ชำระบิล<span class="fa num">1,200</span></div>
+                  <div class="bar"><i style="width:9%"></i></div>
+                </div>
+              </div>
+
+              <div class="mini-card" style="margin-bottom:0">
+                <div class="mc-title">ความคืบหน้าผ่อนชำระ</div>
+                <div class="inst-top"><b>iPad</b><span class="num">1/10 งวด</span></div>
+                <div class="inst-sub"><span>UOB Premier</span><span class="num">เหลือ ฿30,474</span></div>
+                <div class="inst-bar"><i></i></div>
+              </div>
+            </div>
+
+            <div class="scr-nav">
+              <div class="on"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="2"/><rect x="14" y="3" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="2"/><rect x="3" y="14" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="2"/><rect x="14" y="14" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="2"/></svg>หน้าหลัก</div>
+              <div><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="17" rx="2" stroke="currentColor" stroke-width="2"/><path d="M3 9h18M8 2v4M16 2v4" stroke="currentColor" stroke-width="2"/></svg>รายเดือน</div>
+              <div><svg viewBox="0 0 24 24" fill="none"><path d="M4 9a8 8 0 0 1 14-4M20 5v4h-4M20 15a8 8 0 0 1-14 4M4 19v-4h4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>สมาชิก</div>
+              <div><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="6" width="18" height="13" rx="2" stroke="currentColor" stroke-width="2"/><path d="M3 10h18" stroke="currentColor" stroke-width="2"/></svg>บัตร</div>
+              <div><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>ตั้งค่า</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ZONES -->
+  <section class="sec-pad" id="zones">
+    <div class="wrap">
+      <div class="sec-head reveal">
+        <div class="sec-eyebrow">มีอะไรในแอป</div>
+        <h2>ไม่ใช่แค่จดรายจ่าย — คุมหนี้ทั้งก้อนได้</h2>
+        <p>ทุกอย่างที่เงินไหลออกอยู่ในแอปเดียว แบ่งเป็น 5 ส่วน ใช้ต่อกันเป็นเส้นเดียว</p>
+      </div>
+
+      <div class="zones">
+        <!-- feature: รายเดือน + checklist กดได้ -->
+        <div class="zone feature reveal">
+          <div>
+            <div class="z-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="17" rx="2" stroke="currentColor" stroke-width="2"/><path d="M3 9h18M8 2v4M16 2v4M8 14h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></div>
+            <h3>ค่าใช้จ่ายรายเดือน</h3>
+            <p>ตั้งรายการประจำไว้ครั้งเดียว (ค่าบ้าน ค่าไฟ ค่าน้ำ ค่าส่งรถ) พอขึ้นเดือนใหม่ดึงเข้ามาทีเดียวครบ จ่ายอันไหนติ๊กอันนั้น ยอดค้างจ่ายลดลงทันที — ลองติ๊กดูได้เลย</p>
+            <div class="z-tags">
+              <span class="z-tag">ยอดรวม / จ่ายแล้ว / ค้างจ่าย</span>
+              <span class="z-tag">Template รายการประจำ</span>
+              <span class="z-tag">เลื่อนดูรายเดือน</span>
+            </div>
+          </div>
+          <div class="demo-box" id="demo">
+            <div class="summary-mini">
+              <div class="sm"><div class="k">ค้างจ่าย</div><div class="v amber num" id="dPending">11,679</div></div>
+              <div class="sm"><div class="k">จ่ายแล้ว</div><div class="v green num" id="dPaid">0</div></div>
+            </div>
+            <div id="dRows"></div>
+          </div>
+        </div>
+
+        <!-- บัตรเครดิต -->
+        <div class="zone reveal">
+          <div class="z-icon" style="background:#E7ECF4;color:var(--ink)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="3" y="6" width="18" height="13" rx="2" stroke="currentColor" stroke-width="2"/><path d="M3 10h18M7 15h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></div>
+          <h3>บัตรเครดิต</h3>
+          <p>เก็บบัตรไว้หลายใบ ดูยอดบิลของเดือนนี้แยกแต่ละบัตร เพิ่มรายการรูดเองได้ ยอดค้าง/จ่ายแล้วสรุปให้</p>
+          <div class="z-tags"><span class="z-tag">รายการชำระบัตร</span><span class="z-tag">บัตรของฉัน</span></div>
+        </div>
+
+        <!-- ผ่อนชำระ -->
+        <div class="zone reveal">
+          <div class="z-icon" style="background:var(--amber-bg);color:var(--amber)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M3 12h18M3 7h18M3 17h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></div>
+          <h3>แผนผ่อนชำระ</h3>
+          <p>ผ่อนอะไรอยู่บ้าง งวดที่เท่าไหร่ เหลืออีกกี่งวด คาดว่าจะจบเมื่อไหร่ แยกเงินต้น/ดอกเบี้ยให้ เห็นภาพรวมหนี้ทั้งหมด</p>
+          <div class="z-tags"><span class="z-tag">งวด 1/10</span><span class="z-tag">คาดว่าจบ 2027/02</span><span class="z-tag">เงินต้น/ดอก</span></div>
+        </div>
+
+        <!-- subscription -->
+        <div class="zone reveal">
+          <div class="z-icon" style="background:#EFEAFB;color:var(--cat-fun)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M4 9a8 8 0 0 1 14-4M20 5v4h-4M20 15a8 8 0 0 1-14 4M4 19v-4h4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <h3>สมาชิก / บริการ</h3>
+          <p>ค่าสมาชิกรายเดือนอย่าง Netflix ตั้งไว้ว่าตัดเงินวันไหน เปิด/ปิดได้ พอถึงเดือนมันโผล่ในรายการจ่ายให้เอง ไม่ลืมว่าจ่ายอะไรอยู่</p>
+          <div class="z-tags"><span class="z-tag">ตัดเงินทุกวันที่ 29</span><span class="z-tag">เปิด/ปิดบริการ</span></div>
+        </div>
+
+        <!-- dashboard -->
+        <div class="zone reveal">
+          <div class="z-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M21 21H3V3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M7 14l4-4 3 3 5-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <h3>ภาพรวม (Dashboard)</h3>
+          <p>กราฟรายจ่าย 6 เดือนข้างหน้า วงกลมแยกตามประเภท และ heatmap บอกว่าเดือนไหนภาระหนักเบาแค่ไหน วางแผนล่วงหน้าได้</p>
+          <div class="z-tags"><span class="z-tag">รายจ่าย 6 เดือน</span><span class="z-tag">heatmap รายเดือน</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FRIEND STEPS -->
+  <section class="sec-pad" style="padding-top:0">
+    <div class="wrap">
+      <div class="friend reveal">
+        <div class="sec-eyebrow">ได้ลิงก์มาแล้ว เริ่มยังไง</div>
+        <h2>สมัครครั้งเดียว แล้วเริ่มจดได้เลย</h2>
+        <p>แอปนี้ทำไว้ใช้ส่วนตัว เลยเปิดให้เพื่อนที่สนใจลองด้วย ข้อมูลของแต่ละคนแยกกัน ใครเห็นแต่ของตัวเอง</p>
+        <div class="steps">
+          <div class="step"><div class="no">01</div><h4>สมัครด้วยอีเมลหรือ Google</h4><p>ใช้บัญชีไหนก็ได้ ไม่กี่วินาที</p></div>
+          <div class="step"><div class="no">02</div><h4>ตั้งรายการประจำ</h4><p>ใส่ค่าบ้าน ค่าน้ำค่าไฟ บัตร หรือยอดผ่อนที่มี</p></div>
+          <div class="step"><div class="no">03</div><h4>ดึงเข้าเดือนนี้ แล้วติ๊กจ่าย</h4><p>เห็นยอดค้างจ่ายลดลงจริง รู้ทุกเดือนว่าเหลืออะไร</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FINAL -->
+  <section style="padding-bottom:10px">
+    <div class="wrap">
+      <div class="cta-band reveal">
+        <h2>อยากลองคุมเงินแบบเห็นภาพไหม</h2>
+        <p>สมัครแล้วลองดึงค่าใช้จ่ายเดือนนี้เข้ามาดูได้เลย</p>
+        <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+          <a class="btn btn-primary btn-lg" href="https://debt-tracker-xi-eosin.vercel.app/register">เข้าไปลองดู</a>
+          <a class="btn btn-ghost btn-lg" href="https://debt-tracker-xi-eosin.vercel.app/login">เข้าสู่ระบบ</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap foot">
+    <a class="brand" href="#"><span class="mark"><span></span></span>Debt Tracker</a>
+    <div>โปรเจกต์ส่วนตัว · เปิดให้เพื่อนลอง</div>
+    <div>© 2026</div>
+  </div>
+</footer>
+
+<script>
+  // checklist กดได้ (ใช้ data จาก screenshot จริง)
+  const items=[
+    {n:"ค่าส่งรถ",cat:"สินเชื่อ/เช่าซื้อ",c:"#E5484D",ic:"฿",amt:3878.5,paid:false},
+    {n:"ค่าบ้าน",cat:"สินเชื่อ/เช่าซื้อ",c:"#E5484D",ic:"฿",amt:7800,paid:false},
+    {n:"ค่าไฟ",cat:"ชำระบิล",c:"#E8973C",ic:"💧",amt:1200,paid:false},
+    {n:"Netflix",cat:"บันเทิง",c:"#7C5CE0",ic:"🎬",amt:201,paid:false},
+  ];
+  const rows=document.getElementById('dRows');
+  const fmt=n=>Math.round(n).toLocaleString('en-US');
+  const ck='<svg viewBox="0 0 24 24" fill="none"><path d="M20 6L9 17l-5-5" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  function render(){
+    rows.innerHTML=items.map((it,i)=>`<div class="li ${it.paid?'paid':''}" data-i="${i}">
+      <span class="ck">${ck}</span>
+      <span class="nm">${it.n}<span class="cat-pill"><span class="cat-dot" style="background:${it.c}">${it.ic}</span>${it.cat}</span></span>
+      <span class="am num">${fmt(it.amt)}</span></div>`).join('');
+    const total=items.reduce((s,i)=>s+i.amt,0);
+    const paid=items.filter(i=>i.paid).reduce((s,i)=>s+i.amt,0);
+    document.getElementById('dPaid').textContent=fmt(paid);
+    document.getElementById('dPending').textContent=fmt(total-paid);
+  }
+  rows.addEventListener('click',e=>{const r=e.target.closest('.li');if(r){items[+r.dataset.i].paid=!items[+r.dataset.i].paid;render();}});
+  render();
+
+  const hdr=document.getElementById('hdr');
+  addEventListener('scroll',()=>hdr.classList.toggle('scrolled',scrollY>8),{passive:true});
+  const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}}),{threshold:.12});
+  document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+</script>
+</body>
+</html>

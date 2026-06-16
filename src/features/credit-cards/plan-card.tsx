@@ -185,17 +185,17 @@ export function PlanCard({
         </div>
       ) : (
         <>
-          <div className="flex flex-col gap-1 text-sm">
-            <Row label="ยอดรวม" value={formatMoney(totalAmount)} />
-            <Row
+          <div className="grid grid-cols-3 gap-3 rounded-lg border border-border/60 bg-muted/30 px-3 py-2.5">
+            <Stat
+              label="ค่างวด/เดือน"
+              value={formatMoney(plan.installmentAmount)}
+            />
+            <Stat
               label="คงเหลือ"
               value={formatMoney(remainingAmount)}
               emphasize
             />
-            <Row
-              label="ค่างวด"
-              value={`${formatMoney(plan.installmentAmount)} / เดือน`}
-            />
+            <Stat label="ยอดรวม" value={formatMoney(totalAmount)} />
           </div>
           <Segments
             total={total}
@@ -273,6 +273,30 @@ function Row({
       >
         {value}
       </span>
+    </div>
+  );
+}
+
+function Stat({
+  label,
+  value,
+  emphasize = false,
+}: {
+  label: string;
+  value: string;
+  emphasize?: boolean;
+}) {
+  return (
+    <div className="min-w-0 text-center">
+      <div className="text-[11px] text-muted-foreground">{label}</div>
+      <div
+        className={cn(
+          "mt-0.5 truncate font-semibold tabular-nums",
+          emphasize ? "text-foreground text-lg" : "text-sm"
+        )}
+      >
+        {value}
+      </div>
     </div>
   );
 }

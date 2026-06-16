@@ -425,7 +425,7 @@ export function RecurringApp({
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold">รายการประจำ</h1>
+        <h1 className="text-2xl font-bold">รายการค่าใช้จ่าย</h1>
       </div>
 
       <Tabs defaultValue="month">
