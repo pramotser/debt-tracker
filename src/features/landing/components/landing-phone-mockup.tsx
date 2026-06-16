@@ -10,6 +10,13 @@ export function LandingPhoneMockup() {
     (INSTALLMENT_DEMO.current / INSTALLMENT_DEMO.total) * 100
   );
 
+  let cursor = 0;
+  const donutStops = DONUT_BREAKDOWN.map((seg) => {
+    const start = cursor;
+    cursor += seg.pct;
+    return `${seg.color} ${start}% ${cursor}%`;
+  }).join(", ");
+
   return (
     <div className="relative flex justify-center">
       <div className="absolute left-1/2 top-1/2 -z-0 size-[330px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgba(46,158,107,0.16),transparent_68%)]" />
@@ -36,7 +43,7 @@ export function LandingPhoneMockup() {
                 <div
                   className="relative grid size-[90px] shrink-0 place-items-center rounded-full"
                   style={{
-                    background: `conic-gradient(${DONUT_BREAKDOWN[0].color} 0 ${DONUT_BREAKDOWN[0].pct}%, ${DONUT_BREAKDOWN[1].color} ${DONUT_BREAKDOWN[0].pct}% ${DONUT_BREAKDOWN[0].pct + DONUT_BREAKDOWN[1].pct}%, ${DONUT_BREAKDOWN[2].color} ${DONUT_BREAKDOWN[0].pct + DONUT_BREAKDOWN[1].pct}% 100%)`,
+                    background: `conic-gradient(${donutStops})`,
                   }}
                 >
                   <div className="size-[54px] rounded-full bg-white" />
@@ -118,12 +125,9 @@ export function LandingPhoneMockup() {
               <rect x="3" y="14" width="7" height="7" rx="1.5" />
               <rect x="14" y="14" width="7" height="7" rx="1.5" />
             </NavItem>
-            <NavItem label="รายเดือน">
+            <NavItem label="รายการประจำ">
               <rect x="3" y="4" width="18" height="17" rx="2" />
-              <path d="M3 9h18M8 2v4M16 2v4" />
-            </NavItem>
-            <NavItem label="สมาชิก">
-              <path d="M4 9a8 8 0 0 1 14-4M20 5v4h-4M20 15a8 8 0 0 1-14 4M4 19v-4h4" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M3 9h18M8 2v4M16 2v4M8 14h4M8 17h6" strokeLinecap="round" />
             </NavItem>
             <NavItem label="บัตร">
               <rect x="3" y="6" width="18" height="13" rx="2" />

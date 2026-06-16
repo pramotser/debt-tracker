@@ -14,9 +14,8 @@ export const MONTHLY_DEMO_ITEMS: MonthlyDemoItem[] = [
 ];
 
 export const DONUT_BREAKDOWN = [
-  { label: "ค่าใช้จ่ายรายเดือน", pct: 51, color: "#2E9E6B" },
+  { label: "ค่าใช้จ่ายรายเดือน", pct: 52, color: "#2E9E6B" },
   { label: "ผ่อนบัตรเครดิต", pct: 48, color: "#16243F" },
-  { label: "Subscription", pct: 1, color: "#E8B53C" },
 ];
 
 export const CATEGORY_FLOW = [
