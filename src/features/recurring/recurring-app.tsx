@@ -33,6 +33,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatMoney } from "@/lib/format";
 import { shiftMonth, ymKey } from "@/lib/month";
 import {
+  createOneTimeEntry,
   deleteRecurringLedger,
   fetchRecurringEntriesByMonth,
   importRecurringToMonth,
@@ -48,6 +49,7 @@ import {
 } from "@/server/actions/recurring-templates";
 
 import { ImportModal } from "./import-modal";
+import { AddItemDialog, type ItemDraft } from "./item-dialog";
 import { MonthView, type AmountEditRequest } from "./month-view";
 import {
   TemplateDialog,
@@ -107,6 +109,7 @@ export function RecurringApp({
   const [editingTemplate, setEditingTemplate] =
     useState<RecurringTemplate | null>(null);
   const [importOpen, setImportOpen] = useState(false);
+  const [addItemOpen, setAddItemOpen] = useState(false);
   const [dismissedMonths, setDismissedMonths] = useState<Set<string>>(
     () => new Set()
   );
@@ -295,6 +298,48 @@ export function RecurringApp({
     });
   };
 
+  // === ad-hoc one-time entry ===
+  const handleAddItem = (d: ItemDraft) => {
+    const now = new Date();
+    const tempId = `tmp-${Date.now()}`;
+    const optimistic: LedgerEntry = {
+      id: tempId,
+      userId: "",
+      categoryId: d.categoryId,
+      sourceType: null,
+      sourceId: null,
+      type: "ONE_TIME_COST",
+      name: d.name,
+      amount: d.amount,
+      principalAmount: null,
+      interestAmount: null,
+      year: ym.year,
+      month: ym.month,
+      paid: false,
+      paidAt: null,
+      note: null,
+      createdAt: now,
+      updatedAt: now,
+    };
+    mutateCurrentMonth((p) => [...p, optimistic]);
+    startMutation(async () => {
+      try {
+        const row = await createOneTimeEntry({
+          name: d.name,
+          categoryId: d.categoryId,
+          amount: d.amount,
+          year: ym.year,
+          month: ym.month,
+        });
+        mutateCurrentMonth((p) => p.map((e) => (e.id === tempId ? row : e)));
+      } catch (err) {
+        toast.error("บันทึกไม่สำเร็จ");
+        console.error("createOneTimeEntry failed", err);
+        mutateCurrentMonth((p) => p.filter((e) => e.id !== tempId));
+      }
+    });
+  };
+
   // === import ===
   const handleImport = (templateIds: string[]) => {
     if (templateIds.length === 0) return;
@@ -458,6 +503,7 @@ export function RecurringApp({
             bannerDismissed={bannerDismissed}
             onPrev={() => navigateMonth(-1)}
             onNext={() => navigateMonth(1)}
+            onAdd={() => setAddItemOpen(true)}
             onOpenImport={() => setImportOpen(true)}
             onDismissBanner={() =>
               setDismissedMonths((p) => {
@@ -509,6 +555,13 @@ export function RecurringApp({
         ym={ym}
         pendingTemplates={pendingTemplates}
         onSubmit={handleImport}
+      />
+
+      <AddItemDialog
+        open={addItemOpen}
+        onOpenChange={setAddItemOpen}
+        categories={categories}
+        onSubmit={handleAddItem}
       />
 
       <AlertDialog
