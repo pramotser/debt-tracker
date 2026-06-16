@@ -3,11 +3,14 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  Building2,
   CreditCard,
   LayoutDashboard,
   ListChecks,
   LogOut,
   Settings,
+  Tag,
+  Users,
   type LucideIcon,
 } from "lucide-react";
 
@@ -22,6 +25,12 @@ const mainLinks: NavLink[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/recurring", label: "รายการค่าใช้จ่าย", icon: ListChecks },
   { href: "/credit-cards", label: "บัตรเครดิต", icon: CreditCard },
+];
+
+const adminLinks: NavLink[] = [
+  { href: "/banks", label: "ธนาคาร", icon: Building2 },
+  { href: "/categories", label: "หมวดหมู่", icon: Tag },
+  { href: "/users", label: "ผู้ใช้", icon: Users },
 ];
 
 const settingsLink: NavLink = {
@@ -62,7 +71,13 @@ function NavItem({ link, active }: { link: NavLink; active: boolean }) {
   );
 }
 
-export function Sidebar({ displayName }: { displayName: string }) {
+export function Sidebar({
+  displayName,
+  role,
+}: {
+  displayName: string;
+  role: "admin" | "user";
+}) {
   const pathname = usePathname();
 
   return (
@@ -85,6 +100,20 @@ export function Sidebar({ displayName }: { displayName: string }) {
             active={isActivePath(pathname, link.href)}
           />
         ))}
+        {role === "admin" && (
+          <div className="mt-4 flex flex-col gap-1">
+            <span className="px-3 pb-1 text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+              ผู้ดูแลระบบ
+            </span>
+            {adminLinks.map((link) => (
+              <NavItem
+                key={link.href}
+                link={link}
+                active={isActivePath(pathname, link.href)}
+              />
+            ))}
+          </div>
+        )}
       </nav>
 
       <div className="mt-auto flex flex-col gap-1 border-t border-border px-3 py-3">

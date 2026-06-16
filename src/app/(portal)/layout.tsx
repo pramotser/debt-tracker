@@ -19,7 +19,7 @@ export default async function PortalLayout({
   return (
     <div className="min-h-screen bg-background">
       <ThemeSync serverTheme={settings.theme} />
-      <Sidebar displayName={displayName} />
+      <Sidebar displayName={displayName} role={user.role} />
       <BottomNav />
       <main className="md:ml-[240px]">
         <div className="mx-auto w-full max-w-6xl px-6 pt-8 pb-24 sm:px-8 sm:pt-12 md:pb-10">
