@@ -91,7 +91,7 @@ export function BankPicker({
       />
       <PopoverContent
         align="start"
-        className="w-[min(22rem,calc(100vw-2rem))] p-0"
+        className="w-(--anchor-width) min-w-56 p-0"
       >
         <div className="border-b border-border p-2">
           <div className="relative">
