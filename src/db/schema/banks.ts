@@ -10,13 +10,15 @@ import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 
 // admin table — global ไม่ผูก user
 // id = slug รูปแบบ "b-<short>" (lower-case) — คงเดิมจาก lib/banks.ts เพื่อไม่กระทบ credit_cards.bank_id
-// brandBg / brandFg ยังไม่อยู่ใน schema รอบนี้ — ใช้ lib/banks.ts ต่อ
+// brandBg / brandFg = สี chip ที่ใช้แสดงบนทุก module — admin แก้ผ่าน /banks
 export const banks = pgTable(
   "banks",
   {
     id: text("id").primaryKey(),
     shortName: text("short_name").notNull(),
     name: text("name").notNull(),
+    brandBg: text("brand_bg").notNull().default("#5F5E5A"),
+    brandFg: text("brand_fg").notNull().default("#F1EFE8"),
     active: boolean("active").notNull().default(true),
     sortOrder: integer("sort_order").notNull().default(0),
     createdAt: timestamp("created_at", { withTimezone: true })

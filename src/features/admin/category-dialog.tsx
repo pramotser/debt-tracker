@@ -27,6 +27,8 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import type { Category } from "@/db/schema";
 import { getCategoryIcon } from "@/lib/categories";
 
+import { IconPicker } from "./icon-picker";
+
 export type CategoryDraft = {
   name: string;
   icon: string;
@@ -98,18 +100,12 @@ function CategoryFormFields({
       </div>
 
       <div className="flex flex-col gap-2">
-        <Label htmlFor={`${idPrefix}-icon`}>
-          ไอคอน{" "}
-          <span className="text-xs font-normal text-muted-foreground">
-            (kebab-case · เช่น &quot;shopping-bag&quot;)
-          </span>
-        </Label>
-        <Input
-          id={`${idPrefix}-icon`}
-          placeholder="shopping-bag"
+        <Label htmlFor={`${idPrefix}-icon`}>ไอคอน</Label>
+        <IconPicker
           value={icon}
-          onChange={(e) => setIcon(e.target.value.trim())}
-          maxLength={60}
+          onChange={setIcon}
+          bgPreview={HEX_RE.test(colorBg) ? colorBg : "#94A3B8"}
+          fgPreview={HEX_RE.test(colorFg) ? colorFg : "#FFFFFF"}
         />
       </div>
 

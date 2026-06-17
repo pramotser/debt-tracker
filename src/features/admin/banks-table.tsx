@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { useMemo, useState, useTransition } from "react";
+import { Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -15,6 +15,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import {
   Tooltip,
@@ -22,8 +23,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 import type { Bank } from "@/db/schema";
-import { getBankBrand } from "@/lib/banks";
 import {
   createBank,
   deleteBank,
@@ -34,6 +35,13 @@ import {
 import { BankDialog, type BankDraft } from "./bank-dialog";
 
 type CardCountMap = Record<string, number>;
+type StatusFilter = "all" | "active" | "inactive";
+
+const STATUS_OPTIONS: { value: StatusFilter; label: string }[] = [
+  { value: "all", label: "ทั้งหมด" },
+  { value: "active", label: "ใช้งาน" },
+  { value: "inactive", label: "ปิดใช้" },
+];
 
 export function BanksTable({
   initialBanks,
@@ -47,6 +55,30 @@ export function BanksTable({
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Bank | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
+  const [status, setStatus] = useState<StatusFilter>("all");
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return banks.filter((b) => {
+      if (status === "active" && !b.active) return false;
+      if (status === "inactive" && b.active) return false;
+      if (!q) return true;
+      return (
+        b.shortName.toLowerCase().includes(q) ||
+        b.name.toLowerCase().includes(q)
+      );
+    });
+  }, [banks, query, status]);
+
+  const counts = useMemo(
+    () => ({
+      all: banks.length,
+      active: banks.filter((b) => b.active).length,
+      inactive: banks.filter((b) => !b.active).length,
+    }),
+    [banks]
+  );
 
   const handleSubmit = (d: BankDraft) => {
     if (editing) {
@@ -59,6 +91,8 @@ export function BanksTable({
                 ...b,
                 shortName: d.shortName,
                 name: d.name,
+                brandBg: d.brandBg,
+                brandFg: d.brandFg,
                 sortOrder: d.sortOrder,
                 active: d.active,
                 updatedAt: new Date(),
@@ -130,7 +164,17 @@ export function BanksTable({
   return (
     <TooltipProvider>
       <div className="flex flex-col gap-4">
-        <div className="flex items-center justify-end">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="relative flex-1 sm:max-w-sm">
+            <Search className="absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="ค้นหา ชื่อ หรือชื่อย่อ"
+              className="pl-8"
+              aria-label="ค้นหาธนาคาร"
+            />
+          </div>
           <Button
             onClick={() => {
               setEditing(null);
@@ -143,76 +187,111 @@ export function BanksTable({
           </Button>
         </div>
 
-        <ul className="flex flex-col gap-2">
-          {banks.map((b) => {
-            const count = cardCounts[b.id] ?? 0;
-            const canDelete = count === 0;
-            const brand = getBankBrand(b.id);
+        <div
+          className="inline-flex w-full items-center gap-1 rounded-lg bg-muted p-1 text-sm sm:w-fit"
+          role="tablist"
+          aria-label="กรองตามสถานะ"
+        >
+          {STATUS_OPTIONS.map((opt) => {
+            const selected = status === opt.value;
             return (
-              <li
-                key={b.id}
-                className="flex items-center gap-3 rounded-lg border border-border bg-card p-3"
+              <button
+                key={opt.value}
+                type="button"
+                role="tab"
+                aria-selected={selected}
+                onClick={() => setStatus(opt.value)}
+                className={cn(
+                  "flex-1 rounded-md px-3 py-1 font-medium transition-colors sm:flex-none",
+                  selected
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
               >
-                <span
-                  className="inline-flex h-7 min-w-12 items-center justify-center rounded-md px-2 text-xs font-semibold"
-                  style={{ backgroundColor: brand.bg, color: brand.fg }}
-                >
-                  {b.shortName}
+                {opt.label}
+                <span className="ml-1.5 text-xs opacity-70">
+                  {counts[opt.value]}
                 </span>
-                <div className="flex min-w-0 flex-1 flex-col">
-                  <span className="truncate text-sm font-medium text-foreground">
-                    {b.name}
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    {b.id} · {count} บัตรใช้งาน
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Switch
-                    checked={b.active}
-                    onCheckedChange={() => handleToggle(b.id)}
-                    aria-label={`สลับสถานะ ${b.shortName}`}
-                  />
-                  <Button
-                    size="icon-sm"
-                    variant="ghost"
-                    aria-label="แก้ไข"
-                    onClick={() => {
-                      setEditing(b);
-                      setDialogOpen(true);
-                    }}
+              </button>
+            );
+          })}
+        </div>
+
+        {filtered.length === 0 ? (
+          <div className="rounded-lg border border-dashed border-border bg-card/50 p-8 text-center text-sm text-muted-foreground">
+            ไม่พบธนาคารที่ตรงกับเงื่อนไข
+          </div>
+        ) : (
+          <ul className="flex flex-col gap-2">
+            {filtered.map((b) => {
+              const count = cardCounts[b.id] ?? 0;
+              const canDelete = count === 0;
+              return (
+                <li
+                  key={b.id}
+                  className="flex items-center gap-3 rounded-lg border border-border bg-card p-3"
+                >
+                  <span
+                    className="inline-flex h-7 min-w-12 items-center justify-center rounded-md px-2 text-xs font-semibold"
+                    style={{ backgroundColor: b.brandBg, color: b.brandFg }}
                   >
-                    <Pencil className="size-4" />
-                  </Button>
-                  {canDelete ? (
+                    {b.shortName}
+                  </span>
+                  <div className="flex min-w-0 flex-1 flex-col">
+                    <span className="truncate text-sm font-medium text-foreground">
+                      {b.name}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {b.id} · {count} บัตรใช้งาน
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      checked={b.active}
+                      onCheckedChange={() => handleToggle(b.id)}
+                      aria-label={`สลับสถานะ ${b.shortName}`}
+                    />
                     <Button
                       size="icon-sm"
                       variant="ghost"
-                      aria-label="ลบ"
-                      onClick={() => setDeletingId(b.id)}
+                      aria-label="แก้ไข"
+                      onClick={() => {
+                        setEditing(b);
+                        setDialogOpen(true);
+                      }}
                     >
-                      <Trash2 className="size-4 text-destructive" />
+                      <Pencil className="size-4" />
                     </Button>
-                  ) : (
-                    <Tooltip>
-                      <TooltipTrigger
-                        render={
-                          <span
-                            aria-label="ลบไม่ได้ — มีบัตรใช้งานอยู่"
-                            className="inline-flex size-8 items-center justify-center rounded-md opacity-40"
-                          />
-                        }
+                    {canDelete ? (
+                      <Button
+                        size="icon-sm"
+                        variant="ghost"
+                        aria-label="ลบ"
+                        onClick={() => setDeletingId(b.id)}
                       >
-                        <Trash2 className="size-4" />
-                      </TooltipTrigger>
-                      <TooltipContent>มีบัตรใช้งานอยู่</TooltipContent>
-                    </Tooltip>
-                  )}
-                </div>
-              </li>
-            );
-          })}
-        </ul>
+                        <Trash2 className="size-4 text-destructive" />
+                      </Button>
+                    ) : (
+                      <Tooltip>
+                        <TooltipTrigger
+                          render={
+                            <span
+                              aria-label="ลบไม่ได้ — มีบัตรใช้งานอยู่"
+                              className="inline-flex size-8 items-center justify-center rounded-md opacity-40"
+                            />
+                          }
+                        >
+                          <Trash2 className="size-4" />
+                        </TooltipTrigger>
+                        <TooltipContent>มีบัตรใช้งานอยู่</TooltipContent>
+                      </Tooltip>
+                    )}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
 
         <BankDialog
           open={dialogOpen}

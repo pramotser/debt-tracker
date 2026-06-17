@@ -18,10 +18,16 @@ const idSchema = z
 const shortNameSchema = z.string().trim().min(1).max(20);
 const nameSchema = z.string().trim().min(1).max(120);
 const sortOrderSchema = z.number().int().min(0).max(9999);
+const hexSchema = z
+  .string()
+  .trim()
+  .regex(/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/, "ต้องเป็น hex (#RGB หรือ #RRGGBB)");
 
 const createSchema = z.object({
   shortName: shortNameSchema,
   name: nameSchema,
+  brandBg: hexSchema,
+  brandFg: hexSchema,
   sortOrder: sortOrderSchema,
   active: z.boolean(),
 });
@@ -60,6 +66,8 @@ export async function createBank(
       id,
       shortName: parsed.shortName,
       name: parsed.name,
+      brandBg: parsed.brandBg,
+      brandFg: parsed.brandFg,
       sortOrder: parsed.sortOrder,
       active: parsed.active,
     })
@@ -80,6 +88,8 @@ export async function updateBank(
     .set({
       shortName: parsed.shortName,
       name: parsed.name,
+      brandBg: parsed.brandBg,
+      brandFg: parsed.brandFg,
       sortOrder: parsed.sortOrder,
       active: parsed.active,
       updatedAt: new Date(),

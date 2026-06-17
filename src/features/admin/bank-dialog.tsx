@@ -30,15 +30,33 @@ import type { Bank } from "@/db/schema";
 export type BankDraft = {
   shortName: string;
   name: string;
+  brandBg: string;
+  brandFg: string;
   sortOrder: number;
   active: boolean;
 };
+
+const HEX_RE = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
+const DEFAULT_BG = "#5F5E5A";
+const DEFAULT_FG = "#F1EFE8";
+
+function expandHex(hex: string): string {
+  if (hex.length === 4) {
+    const [, r, g, b] = hex;
+    return `#${r}${r}${g}${g}${b}${b}`;
+  }
+  return hex;
+}
 
 type FormProps = {
   shortName: string;
   setShortName: (v: string) => void;
   name: string;
   setName: (v: string) => void;
+  brandBg: string;
+  setBrandBg: (v: string) => void;
+  brandFg: string;
+  setBrandFg: (v: string) => void;
   sortOrder: string;
   setSortOrder: (v: string) => void;
   active: boolean;
@@ -52,6 +70,10 @@ function BankFormFields({
   setShortName,
   name,
   setName,
+  brandBg,
+  setBrandBg,
+  brandFg,
+  setBrandFg,
   sortOrder,
   setSortOrder,
   active,
@@ -59,8 +81,26 @@ function BankFormFields({
   idPrefix,
   showShortName,
 }: FormProps) {
+  const previewBg = HEX_RE.test(brandBg) ? brandBg : DEFAULT_BG;
+  const previewFg = HEX_RE.test(brandFg) ? brandFg : DEFAULT_FG;
+  const previewLabel = shortName.trim() || "ตัวอย่าง";
   return (
     <div className="flex flex-col gap-5">
+      <div className="flex items-center gap-3">
+        <span
+          className="inline-flex h-8 min-w-14 items-center justify-center rounded-md px-2 text-xs font-semibold"
+          style={{ backgroundColor: previewBg, color: previewFg }}
+        >
+          {previewLabel}
+        </span>
+        <div className="flex flex-col gap-0.5">
+          <span className="text-sm font-medium">ตัวอย่าง chip</span>
+          <span className="text-xs text-muted-foreground">
+            ใช้บน badge ทั่วทุก module
+          </span>
+        </div>
+      </div>
+
       <div className="flex flex-col gap-2">
         <Label htmlFor={`${idPrefix}-short`}>ชื่อย่อ (chip)</Label>
         <Input
@@ -87,6 +127,49 @@ function BankFormFields({
           onChange={(e) => setName(e.target.value)}
           maxLength={120}
         />
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        <div className="flex flex-col gap-2">
+          <Label htmlFor={`${idPrefix}-bg`}>สีพื้นหลัง</Label>
+          <div className="flex items-center gap-2">
+            <Input
+              id={`${idPrefix}-bg`}
+              placeholder={DEFAULT_BG}
+              value={brandBg}
+              onChange={(e) => setBrandBg(e.target.value)}
+              maxLength={7}
+              className="font-mono"
+            />
+            <input
+              type="color"
+              aria-label="เลือกสีพื้นหลัง"
+              value={HEX_RE.test(brandBg) ? expandHex(brandBg) : DEFAULT_BG.toLowerCase()}
+              onChange={(e) => setBrandBg(e.target.value)}
+              className="size-9 cursor-pointer rounded border border-border"
+            />
+          </div>
+        </div>
+        <div className="flex flex-col gap-2">
+          <Label htmlFor={`${idPrefix}-fg`}>สีตัวอักษร</Label>
+          <div className="flex items-center gap-2">
+            <Input
+              id={`${idPrefix}-fg`}
+              placeholder={DEFAULT_FG}
+              value={brandFg}
+              onChange={(e) => setBrandFg(e.target.value)}
+              maxLength={7}
+              className="font-mono"
+            />
+            <input
+              type="color"
+              aria-label="เลือกสีตัวอักษร"
+              value={HEX_RE.test(brandFg) ? expandHex(brandFg) : DEFAULT_FG.toLowerCase()}
+              onChange={(e) => setBrandFg(e.target.value)}
+              className="size-9 cursor-pointer rounded border border-border"
+            />
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
@@ -135,6 +218,8 @@ export function BankDialog({
   const isMobile = useIsMobile();
   const [shortName, setShortName] = useState("");
   const [name, setName] = useState("");
+  const [brandBg, setBrandBg] = useState(DEFAULT_BG);
+  const [brandFg, setBrandFg] = useState(DEFAULT_FG);
   const [sortOrder, setSortOrder] = useState("0");
   const [active, setActive] = useState(true);
 
@@ -143,11 +228,15 @@ export function BankDialog({
     if (initial) {
       setShortName(initial.shortName);
       setName(initial.name);
+      setBrandBg(initial.brandBg);
+      setBrandFg(initial.brandFg);
       setSortOrder(String(initial.sortOrder));
       setActive(initial.active);
     } else {
       setShortName("");
       setName("");
+      setBrandBg(DEFAULT_BG);
+      setBrandFg(DEFAULT_FG);
       setSortOrder("0");
       setActive(true);
     }
@@ -156,14 +245,22 @@ export function BankDialog({
   const sortNum = Number(sortOrder);
   const sortOk =
     sortOrder === "" || (Number.isInteger(sortNum) && sortNum >= 0);
+  const bgOk = HEX_RE.test(brandBg);
+  const fgOk = HEX_RE.test(brandFg);
   const canSubmit =
-    shortName.trim().length > 0 && name.trim().length > 0 && sortOk;
+    shortName.trim().length > 0 &&
+    name.trim().length > 0 &&
+    bgOk &&
+    fgOk &&
+    sortOk;
 
   const handleSubmit = () => {
     if (!canSubmit) return;
     onSubmit({
       shortName: shortName.trim(),
       name: name.trim(),
+      brandBg,
+      brandFg,
       sortOrder: sortOrder === "" ? 0 : sortNum,
       active,
     });
@@ -181,7 +278,7 @@ export function BankDialog({
     </span>
   );
   const descriptionText = initial
-    ? "ชื่อย่อ ชื่อเต็ม ลำดับ และสถานะใช้งาน"
+    ? "ชื่อย่อ ชื่อเต็ม สี ลำดับ และสถานะใช้งาน"
     : "id จะถูกสร้างจากชื่อย่ออัตโนมัติ (b-<short>)";
 
   const fields = (idPrefix: string) => (
@@ -190,6 +287,10 @@ export function BankDialog({
       setShortName={setShortName}
       name={name}
       setName={setName}
+      brandBg={brandBg}
+      setBrandBg={setBrandBg}
+      brandFg={brandFg}
+      setBrandFg={setBrandFg}
       sortOrder={sortOrder}
       setSortOrder={setSortOrder}
       active={active}
