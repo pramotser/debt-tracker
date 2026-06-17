@@ -6,6 +6,7 @@
 export * from "./enums";
 export * from "./users";
 export * from "./user-settings";
+export * from "./banks";
 export * from "./categories";
 export * from "./recurring-templates";
 export * from "./credit-cards";

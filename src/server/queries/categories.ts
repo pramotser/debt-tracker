@@ -1,10 +1,15 @@
 import "server-only";
 
-import { asc, eq } from "drizzle-orm";
+import { asc, eq, sql } from "drizzle-orm";
 import { unstable_cache } from "next/cache";
 
 import { db } from "@/db";
-import { categories, type Category } from "@/db/schema";
+import {
+  categories,
+  ledgerEntries,
+  recurringTemplates,
+  type Category,
+} from "@/db/schema";
 
 // catalog ของ category — global ไม่ผูก user → cache แบบไม่มี user key ได้
 // ⚠️ pattern นี้ใช้ได้เฉพาะ query ที่ไม่อ่าน getCurrentUser() เท่านั้น
@@ -38,4 +43,41 @@ export const getAllCategories = unstable_cache(
 export async function getCategoryMap(): Promise<Map<string, Category>> {
   const rows = await getAllCategories();
   return new Map(rows.map((r) => [r.id, r]));
+}
+
+// admin view — รวมทุก active/inactive · ไม่ cache เพราะมี mutation บ่อย
+// guard admin ฝั่ง page/action
+export async function listCategoriesAdmin(): Promise<Category[]> {
+  return db
+    .select()
+    .from(categories)
+    .orderBy(asc(categories.sortOrder), asc(categories.id));
+}
+
+// นับ usage ต่อ categoryId (ledger + recurring templates) — กัน delete ตอนมี ref
+export async function getCategoryUsageCount(): Promise<Map<string, number>> {
+  const [ledgerRows, templateRows] = await Promise.all([
+    db
+      .select({
+        categoryId: ledgerEntries.categoryId,
+        count: sql<number>`count(*)::int`,
+      })
+      .from(ledgerEntries)
+      .groupBy(ledgerEntries.categoryId),
+    db
+      .select({
+        categoryId: recurringTemplates.categoryId,
+        count: sql<number>`count(*)::int`,
+      })
+      .from(recurringTemplates)
+      .groupBy(recurringTemplates.categoryId),
+  ]);
+  const map = new Map<string, number>();
+  for (const r of ledgerRows) {
+    map.set(r.categoryId, (map.get(r.categoryId) ?? 0) + Number(r.count));
+  }
+  for (const r of templateRows) {
+    map.set(r.categoryId, (map.get(r.categoryId) ?? 0) + Number(r.count));
+  }
+  return map;
 }
