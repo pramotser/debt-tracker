@@ -100,7 +100,7 @@ function CategoryFormFields({
       </div>
 
       <div className="flex flex-col gap-2">
-        <Label htmlFor={`${idPrefix}-icon`}>ไอคอน</Label>
+        <Label>ไอคอน</Label>
         <IconPicker
           value={icon}
           onChange={setIcon}

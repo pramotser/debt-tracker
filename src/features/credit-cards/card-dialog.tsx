@@ -102,13 +102,8 @@ function CardFormFields({
   return (
     <div className="flex flex-col gap-5">
       <div className="flex flex-col gap-2">
-        <Label htmlFor={`${idPrefix}-bank`}>ธนาคาร</Label>
-        <BankPicker
-          id={`${idPrefix}-bank`}
-          banks={banks}
-          value={bankId}
-          onChange={setBankId}
-        />
+        <Label>ธนาคาร</Label>
+        <BankPicker banks={banks} value={bankId} onChange={setBankId} />
       </div>
 
       <div className="flex flex-col gap-2">
