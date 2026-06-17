@@ -21,6 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { BankPicker } from "./bank-picker";
 import {
   Sheet,
   SheetContent,
@@ -102,22 +103,12 @@ function CardFormFields({
     <div className="flex flex-col gap-5">
       <div className="flex flex-col gap-2">
         <Label htmlFor={`${idPrefix}-bank`}>ธนาคาร</Label>
-        <Select value={bankId} onValueChange={(v) => v && setBankId(v)}>
-          <SelectTrigger id={`${idPrefix}-bank`} className="w-full">
-            <SelectValue>
-              {(value: string | null) =>
-                value ? banks.find((b) => b.id === value)?.name ?? value : ""
-              }
-            </SelectValue>
-          </SelectTrigger>
-          <SelectContent>
-            {banks.map((b) => (
-              <SelectItem key={b.id} value={b.id} label={b.name}>
-                {b.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <BankPicker
+          id={`${idPrefix}-bank`}
+          banks={banks}
+          value={bankId}
+          onChange={setBankId}
+        />
       </div>
 
       <div className="flex flex-col gap-2">
