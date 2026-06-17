@@ -21,11 +21,13 @@ docs/
 │   │   ├── subscription.md                overview + renewDate semantics
 │   │   ├── month-tab.md                   tab "รายการจ่ายรายเดือน"
 │   │   └── template-tab.md                tab "รายการสมัคร"
-│   └── credit-cards/                    /credit-cards (3 tabs)
-│       ├── credit-cards.md                overview + data model + cross-tab logic
-│       ├── statement-tab.md               tab "รายการชำระบัตรเครดิต"
-│       ├── installment-tab.md             tab "รายการผ่อนชำระ"
-│       └── cards-tab.md                   tab "บัตรของฉัน"
+│   ├── credit-cards/                    /credit-cards (3 tabs)
+│   │   ├── credit-cards.md                overview + data model + cross-tab logic
+│   │   ├── statement-tab.md               tab "รายการชำระบัตรเครดิต"
+│   │   ├── installment-tab.md             tab "รายการผ่อนชำระ"
+│   │   └── cards-tab.md                   tab "บัตรของฉัน"
+│   └── admin/                           /banks · /categories · /users (admin section)
+│       └── admin.md                       role gating + 3 admin pages
 ├── email-templates/                   ← เทมเพลตอีเมล (ใช้ที่ Supabase Dashboard)
 │   └── reset-password.md
 └── archive/                           ← UI mock เก่า ไม่ตรงกับของจริงแล้ว
@@ -50,8 +52,10 @@ Spec เขียนตอนตัดสินใจ design ครั้งแ�
 | `specs/monthly-cost/*` | `/monthly-cost` | `src/app/(portal)/monthly-cost/`, `features/monthly-cost/` |
 | `specs/subscription/*` | `/subscription` | `src/app/(portal)/subscription/`, `features/subscription/` |
 | `specs/credit-cards/*` | `/credit-cards` | `src/app/(portal)/credit-cards/`, `features/credit-cards/` |
+| `specs/admin/admin.md` | `/banks`, `/categories`, `/users` | `src/app/(portal)/{banks,categories,users}/`, `features/admin/`, `server/{queries,actions}/{banks,categories,users}.ts` |
 
-ยังไม่มี spec: `/ledger`, `/settings`, admin (`/banks`, `/categories`, `/users`) — ตอนนี้เป็น stub
+**ยังไม่มี spec (หน้าทำแล้วแต่ spec ค้าง):** `/recurring` · `/settings`
+**ยังไม่มี spec (ยังเป็น stub):** `/ledger`
 
 ## Convention ของ spec
 
