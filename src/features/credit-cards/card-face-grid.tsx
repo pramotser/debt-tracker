@@ -11,23 +11,21 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Switch } from "@/components/ui/switch";
-import {
-  getBankBrand,
-  getCardColorTheme,
-  getNetworkLabel,
-} from "@/lib/banks";
+import { getCardColorTheme, getNetworkLabel } from "@/lib/banks";
 import { cn } from "@/lib/utils";
 
-import type { CreditCard } from "./types";
+import type { Bank, CreditCard } from "./types";
 
 export function CardFaceGrid({
   cards,
+  banks,
   onAdd,
   onEdit,
   onToggleActive,
   onDelete,
 }: {
   cards: CreditCard[];
+  banks: Bank[];
   onAdd: () => void;
   onEdit: (id: string) => void;
   onToggleActive: (id: string) => void;
@@ -35,6 +33,7 @@ export function CardFaceGrid({
 }) {
   const active = cards.filter((c) => c.active);
   const inactive = cards.filter((c) => !c.active);
+  const bankMap = new Map(banks.map((b) => [b.id, b]));
 
   return (
     <div className="flex flex-col gap-4">
@@ -60,6 +59,7 @@ export function CardFaceGrid({
                 <CardFace
                   key={c.id}
                   card={c}
+                  bank={bankMap.get(c.bankId)}
                   onEdit={() => onEdit(c.id)}
                   onToggleActive={() => onToggleActive(c.id)}
                   onDelete={() => onDelete(c.id)}
@@ -73,6 +73,7 @@ export function CardFaceGrid({
                 <CardFace
                   key={c.id}
                   card={c}
+                  bank={bankMap.get(c.bankId)}
                   onEdit={() => onEdit(c.id)}
                   onToggleActive={() => onToggleActive(c.id)}
                   onDelete={() => onDelete(c.id)}
@@ -105,17 +106,19 @@ function Section({
 
 function CardFace({
   card,
+  bank,
   onEdit,
   onToggleActive,
   onDelete,
 }: {
   card: CreditCard;
+  bank?: Bank;
   onEdit: () => void;
   onToggleActive: () => void;
   onDelete: () => void;
 }) {
   const theme = getCardColorTheme(card.color);
-  const bankLabel = getBankBrand(card.bankId).label;
+  const bankLabel = bank?.shortName ?? card.bankId;
   const networkLabel = getNetworkLabel(card.cardNetwork);
   const last4 = card.lastFourDigits;
   const masked = last4 ? `•••• •••• •••• ${last4}` : "•••• ••••";

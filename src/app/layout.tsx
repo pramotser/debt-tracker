@@ -29,7 +29,7 @@ export default function RootLayout({
       suppressHydrationWarning
       className={`${fontSans.variable} h-full antialiased`}
     >
-      <body className="bg-background text-foreground">
+      <body className="bg-background text-foreground" suppressHydrationWarning>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
