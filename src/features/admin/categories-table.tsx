@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { useMemo, useState, useTransition } from "react";
+import { Pencil, Plus, Search, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import {
   Tooltip,
@@ -23,6 +24,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 import type { Category } from "@/db/schema";
 import { getCategoryIcon } from "@/lib/categories";
 import {
@@ -35,6 +37,13 @@ import {
 import { CategoryDialog, type CategoryDraft } from "./category-dialog";
 
 type UsageMap = Record<string, number>;
+type StatusFilter = "all" | "active" | "inactive";
+
+const STATUS_OPTIONS: { value: StatusFilter; label: string }[] = [
+  { value: "all", label: "ทั้งหมด" },
+  { value: "active", label: "ใช้งาน" },
+  { value: "inactive", label: "ปิดใช้" },
+];
 
 export function CategoriesTable({
   initialCategories,
@@ -48,6 +57,27 @@ export function CategoriesTable({
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Category | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
+  const [status, setStatus] = useState<StatusFilter>("all");
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return items.filter((c) => {
+      if (status === "active" && !c.active) return false;
+      if (status === "inactive" && c.active) return false;
+      if (!q) return true;
+      return c.name.toLowerCase().includes(q) || c.id.toLowerCase().includes(q);
+    });
+  }, [items, query, status]);
+
+  const counts = useMemo(
+    () => ({
+      all: items.length,
+      active: items.filter((c) => c.active).length,
+      inactive: items.filter((c) => !c.active).length,
+    }),
+    [items]
+  );
 
   const handleSubmit = (d: CategoryDraft) => {
     if (editing) {
@@ -133,7 +163,17 @@ export function CategoriesTable({
   return (
     <TooltipProvider>
       <div className="flex flex-col gap-4">
-        <div className="flex items-center justify-end">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="relative flex-1 sm:max-w-sm">
+            <Search className="absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="ค้นหา ชื่อ หรือ id"
+              className="pl-8"
+              aria-label="ค้นหาหมวดหมู่"
+            />
+          </div>
           <Button
             onClick={() => {
               setEditing(null);
@@ -146,8 +186,43 @@ export function CategoriesTable({
           </Button>
         </div>
 
+        <div
+          className="inline-flex w-full items-center gap-1 rounded-lg bg-muted p-1 text-sm sm:w-fit"
+          role="tablist"
+          aria-label="กรองตามสถานะ"
+        >
+          {STATUS_OPTIONS.map((opt) => {
+            const selected = status === opt.value;
+            return (
+              <button
+                key={opt.value}
+                type="button"
+                role="tab"
+                aria-selected={selected}
+                onClick={() => setStatus(opt.value)}
+                className={cn(
+                  "flex-1 rounded-md px-3 py-1 font-medium transition-colors sm:flex-none",
+                  selected
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                {opt.label}
+                <span className="ml-1.5 text-xs opacity-70">
+                  {counts[opt.value]}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        {filtered.length === 0 ? (
+          <div className="rounded-lg border border-dashed border-border bg-card/50 p-8 text-center text-sm text-muted-foreground">
+            ไม่พบหมวดหมู่ที่ตรงกับเงื่อนไข
+          </div>
+        ) : (
         <ul className="flex flex-col gap-2">
-          {items.map((c) => {
+          {filtered.map((c) => {
             const Icon = getCategoryIcon(c.icon);
             const usageCount = usage[c.id] ?? 0;
             const canDelete = !c.isSystem && usageCount === 0;
@@ -224,6 +299,7 @@ export function CategoriesTable({
             );
           })}
         </ul>
+        )}
 
         <CategoryDialog
           open={dialogOpen}

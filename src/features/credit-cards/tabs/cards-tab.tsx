@@ -1,6 +1,12 @@
 "use client";
 
-import { useState, useTransition, type Dispatch, type SetStateAction } from "react";
+import {
+  useMemo,
+  useState,
+  useTransition,
+  type Dispatch,
+  type SetStateAction,
+} from "react";
 import { toast } from "sonner";
 
 import {
@@ -20,21 +26,20 @@ import {
   updateCreditCard,
 } from "@/server/actions/credit-cards";
 
-import { BANK_LIST } from "@/lib/banks";
-
 import { CardDialog, type CardDraft } from "../card-dialog";
 import { CardFaceGrid } from "../card-face-grid";
 import type { Bank, CreditCard } from "../types";
 
-const BANKS: Bank[] = BANK_LIST.map((b) => ({ id: b.id, name: b.label }));
-
 export function CardsTab({
   cards,
   setCards,
+  banks,
 }: {
   cards: CreditCard[];
   setCards: Dispatch<SetStateAction<CreditCard[]>>;
+  banks: Bank[];
 }) {
+  const activeBanks = useMemo(() => banks.filter((b) => b.active), [banks]);
   const [, startMutation] = useTransition();
   const [cardDialogOpen, setCardDialogOpen] = useState(false);
   const [editingCard, setEditingCard] = useState<CreditCard | null>(null);
@@ -125,6 +130,7 @@ export function CardsTab({
     <>
       <CardFaceGrid
         cards={cards}
+        banks={banks}
         onAdd={() => {
           setEditingCard(null);
           setCardDialogOpen(true);
@@ -145,7 +151,7 @@ export function CardsTab({
           setCardDialogOpen(o);
           if (!o) setEditingCard(null);
         }}
-        banks={BANKS}
+        banks={activeBanks}
         initial={editingCard}
         onSubmit={handleSubmit}
       />

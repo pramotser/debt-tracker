@@ -9,7 +9,13 @@ import type { InstallmentPlanWithProgress } from "@/server/queries/credit-card-i
 import { CardsTab } from "./tabs/cards-tab";
 import { InstallmentTab } from "./tabs/installment-tab";
 import { StatementTab } from "./tabs/statement-tab";
-import type { Category, CreditCard, LedgerEntry, YearMonth } from "./types";
+import type {
+  Bank,
+  Category,
+  CreditCard,
+  LedgerEntry,
+  YearMonth,
+} from "./types";
 
 type TabValue = "statement" | "installment" | "mine";
 
@@ -22,6 +28,7 @@ export function CreditCardsApp({
   initialEntries,
   initialInstallmentEntries,
   categories,
+  banks,
   ym: initialYm,
 }: {
   initialCards: CreditCard[];
@@ -29,6 +36,7 @@ export function CreditCardsApp({
   initialEntries: LedgerEntry[];
   initialInstallmentEntries: LedgerEntry[];
   categories: Category[];
+  banks: Bank[];
   ym: YearMonth;
 }) {
   const [cards, setCards] = useState<CreditCard[]>(initialCards);
@@ -102,7 +110,7 @@ export function CreditCardsApp({
         </TabsContent>
 
         <TabsContent value="mine" className="mt-4" keepMounted>
-          <CardsTab cards={cards} setCards={setCards} />
+          <CardsTab cards={cards} setCards={setCards} banks={banks} />
         </TabsContent>
       </Tabs>
     </div>
