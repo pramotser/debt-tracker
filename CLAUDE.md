@@ -25,7 +25,7 @@ Next.js 16 App Router + TS · shadcn/ui + Tailwind v4 (UI เดียว ห้
 
 ## Layout
 - `src/app/(auth)/<page>` — login · register · forgot-password · reset-password
-- `src/app/(portal)/<page>` — dashboard · monthly-cost · subscription · recurring · credit-cards · ledger · settings · **admin:** banks · categories · users
+- `src/app/(portal)/<page>` — dashboard · recurring · credit-cards · ledger · settings · **admin:** banks · categories · users
 - `components/ui` (shadcn) + `components/layout`
 - `features/<domain>` (UI/logic per module)
 - `server/actions` (mutations) + `server/queries` (reads)
@@ -91,12 +91,10 @@ Next.js 16 App Router + TS · shadcn/ui + Tailwind v4 (UI เดียว ห้
 
 **User:**
 - ✅ `/dashboard` — 2 tabs (เดือนนี้ / ภาพรวม) · read-only chart + KPI
-- ✅ `/monthly-cost` — ค่าใช้จ่ายรายเดือน · template + month ledger
-- ✅ `/subscription` — รายเดือน/รายปี · auto-renew + import
-- ✅ `/recurring` — รวม fixed-cost + subscription · CRUD template
+- ✅ `/recurring` — **รวม fixed-cost + subscription** (เดิม `/monthly-cost` + `/subscription` ถูกลบ · commit `2ed81ff`) · 2 tabs (รายการเดือนนี้ / ตั้งค่ารายการประจำ) · template + month ledger + import + 3-way amount edit
 - ✅ `/credit-cards` — 3 tabs (statement / installment / cards) · BankPicker wired กับ DB banks
 - ✅ `/settings` — profile + theme + logout
-- 🚧 `/ledger` — stub (placeholder, ยังไม่ต่อ DB)
+- 🚧 `/ledger` — stub (placeholder, ยังไม่ต่อ DB) · มี **design spec** แล้ว (`docs/specs/ledger/ledger.md`) รอเจ้าของเคาะ open questions
 
 **Admin (role gating · `notFound()` ถ้าไม่ใช่ admin):**
 - ✅ `/banks` — CRUD ธนาคาร · brand colors · filter
@@ -116,23 +114,21 @@ Next.js 16 App Router + TS · shadcn/ui + Tailwind v4 (UI เดียว ห้
   - `dashboard.md` — overview + 2 tabs + 8 queries
   - `this-month-tab.md` — KPI + progress + trend bar + monthly donut
   - `overview-tab.md` — upcoming line + all-time donut + category flow + installment progress + heatmap
-- `docs/specs/monthly-cost/` — monthly-cost module:
-  - `monthly-cost.md` — overview + 2 tabs + data flow
-  - `month-tab.md` — รายการจ่ายรายเดือน + import banner
-  - `template-tab.md` — CRUD template จ่ายประจำ
-- `docs/specs/subscription/` — subscription module:
-  - `subscription.md` — overview + 2 tabs + renewDate semantics
-  - `month-tab.md` — รายการจ่ายรายเดือน + import banner
-  - `template-tab.md` — CRUD บริการ subscription (รายเดือน/รายปี)
+- `docs/specs/recurring/` — recurring module (รวม fixed-cost + subscription):
+  - `recurring.md` — overview + data flow + merge note
+  - `month-tab.md` — รายการเดือนนี้ + import banner + 3-way amount edit
+  - `template-tab.md` — CRUD รายการประจำ (รายเดือน/รายปี)
 - `docs/specs/credit-cards/` — credit-cards module:
   - `credit-cards.md` — overview + tab structure + data flow
   - `statement-tab.md` — statement รายเดือน + add charge
   - `installment-tab.md` — แผนผ่อน logic ทั้งหมด
   - `cards-tab.md` — CRUD บัตร
+- `docs/specs/settings/settings.md` — settings (profile + theme + logout)
+- `docs/specs/ledger/ledger.md` — ⚠️ **design spec** (ledger ยังเป็น stub) — read-only master view + open questions รอเจ้าของเคาะ
 - `docs/specs/admin/admin.md` — admin section (role gating + banks + categories + users)
 - `docs/deployment.md` — production runbook
 
-> ⚠️ **Spec ที่ขาด:** `/recurring` · `/settings` · `/ledger` — หน้าทำแล้ว (ยกเว้น ledger) แต่ยังไม่มี spec · จะ backfill ใน sprint ถัดไป
+> 🗂️ **Deprecated specs:** `docs/specs/monthly-cost/` + `docs/specs/subscription/` — รวมเข้า `/recurring` แล้ว (commit `2ed81ff`) · เก็บเป็น history ไม่ใช่ source of truth
 
 ## Env
 - `.env.local` ที่เดียว; `drizzle.config.ts` โหลดเอง

@@ -1,5 +1,8 @@
 # Subscription — overview
 
+> ⚠️ **DEPRECATED — superseded by [`/recurring`](../recurring/recurring.md)**
+> หน้า `/subscription` ถูกลบ · รวมเข้าเป็น `/recurring` (commit `2ed81ff`) · spec นี้อ้างตาราง `subscription_templates` ที่ไม่มีแล้ว (billingCycle/renewDate ย้ายไปอยู่บน `recurring_templates`) — เก็บเป็น history เท่านั้น
+
 route `/subscription` · หน้าเดียว 2 tabs · จัดการ subscription/บริการที่ตัดเงินประจำ (รายเดือน/รายปี)
 
 > page header แสดงเป็น **"สมาชิก/บริการ"** ไม่ใช่ "Subscription"

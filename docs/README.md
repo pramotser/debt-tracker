@@ -13,21 +13,23 @@ docs/
 │   │   ├── dashboard.md                   overview + data flow
 │   │   ├── this-month-tab.md              tab "เดือนนี้ต้องจ่ายอะไรบ้าง"
 │   │   └── overview-tab.md                tab "ภาพรวมรายจ่าย"
-│   ├── monthly-cost/                    /monthly-cost (2 tabs)
-│   │   ├── monthly-cost.md                overview + data flow
-│   │   ├── month-tab.md                   tab "รายการจ่ายรายเดือน"
-│   │   └── template-tab.md                tab "ตั้งค่ารายการประจำ"
-│   ├── subscription/                    /subscription (2 tabs)
-│   │   ├── subscription.md                overview + renewDate semantics
-│   │   ├── month-tab.md                   tab "รายการจ่ายรายเดือน"
-│   │   └── template-tab.md                tab "รายการสมัคร"
+│   ├── recurring/                      /recurring (2 tabs · รวม fixed-cost + subscription)
+│   │   ├── recurring.md                  overview + data flow + merge note
+│   │   ├── month-tab.md                  tab "รายการเดือนนี้"
+│   │   └── template-tab.md               tab "ตั้งค่ารายการประจำ"
 │   ├── credit-cards/                    /credit-cards (3 tabs)
 │   │   ├── credit-cards.md                overview + data model + cross-tab logic
 │   │   ├── statement-tab.md               tab "รายการชำระบัตรเครดิต"
 │   │   ├── installment-tab.md             tab "รายการผ่อนชำระ"
 │   │   └── cards-tab.md                   tab "บัตรของฉัน"
-│   └── admin/                           /banks · /categories · /users (admin section)
-│       └── admin.md                       role gating + 3 admin pages
+│   ├── settings/                       /settings (profile + theme + logout)
+│   │   └── settings.md                   overview + actions + AC
+│   ├── ledger/                         /ledger (🚧 design · ยังไม่ build)
+│   │   └── ledger.md                     design spec + open questions
+│   ├── admin/                          /banks · /categories · /users (admin section)
+│   │   └── admin.md                      role gating + 3 admin pages
+│   ├── monthly-cost/  ⚠️ DEPRECATED    รวมเข้า recurring/ แล้ว (เก็บเป็น history)
+│   └── subscription/  ⚠️ DEPRECATED    รวมเข้า recurring/ แล้ว (เก็บเป็น history)
 ├── email-templates/                   ← เทมเพลตอีเมล (ใช้ที่ Supabase Dashboard)
 │   └── reset-password.md
 └── archive/                           ← UI mock เก่า ไม่ตรงกับของจริงแล้ว
@@ -49,13 +51,15 @@ Spec เขียนตอนตัดสินใจ design ครั้งแ�
 | Spec | Route | Code path |
 |---|---|---|
 | `specs/dashboard/*` | `/dashboard` | `src/app/(portal)/dashboard/`, `features/dashboard/`, `server/queries/dashboard.ts` |
-| `specs/monthly-cost/*` | `/monthly-cost` | `src/app/(portal)/monthly-cost/`, `features/monthly-cost/` |
-| `specs/subscription/*` | `/subscription` | `src/app/(portal)/subscription/`, `features/subscription/` |
+| `specs/recurring/*` | `/recurring` | `src/app/(portal)/recurring/`, `features/recurring/`, `server/{queries,actions}/recurring-*.ts`, `ledger-entries.ts` |
 | `specs/credit-cards/*` | `/credit-cards` | `src/app/(portal)/credit-cards/`, `features/credit-cards/` |
+| `specs/settings/settings.md` | `/settings` | `src/app/(portal)/settings/`, `features/{profile,settings}/`, `server/actions/{profile,user-settings}.ts` |
+| `specs/ledger/ledger.md` | `/ledger` | 🚧 stub `src/app/(portal)/ledger/page.tsx` — ยังไม่ build |
 | `specs/admin/admin.md` | `/banks`, `/categories`, `/users` | `src/app/(portal)/{banks,categories,users}/`, `features/admin/`, `server/{queries,actions}/{banks,categories,users}.ts` |
+| `specs/monthly-cost/*` · `specs/subscription/*` | ~~`/monthly-cost`~~ ~~`/subscription`~~ | ⚠️ DEPRECATED — รวมเข้า `/recurring` (commit `2ed81ff`) · เก็บเป็น history |
 
-**ยังไม่มี spec (หน้าทำแล้วแต่ spec ค้าง):** `/recurring` · `/settings`
-**ยังไม่มี spec (ยังเป็น stub):** `/ledger`
+**ยังไม่มี spec:** ครบทุกหน้าที่ build แล้ว ✅
+**Design spec (ยังเป็น stub):** `/ledger` — มี design spec + open questions รอเจ้าของเคาะ
 
 ## Convention ของ spec
 
