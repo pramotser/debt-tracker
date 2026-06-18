@@ -16,7 +16,7 @@ Next.js 16 App Router + TS · shadcn/ui + Tailwind v4 (UI เดียว ห้
 ## Conventions
 - เงิน = `numeric(12,2)`; แสดงผลผ่าน `lib/format.ts` เสมอ (ห้าม hardcode สัญลักษณ์เงิน)
 - เดือน = เก็บ `year` + `month` (1-12); แสดง `YYYY/MM`; เทียบด้วย `year*100+month`
-- query ข้อมูลราย user ต้องกรอง `userId` ผ่าน `lib/auth.ts` → `getCurrentUser()` (dev คืน `dev-01`)
+- query ข้อมูลราย user ต้องกรอง `userId` ผ่าน `lib/auth.ts` → `getCurrentUser()` (Supabase Auth · throw ถ้าไม่ login)
 - **Read** = Server Component เรียก `server/queries` โดยตรง
 - **Mutation** = Server Action (`server/actions`) + `revalidatePath` + validate ด้วย zod ทุกครั้ง
 - UI: shadcn เท่านั้น โทนมน ขอบโค้ง การ์ดนุ่ม
@@ -24,13 +24,19 @@ Next.js 16 App Router + TS · shadcn/ui + Tailwind v4 (UI เดียว ห้
 - Role: `admin` = Banks/Categories/Users (ไม่มี userId) · `user` = Cards + ตาราง transactional (มี userId)
 
 ## Layout
-`src/app/(portal)/<page>` · `components/ui` (shadcn) + `components/layout` · `features/<domain>` · `server/actions` + `server/queries` · `db/schema` + `db/index` · `lib/{auth,format}` · `messages/th.json`
+- `src/app/(auth)/<page>` — login · register · forgot-password · reset-password
+- `src/app/(portal)/<page>` — dashboard · recurring · credit-cards · ledger · settings · **admin:** banks · categories · users
+- `components/ui` (shadcn) + `components/layout`
+- `features/<domain>` (UI/logic per module)
+- `server/actions` (mutations) + `server/queries` (reads)
+- `db/schema` + `db/index`
+- `lib/{auth,format,supabase}` · `messages/th.json`
 
 ## Schema
 
 ### Enums
 - `ledger_entry_type`: `FIXED_COST` | `SUBSCRIPTION` | `CREDIT_CARD` | `CREDIT_CARD_INSTALLMENT` | `ONE_TIME_COST`
-- `subscription_cycle`: `monthly` | `yearly`
+- `cycle_type`: `monthly` | `yearly` (ใช้กับ `recurring_templates`)
 - `installment_status`: `active` | `early_settled` (completed/near-end = derive ฝั่ง UI)
 - `user_role`: `admin` | `user`
 
@@ -41,9 +47,21 @@ Next.js 16 App Router + TS · shadcn/ui + Tailwind v4 (UI เดียว ห้
 ### user_settings — ตั้งค่ารายผู้ใช้
 - id: uuid PK · userId: FK→users · currency: text (THB) · language: text (th) · theme: text (light)
 
+### banks — ⭐ admin · ธนาคารกลาง (global, ไม่ผูก user)
+- id: text PK (slug `b-<short>` เช่น `b-kbank`) · shortName: text · name: text
+- brandBg: text (#hex) · brandFg: text (#hex) · active: bool · sortOrder: int
+- `credit_cards.bankId` → `banks.id` (logical, ไม่มี FK formal)
+
+### categories — ⭐ admin · หมวดหมู่กลาง (global, แชร์ทุก user)
+- id: text PK · name: text · icon: text (Lucide name) · colorBg: text · colorFg: text
+- ownerId: uuid? (NULL = catalog ระบบ · != NULL = user สร้างเอง — เผื่ออนาคต)
+- isSystem: bool (system = ลบไม่ได้) · sortOrder: int · active: bool
+- `ledger_entries.categoryId` / `recurring_templates.categoryId` อ้างเป็น text เปล่า (ไม่มี FK — ตั้งใจ)
+
 ### credit_cards — บัตรเครดิตของ user
-- id: uuid PK · userId: FK→users · bankId: text (mock รอ admin) · name: text
-- lastFourDigits: text? · statementDate: int? (1-31) · dueDate: int? (1-31) · active: bool
+- id: uuid PK · userId: FK→users · bankId: text (logical → banks.id) · name: text
+- lastFourDigits: text? · cardNetwork: text? · statementDate: int? (1-31) · dueDate: int? (1-31)
+- color: text (default "blue") · active: bool
 
 ### credit_card_installments — แผนผ่อน (ledger rows generate ตอน create)
 - id: uuid PK · userId: FK→users · creditCardId: FK→credit_cards (restrict) · categoryId: text
@@ -53,31 +71,39 @@ Next.js 16 App Router + TS · shadcn/ui + Tailwind v4 (UI เดียว ห้
 - hasInterest: bool · status: installment_status (default active)
 - settlementAmount: numeric? · closedAt: timestamptz?
 
-### fixed_cost_templates — template ค่าใช้จ่ายประจำเดือน
-- id: uuid PK · userId: FK→users · categoryId: text (mock รอ admin)
-- name: text · defaultAmount: numeric? · active: bool
-
-### subscription_templates — template subscription
+### recurring_templates — template รายจ่ายประจำ (รวม fixed cost + subscription)
 - id: uuid PK · userId: FK→users · categoryId: text · name: text
-- defaultAmount: numeric(12,2) · billingCycle: subscription_cycle
+- defaultAmount: numeric(12,2)? (NULL ได้ — กรอกทีหลังแบบค่าไฟ)
+- billingCycle: cycle_type (default `monthly` · `yearly` = renew เฉพาะเดือนตรงตาม renewDate)
 - renewDate: date? (monthly=day, yearly=month+day) · active: bool
 
 ### ledger_entries — ตารางกลางรายจ่ายจริงทุกประเภท ⭐
 - id: uuid PK · userId: FK→users · categoryId: text
-- sourceType: text? (เช่น "fixed_cost_template") · sourceId: text? (id ต้นทาง)
+- sourceType: text? (เช่น "recurring_template") · sourceId: text? (id ต้นทาง)
 - type: ledger_entry_type · name: text
 - amount: numeric? (ยอดรวม) · principalAmount: numeric? · interestAmount: numeric? (ใช้กับผ่อน)
 - year: int · month: int (1-12) · paid: bool · paidAt: timestamptz? · note: text?
 - index: (userId, year, month, type) · (sourceType, sourceId)
 
-> ⚠️ bankId / categoryId ยังเป็น text (mock) — รอ admin tables (banks, categories) ที่ยังไม่ได้สร้าง ห้ามเปลี่ยน type เอง
+> ⚠️ `categoryId` ใน ledger/templates เป็น text เปล่า (ไม่มี FK formal) — ตั้งใจให้ join ฝั่ง app ห้ามเปลี่ยน type เป็น uuid · `bankId` ใน credit_cards = logical FK → `banks.id` (ตอนนี้มีตารางจริงแล้ว)
 
 ## Module Status
+
+**User:**
 - ✅ `/dashboard` — 2 tabs (เดือนนี้ / ภาพรวม) · read-only chart + KPI
-- ✅ `/monthly-cost` — ค่าใช้จ่ายรายเดือน
-- ✅ `/subscription` — รายเดือน/รายปี
-- ✅ `/credit-cards` — 3 tabs (ชำระ / ผ่อน / บัตร)
-- 🚧 stub: `/ledger`, `/settings`, admin pages
+- ✅ `/recurring` — **รวม fixed-cost + subscription** (เดิม `/monthly-cost` + `/subscription` ถูกลบ · commit `2ed81ff`) · 2 tabs (รายการเดือนนี้ / ตั้งค่ารายการประจำ) · template + month ledger + import + 3-way amount edit
+- ✅ `/credit-cards` — 3 tabs (statement / installment / cards) · BankPicker wired กับ DB banks
+- ✅ `/settings` — profile + theme + logout
+- 🚧 `/ledger` — stub (placeholder, ยังไม่ต่อ DB) · มี **design spec** แล้ว (`docs/specs/ledger/ledger.md`) รอเจ้าของเคาะ open questions
+
+**Admin (role gating · `notFound()` ถ้าไม่ใช่ admin):**
+- ✅ `/banks` — CRUD ธนาคาร · brand colors · filter
+- ✅ `/categories` — CRUD หมวดหมู่ · icon picker · filter
+- ✅ `/users` — list ผู้ใช้ (read-only)
+
+**Auth (Supabase Auth · cookie session):**
+- ✅ `/(auth)/login` · `/register` · `/forgot-password` · `/reset-password`
+- ✅ Google OAuth + email/password
 
 > Credit installment = module ซับซ้อนสุด — อ่าน `docs/specs/credit-cards/credit-cards.md` ก่อน แล้วต่อ `installment-tab.md` ห้ามเดา logic
 
@@ -88,20 +114,21 @@ Next.js 16 App Router + TS · shadcn/ui + Tailwind v4 (UI เดียว ห้
   - `dashboard.md` — overview + 2 tabs + 8 queries
   - `this-month-tab.md` — KPI + progress + trend bar + monthly donut
   - `overview-tab.md` — upcoming line + all-time donut + category flow + installment progress + heatmap
-- `docs/specs/monthly-cost/` — monthly-cost module:
-  - `monthly-cost.md` — overview + 2 tabs + data flow
-  - `month-tab.md` — รายการจ่ายรายเดือน + import banner
-  - `template-tab.md` — CRUD template จ่ายประจำ
-- `docs/specs/subscription/` — subscription module:
-  - `subscription.md` — overview + 2 tabs + renewDate semantics
-  - `month-tab.md` — รายการจ่ายรายเดือน + import banner
-  - `template-tab.md` — CRUD บริการ subscription (รายเดือน/รายปี)
+- `docs/specs/recurring/` — recurring module (รวม fixed-cost + subscription):
+  - `recurring.md` — overview + data flow + merge note
+  - `month-tab.md` — รายการเดือนนี้ + import banner + 3-way amount edit
+  - `template-tab.md` — CRUD รายการประจำ (รายเดือน/รายปี)
 - `docs/specs/credit-cards/` — credit-cards module:
   - `credit-cards.md` — overview + tab structure + data flow
   - `statement-tab.md` — statement รายเดือน + add charge
   - `installment-tab.md` — แผนผ่อน logic ทั้งหมด
   - `cards-tab.md` — CRUD บัตร
+- `docs/specs/settings/settings.md` — settings (profile + theme + logout)
+- `docs/specs/ledger/ledger.md` — ⚠️ **design spec** (ledger ยังเป็น stub) — read-only master view + open questions รอเจ้าของเคาะ
+- `docs/specs/admin/admin.md` — admin section (role gating + banks + categories + users)
 - `docs/deployment.md` — production runbook
+
+> 🗂️ **Deprecated specs:** `docs/specs/monthly-cost/` + `docs/specs/subscription/` — รวมเข้า `/recurring` แล้ว (commit `2ed81ff`) · เก็บเป็น history ไม่ใช่ source of truth
 
 ## Env
 - `.env.local` ที่เดียว; `drizzle.config.ts` โหลดเอง

@@ -1,7 +1,7 @@
-# Admin Section Spec
+# Admin Section — spec
 
-> ไฟล์นี้ครอบคลุมทุกอย่างที่เกี่ยวกับ admin — role gating, sidebar, และ 3 หน้า (banks / categories / users)  
-> Claude Code: อ่านไฟล์นี้ก่อน build ทุกครั้ง
+> ครอบคลุม admin ทั้งหมด — role gating, sidebar, และ 3 หน้า (banks / categories / users)
+> สถานะ: **shipped** ทั้ง 3 หน้า · ไฟล์นี้สะท้อนสภาพปัจจุบัน (ไม่ใช่ build-plan แล้ว)
 
 ---
 
@@ -11,18 +11,15 @@
 - **Sidebar** (server component): รับ `role` จาก portal layout → render admin section เฉพาะเมื่อ `role === "admin"`
 - **หน้า admin** (server component): ทุกหน้าเรียก `getCurrentUser()` เอง แล้วเช็ค role → ถ้าไม่ใช่ admin ให้ `notFound()` (ไม่ redirect เพื่อกัน information leak)
 - **Server Actions**: ทุก mutation ของ admin ต้อง assert `user.role === "admin"` ก่อน throw ถ้าไม่ใช่
-- Bottom nav (`BottomNav`) เป็น client component ไม่รู้ role → **ไม่แสดง admin links** ใน bottom nav เลย (admin ใช้ sidebar desktop เท่านั้น)
+- Bottom nav (`BottomNav`) เป็น client component ไม่รู้ role → **ไม่แสดง admin links** ใน bottom nav (admin ใช้ sidebar desktop เท่านั้น)
 
 ---
 
-## 2. Sidebar — การเปลี่ยนแปลง
+## 2. Sidebar
 
-**ไฟล์:** `src/components/layout/sidebar.tsx`  
-**ปัจจุบัน:** รับแค่ `displayName: string`  
-**เปลี่ยนเป็น:** รับ `displayName: string` และ `role: "admin" | "user"`
+**ไฟล์:** `src/components/layout/sidebar.tsx` — รับ `displayName: string` + `role: "admin" | "user"`
 
 ```tsx
-// portal layout ส่ง role มาด้วย
 <Sidebar displayName={displayName} role={user.role} />
 ```
 
@@ -30,7 +27,7 @@
 
 ```
 ─────────────────────
- [main nav: dashboard / รายการ / บัตร]
+ [main nav: Dashboard / รายการค่าใช้จ่าย / บัตรเครดิต]
 ─────────────────────
  ผู้ดูแลระบบ          ← section label (12px, muted)
   🏦 ธนาคาร
@@ -40,202 +37,137 @@
  [ตั้งค่า / ชื่อ / ออกจากระบบ]
 ```
 
-**Icons (Lucide):** `Building2` (ธนาคาร) · `Tag` (หมวดหมู่) · `Users` (ผู้ใช้)  
-**Routes:** `/banks` · `/categories` · `/users`  
-**Active style:** เหมือน main nav (เส้นซ้าย navy + bg-secondary)
+**Icons (Lucide):** `Building2` (ธนาคาร) · `Tag` (หมวดหมู่) · `Users` (ผู้ใช้)
+**Routes:** `/banks` · `/categories` · `/users`
+**Active style:** เหมือน main nav
 
 ---
 
 ## 3. หน้า /banks
 
-**Route:** `src/app/(portal)/banks/page.tsx`  
-**Schema ปัจจุบัน:** ยังไม่มีตาราง `banks` ใน DB — ต้องสร้าง migration ใหม่  
-**lib/banks.ts ปัจจุบัน:** มี `BANKS` constant (6 entries) + `getBankBrand()` — ยังคงไว้ระหว่าง migrate  
+**Route:** `src/app/(portal)/banks/page.tsx` (guard `notFound()` ถ้าไม่ใช่ admin)
+**Table component:** `src/features/admin/banks-table.tsx` · **Dialog:** `src/features/admin/bank-dialog.tsx`
 
-### 3a. Schema ใหม่ — ตาราง `banks`
+### 3a. Schema — ตาราง `banks` (DB จริงแล้ว)
 
 ```ts
 // src/db/schema/banks.ts
-export const banks = pgTable("banks", {
-  id: text("id").primaryKey(),           // slug: "b-kbank", "b-scb" ฯลฯ (คงเดิมจาก lib/banks.ts)
-  shortName: text("short_name").notNull(), // "KBank" — แสดงบนบัตร (chip)
-  name: text("name").notNull(),           // "ธนาคารกสิกรไทย" — แสดงใน dropdown
-  active: boolean("active").notNull().default(true),
-  sortOrder: integer("sort_order").notNull().default(0),
-  createdAt: timestamp(...).defaultNow(),
-  updatedAt: timestamp(...).defaultNow(),
-});
+banks {
+  id: text PK            // slug "b-<short>" (lower-case) — คงเดิมเพื่อไม่กระทบ credit_cards.bankId
+  shortName: text        // "KBank" — chip บนบัตร
+  name: text             // "ธนาคารกสิกรไทย" — dropdown / list
+  brandBg: text          // #hex สีพื้น chip (default #5F5E5A)
+  brandFg: text          // #hex สีตัวอักษร chip (default #F1EFE8)
+  active: boolean        // default true
+  sortOrder: integer     // default 0
+  createdAt / updatedAt: timestamptz
+}
+// index: (active, sortOrder)
 ```
 
-> **สี (brandBg / brandFg) ไม่อยู่ใน schema รอบนี้** — ยังใช้ `lib/banks.ts` ต่อ → จะมาทำรอบถัดไป  
-> **ยังไม่เพิ่ม FK** `credit_cards.bank_id → banks.id` รอบนี้ — ทำใน migration แยกตอน migrate สี
+> **`brandBg` / `brandFg` อยู่ใน schema แล้ว** (เคยอยู่ใน `lib/banks.ts` — ย้ายเข้า DB แล้ว) → admin แก้สี chip ได้เองผ่าน `/banks`
+> **`credit_cards.bankId` = logical FK → `banks.id`** (text · **ไม่มี FK formal** · ตั้งใจ ห้ามเปลี่ยนเป็น uuid — ดู CLAUDE.md schema lock)
+> seed = 13 ธนาคารพาณิชย์ไทย (id 6 แบงก์เดิม b-uob/b-ttb/b-scb/b-kbank/b-kkp/b-ktc คงเดิม)
 
-### 3b. Seed data — 13 ธนาคารพาณิชย์ไทย
-
-| id | shortName | name | sortOrder |
-|---|---|---|---|
-| b-bbl | BBL | ธนาคารกรุงเทพ | 1 |
-| b-kbank | KBank | ธนาคารกสิกรไทย | 2 |
-| b-ktb | KTB | ธนาคารกรุงไทย | 3 |
-| b-ttb | TTB | ธนาคารทหารไทยธนชาต | 4 |
-| b-scb | SCB | ธนาคารไทยพาณิชย์ | 5 |
-| b-bay | BAY | ธนาคารกรุงศรีอยุธยา | 6 |
-| b-kkp | KKP | ธนาคารเกียรตินาคินภัทร | 7 |
-| b-cimbt | CIMBT | ธนาคารซีไอเอ็มบีไทย | 8 |
-| b-uob | UOB | ธนาคารยูโอบี | 9 |
-| b-tisco | TISCO | ธนาคารทิสโก้ | 10 |
-| b-lhb | LHB | ธนาคารแลนด์ แอนด์ เฮ้าส์ | 11 |
-| b-tcb | TCB | ธนาคารไทยเครดิต | 12 |
-| b-ktc | KTC | บัตรกรุงไทย (KTC) | 13 |
-
-> id ของ 6 แบงก์เดิม (b-uob, b-ttb, b-scb, b-kbank, b-kkp, b-ktc) คงเดิม — ไม่กระทบบัตรที่มีอยู่
-
-### 3c. UI — หน้า /banks
-
-**Layout:** เหมือน design ที่ approve แล้ว (ดู conversation)
+### 3b. UI
 
 ```
-[ธนาคาร]  [badge: admin]           [+ เพิ่มธนาคาร]
+[ธนาคาร]  [badge: admin]                       [+ เพิ่มธนาคาร]
 ข้อมูลกลาง · ใช้ตอนเพิ่มบัตร
 
+[ 🔍 ค้นหา ชื่อ หรือชื่อย่อ ]   [ทั้งหมด ▾]   (count: ทั้งหมด/เปิด/ปิด)
 ┌─────────────────────────────────────────────┐
 │ [chip] shortName  name           toggle  ✏️ 🗑️ │
 │ ...                                          │
 └─────────────────────────────────────────────┘
 ```
 
-**Chip:** `div` เล็กๆ สี bg/fg จาก `getBankBrand(id)` (lib/banks.ts เดิม) — รอบนี้ยังใช้ hardcode  
-**Toggle active:** inline switch → Server Action `toggleBankActive(id)`  
-**Edit:** Dialog (shadcn `Dialog`) — แก้ `shortName` + `name` + `sortOrder` + `active`  
-**Delete:** ได้เฉพาะ bank ที่ `cardCount === 0` → ถ้ามีบัตรใช้อยู่ปุ่มลบ disabled + tooltip "มีบัตรใช้งานอยู่"  
-**Add:** Dialog เดียวกัน mode สร้างใหม่ — `id` = auto slug จาก shortName (lowercase + prefix `b-`)
+- **Chip:** สี `bank.brandBg` / `bank.brandFg` (จาก DB — ไม่ใช่ `getBankBrand` แล้ว)
+- **ค้นหา:** input filter ตาม `shortName` / `name` (client-side)
+- **Filter สถานะ:** `all | active | inactive` (Select · มี count ต่อสถานะ)
+- **Toggle active:** inline switch → `toggleBankActive(id)`
+- **Edit / Add:** Dialog เดียวกัน — ฟิลด์ `shortName` · `name` · `brandBg` · `brandFg` (มี live preview chip) · `sortOrder` · `active` · create: `id` = auto slug จาก shortName (lowercase + prefix `b-`)
+- **Delete:** ได้เฉพาะ bank ที่ไม่มีบัตรผูก → ถ้ามีบัตรใช้อยู่ ปุ่มลบ disabled + tooltip
 
-### 3d. Queries & Actions
+### 3c. Queries & Actions
 
 ```
 server/queries/banks.ts
-  listBanks(): Bank[]                    // เรียงตาม sortOrder
-  getBankCardCount(): Map<string, number> // นับบัตรต่อ bank_id
+  listBanks()              // เรียงตาม sortOrder · ใช้ทั้ง /banks และ /credit-cards
+  getBankCardCount()       // นับบัตรต่อ bankId (guard delete)
 
-server/actions/banks.ts  (ทุก action assert admin ก่อน)
-  createBank(input)
-  updateBank(id, input)
-  toggleBankActive(id)
-  deleteBank(id)        // throw ถ้า cardCount > 0
+server/actions/banks.ts    (ทุก action assert admin ก่อน · revalidatePath('/banks'))
+  createBank · updateBank · toggleBankActive · deleteBank (throw ถ้ามีบัตรผูก)
 ```
 
 ---
 
 ## 4. หน้า /categories
 
-**Route:** `src/app/(portal)/categories/page.tsx`  
-**Schema:** มีอยู่แล้ว (`src/db/schema/categories.ts`) — ไม่ต้อง migrate  
-**Data:** seeded แล้ว 19 rows  
+**Route:** `src/app/(portal)/categories/page.tsx` (guard `notFound()`)
+**Table:** `src/features/admin/categories-table.tsx` · **Dialog:** `src/features/admin/category-dialog.tsx` · **Icon:** `src/features/admin/icon-picker.tsx`
 
-### 4a. UI
+### 4a. Schema (มีอยู่แล้ว — ไม่ต้อง migrate)
 
 ```
-[หมวดหมู่]  [badge: admin]          [+ เพิ่มหมวดหมู่]
+categories { id text PK · name · icon (Lucide name) · colorBg · colorFg ·
+             ownerId uuid? (NULL = catalog ระบบ) · isSystem bool · sortOrder · active }
+```
+
+### 4b. UI
+
+```
+[หมวดหมู่]  [badge: admin]                      [+ เพิ่มหมวดหมู่]
 ข้อมูลกลาง · ใช้แท็กรายการในทุก module
 
+[ 🔍 ค้นหา ชื่อ หรือ id ]   [ทั้งหมด ▾]   (count: ทั้งหมด/เปิด/ปิด)
 ┌─────────────────────────────────────────────┐
-│ [icon badge] name    is_system  toggle  ✏️ 🗑️ │
+│ [icon badge] name    ระบบ/กำหนดเอง  toggle  ✏️ 🗑️ │
 │ ...                                          │
 └─────────────────────────────────────────────┘
 ```
 
-**Icon badge:** วงกลมสี `colorBg` + icon (ชื่อ icon เก็บใน `icon` field — Lucide icon name)  
-**is_system badge:** "ระบบ" (น้ำเงิน) / "กำหนดเอง" (เทา)  
-**Toggle active + Edit + Delete:** เหมือน banks  
-**Delete guard:** ถ้า `is_system = true` → ลบไม่ได้ (ปุ่มลบ disabled + tooltip "หมวดหมู่ระบบ")
+- **Icon badge:** วงกลมสี `colorBg`/`colorFg` + icon (จาก `icon` field — Lucide name · render ผ่าน `getCategoryIcon`)
+- **ค้นหา:** filter ตาม `name` / `id` · **Filter สถานะ:** `all | active | inactive` (+ count)
+- **is_system badge:** "ระบบ" / "กำหนดเอง"
+- **Edit / Add:** Dialog — ฟิลด์ `name` · `icon` (IconPicker) · `colorBg` · `colorFg` (มี preview) · `sortOrder` · `active`
+- **Delete guard:** ถ้า `isSystem = true` → ลบไม่ได้ (ปุ่ม disabled + tooltip)
 
-### 4b. Queries & Actions
+### 4c. Queries & Actions
 
 ```
-server/queries/categories.ts  (มี listCategories อยู่แล้ว — เพิ่ม listCategoriesAdmin)
-  listCategoriesAdmin(): Category[]      // รวมทุก active/inactive
+server/queries/categories.ts
+  getCategories()          // active สำหรับ dropdown ทั่วแอป
+  listCategoriesAdmin()    // รวมทุก active/inactive สำหรับหน้านี้
 
-server/actions/categories.ts  (ทุก action assert admin ก่อน)
-  createCategory(input)
-  updateCategory(id, input)
-  toggleCategoryActive(id)
-  deleteCategory(id)    // throw ถ้า is_system = true
+server/actions/categories.ts  (assert admin · revalidatePath('/categories'))
+  createCategory · updateCategory · toggleCategoryActive · deleteCategory (throw ถ้า isSystem)
 ```
 
 ---
 
-## 5. หน้า /users
+## 5. หน้า /users — read-only
 
-**Route:** `src/app/(portal)/users/page.tsx`  
-**Schema:** `public.users` มีอยู่แล้ว  
-
-### 5a. UI — read-only (รอบนี้)
+**Route:** `src/app/(portal)/users/page.tsx` (guard `notFound()`)
 
 ```
 [ผู้ใช้]  [badge: admin]
+อ่านอย่างเดียว · จัดการ role ผ่าน Supabase Dashboard
 
-┌──────────────────────────────────────────┐
-│ ชื่อ                  role      สมัครเมื่อ │
-│ Pramot S.            admin     01/06/69  │
-│ ...                                      │
-└──────────────────────────────────────────┘
+┌──────────────────────────────────────────────┐
+│ ชื่อเต็ม (formatFullName)        [role]  สมัครเมื่อ │
+│ user id (มอนอ, มุม)                              │
+└──────────────────────────────────────────────┘
 ```
 
-**role badge:** "admin" (น้ำเงิน) / "user" (เทา)  
-**รอบนี้:** แสดงอย่างเดียว — ไม่มี edit/delete ยังไม่จำเป็น  
-**เหตุผล:** user จัดการผ่าน Supabase Dashboard ได้ตรงๆ, invite flow ทำทีหลัง
-
-### 5b. Query
-
-```
-server/queries/users.ts
-  listUsers(): User[]    // เรียงตาม created_at desc, assert admin
-```
+- **role badge:** `admin` (default/น้ำเงิน) / `user` (secondary/เทา)
+- **วันที่:** `th-TH-u-ca-buddhist` (พ.ศ. · `dd/mm/yy`)
+- **Query:** `server/queries/users.ts` → `listUsers()` (เรียง created_at desc · assert admin)
 
 ---
 
-## 6. Plan — ลำดับงาน
+## 6. ยังไม่อยู่ใน scope
 
-```
-Branch: feat/admin-section
-```
-
-ทำตามลำดับนี้ แต่ละขั้น `tsc` ผ่านก่อน commit:
-
-1. **Sidebar role gating**
-   - `portal/layout.tsx` ส่ง `role` ไปให้ `<Sidebar>`
-   - `sidebar.tsx` รับ `role` prop + render admin section
-   - `bottom-nav.tsx` ไม่ต้องแตะ
-
-2. **Migration: สร้างตาราง banks + seed**
-   - `src/db/schema/banks.ts` — schema ตามข้อ 3a
-   - `src/db/schema/index.ts` — export banks
-   - migration SQL: `CREATE TABLE banks ...` + `INSERT` 13 rows
-   - รัน `drizzle-kit migrate` (session pooler 5432)
-
-3. **หน้า /banks**
-   - `server/queries/banks.ts`
-   - `server/actions/banks.ts`
-   - `app/(portal)/banks/page.tsx` + dialog component
-
-4. **หน้า /categories**
-   - `server/queries/categories.ts` เพิ่ม `listCategoriesAdmin`
-   - `server/actions/categories.ts`
-   - `app/(portal)/categories/page.tsx` + dialog component
-
-5. **หน้า /users**
-   - `server/queries/users.ts`
-   - `app/(portal)/users/page.tsx` (read-only)
-
-6. **Role guard ทุกหน้า**
-   - ทุก page.tsx ข้างต้น: `if (user.role !== "admin") notFound()`
-   - ทุก action: `if (user.role !== "admin") throw new Error("Forbidden")`
-
----
-
-## 7. ไม่อยู่ใน scope รอบนี้
-
-- สี brandBg / brandFg บน banks table (รอบถัดไป)
-- FK `credit_cards.bank_id → banks.id` (รอบถัดไป พร้อม migration สี)
-- Invite user / เปลี่ยน role ผ่าน UI (ทำผ่าน Supabase Dashboard ก่อน)
-- หมวดหมู่ส่วนตัว (`owner_id != null`) — เผื่ออนาคต
+- **Invite user / เปลี่ยน role ผ่าน UI** — ทำผ่าน Supabase Dashboard ก่อน
+- **หมวดหมู่ส่วนตัว** (`ownerId != null`) — schema รองรับแล้ว แต่ยังไม่มี UI ให้ user สร้างเอง (เผื่ออนาคต)
+- **FK formal `credit_cards.bankId → banks.id`** — ตั้งใจคงเป็น logical FK (text) ไม่ทำ FK constraint (CLAUDE.md lock)

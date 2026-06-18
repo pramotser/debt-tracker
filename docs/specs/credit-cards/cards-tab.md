@@ -6,7 +6,8 @@
 - `src/features/credit-cards/tabs/cards-tab.tsx` — orchestrator (state + mutations)
 - `src/features/credit-cards/card-face-grid.tsx` — grid + `CardFace`
 - `src/features/credit-cards/card-dialog.tsx` — create/edit form
-- `src/lib/banks.ts` — bank brand (label/bg/fg) + `CARD_NETWORKS`
+- `src/features/credit-cards/bank-picker.tsx` — เลือกธนาคารจาก DB banks (chip สี `brandBg`/`brandFg`)
+- `src/lib/banks.ts` — card color themes + `CARD_NETWORKS` (bank brand ย้ายไป DB banks table แล้ว)
 
 ## วัตถุประสงค์
 
@@ -87,7 +88,7 @@ section header style: `text-xs font-medium text-muted-foreground` (sentence case
 ฟิลด์:
 | ฟิลด์ | type | required | validation |
 |---|---|---|---|
-| ธนาคาร | Select | ✓ | จาก `MOCK_BANKS` (UOB / TTB / SCB / KBank / KKP / KTC) |
+| ธนาคาร | `BankPicker` | ✓ | จาก DB banks (prop `banks` = `listBanks()`) · ค้นหาได้ · chip สี `brandBg`/`brandFg` |
 | ชื่อบัตร | text | ✓ | autoFocus, `trim().length > 0` |
 | 4 ตัวท้าย | text | — | optional, ถ้าใส่ต้อง `/^\d{4}$/` (`maxLength=4` + strip non-digit ขณะพิมพ์) |
 | เครือข่าย | Select | — | optional, ค่าจาก `CARD_NETWORKS` (`visa`/`mastercard`/`jcb`/`amex`/`unionpay`) + ตัวเลือก "ไม่ระบุ" → `null` |
@@ -144,19 +145,18 @@ zod ฝั่ง server (`server/actions/credit-cards.ts`) — `upsertSchema`:
 
 ## Bank brand config
 
-source: `src/lib/banks.ts`
+source ปัจจุบัน = **`banks` table (DB)** — `bank.brandBg` / `bank.brandFg` (admin แก้ผ่าน `/banks`) · BankPicker render chip จากค่านี้
 
+`src/lib/banks.ts` เหลือเฉพาะ card-level config (ไม่เกี่ยว bank brand แล้ว):
 ```ts
-BANKS: Record<bankId, { id, label, bg, fg }>
-FALLBACK_BANK            // ใช้เมื่อ bank_id ไม่อยู่ใน BANKS
-getBankBrand(bankId)     // never-throw lookup → fallback ถ้าไม่เจอ
-BANK_LIST                // Bank[] ที่ MOCK_BANKS derive ต่อ
+CARD_COLOR_THEMES        // ธีมสีการ์ด blue/navy/teal/plum (gradient from→to, fg)
+getCardColorTheme(color) // never-throw lookup → default 'blue'
 CARD_NETWORKS            // const ['visa','mastercard','jcb','amex','unionpay']
 getNetworkLabel(value)   // 'visa' → 'VISA' · 'mastercard' → 'Mastercard' · etc.
 ```
 
-- bg/fg = **brand color hardcode** ตั้งใจ (ข้อยกเว้นของกฎ "ห้าม hardcode สี")
-- ใช้ `getBankBrand` แทน `BANKS[id]` เสมอ ป้องกัน card หลุดจากที่ admin table ยังไม่มี
+- `brandBg`/`brandFg` (DB) + card gradient (`CARD_COLOR_THEMES`) = **ข้อยกเว้นที่ตั้งใจ** ของกฎ "ห้าม hardcode สี"
+- `getBankBrand`/`BANKS`/`BANK_LIST`/`FALLBACK_BANK` ใน `lib/banks.ts` = **legacy** (ก่อน migrate banks เข้า DB) — ไม่ใช้ใน flow บัตรแล้ว
 
 ## Open questions
 
@@ -164,6 +164,6 @@ getNetworkLabel(value)   // 'visa' → 'VISA' · 'mastercard' → 'Mastercard' �
   1. เพิ่ม column `creditLimit numeric` ใน `credit_cards`
   2. เพิ่ม input ใน CardDialog
   3. คำนวณใน StatementView (limit − sum ของ ledger ที่ยังไม่ paid)
-- **bankId mock** — ตอนนี้เป็น text + lookup `MOCK_BANKS`/`BANKS` หลังต่อ admin banks table จะเปลี่ยนเป็น uuid + FK
+- **bankId = text · logical FK → `banks.id`** (ไม่มี FK formal · ตั้งใจ ห้ามเปลี่ยน type เป็น uuid — ดู CLAUDE.md schema lock) · banks มาจาก DB แล้ว ไม่ใช่ mock
 - **ลบบัตร = orphan CREDIT_CARD ledger rows** — ถ้าต้องการ cascade ต้องตั้ง FK `ledger_entries.sourceId → credit_cards.id` (ทำไม่ได้ตรงๆ เพราะ sourceId เป็น text shared ระหว่าง type) → อาจต้องเปลี่ยนเป็น cleanup ใน server action แทน
 - **`due_date` ยังไม่ใช้บน CardFace** — แสดงแค่ `ตัดรอบ` · ถ้าต้องการโชว์ "ครบกำหนด" ด้วย จะอยู่ใน line เดียวกันหรือบรรทัดใหม่

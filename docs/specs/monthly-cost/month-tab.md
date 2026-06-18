@@ -1,5 +1,7 @@
 # Month Tab — รายการจ่ายรายเดือน
 
+> ⚠️ **DEPRECATED** — รวมเข้า [`/recurring` month-tab](../recurring/month-tab.md) แล้ว (commit `2ed81ff`) · เก็บเป็น history
+
 > ดู overview ก่อน: [`monthly-cost.md`](./monthly-cost.md)
 
 `tab value = "month"` (default tab) · file: `src/features/monthly-cost/month-view.tsx` (state อยู่ที่ `monthly-cost-app.tsx`)

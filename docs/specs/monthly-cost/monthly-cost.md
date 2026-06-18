@@ -1,5 +1,8 @@
 # Monthly Cost — overview
 
+> ⚠️ **DEPRECATED — superseded by [`/recurring`](../recurring/recurring.md)**
+> หน้า `/monthly-cost` ถูกลบ · รวม fixed-cost + subscription เข้าเป็น `/recurring` (commit `2ed81ff`) · spec นี้อ้างตาราง `fixed_cost_templates` ที่ไม่มีแล้ว — เก็บไว้เป็น history เท่านั้น
+
 route `/monthly-cost` · หน้าเดียว 2 tabs · จัดการค่าใช้จ่ายรายเดือน (FIXED_COST + ONE_TIME_COST)
 
 > ใช้ตาราง `ledger_entries` + `fixed_cost_templates` ต่อ Supabase Postgres เรียบร้อยแล้ว ไม่ใช่ mock-only เหมือนใน spec v1

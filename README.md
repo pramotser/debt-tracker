@@ -38,36 +38,40 @@ Scripts: `dev` · `build` · `start` · `lint`
 
 ```
 src/
-  app/(portal)/              # routes ทั้งหมด
-    dashboard/                 # (stub) ภาพรวม
-    monthly-cost/              # ค่าใช้จ่ายรายเดือน — ทำงานครบ
-    subscription/              # สมาชิก/บริการรายเดือน-ปี — ทำงานครบ
-    credit-cards/              # บัตรเครดิต 3 tabs — ทำงานครบ
-    ledger/                    # (stub) รายการทั้งหมด
-    settings/                  # (stub) ตั้งค่า
-    banks/ categories/ users/  # (stub) admin pages
+  app/
+    (auth)/                    # login / register / forgot-password / reset-password
+    (portal)/                  # routes หลังล็อกอิน
+      dashboard/                 # ภาพรวม — 2 tabs (เดือนนี้ / ภาพรวม)
+      monthly-cost/              # ค่าใช้จ่ายรายเดือน
+      subscription/              # สมาชิก/บริการรายเดือน-ปี
+      recurring/                 # รวม fixed-cost + subscription · CRUD template
+      credit-cards/              # บัตรเครดิต 3 tabs (statement / installment / cards)
+      settings/                  # โปรไฟล์ + ธีม + logout
+      ledger/                    # (stub) รายการทั้งหมด
+      banks/ categories/ users/  # admin pages (role gating)
+    auth/callback/             # Supabase OAuth callback
   components/
     ui/                        # shadcn primitives
     layout/                    # portal-sidebar, etc
   features/<domain>/           # client components + dialogs per page
-    credit-cards/  monthly-cost/  subscription/
+    credit-cards/  monthly-cost/  subscription/  recurring/  settings/  profile/  admin/
   server/
     actions/                   # Server Actions (mutations + revalidatePath)
     queries/                   # ดึงข้อมูล (server-only)
   db/
-    schema/                    # Drizzle table definitions
+    schema/                    # Drizzle table definitions (users / user-settings / banks / categories / credit-cards / credit-card-installments / recurring-templates / ledger-entries)
     index.ts seed.ts
   lib/
-    auth.ts                    # getCurrentUser() — dev คืน dev-01
+    auth.ts                    # getCurrentUser() — Supabase Auth (throw ถ้าไม่ login)
     format.ts                  # formatMoney / formatYearMonth
+    supabase/                  # browser + server clients
   messages/th.json             # i18n
 
 docs/
   README.md                    # index ของ doc ทั้งหมด
   deployment.md                # production runbook
   specs/                       # spec ของแต่ละ module — อ่านก่อนลงมือ
-    monthly-cost.md  subscription.md
-    credit-cards/                # /credit-cards 3 tabs (README + tab1/2/3)
+    dashboard/  monthly-cost/  subscription/  credit-cards/  admin/
   email-templates/             # Supabase email templates
   archive/                     # UI mock เก่า (mock.html + prototype.jsx)
 ```
@@ -76,11 +80,15 @@ docs/
 
 | Route | สถานะ | คำอธิบาย |
 |---|---|---|
+| `/dashboard` | ✅ | 2 tabs (เดือนนี้ / ภาพรวม) — read-only KPI + chart |
 | `/monthly-cost` | ✅ | ค่าใช้จ่ายรายเดือน — template + month ledger + import |
 | `/subscription` | ✅ | สมาชิกรายเดือน/ปี — auto-renew + import |
-| `/credit-cards` | ✅ | บัตรเครดิต 3 tabs (statement / installment / mine) |
-| `/dashboard` `/ledger` `/settings` | 🚧 stub | ยังไม่ทำ |
-| `/banks` `/categories` `/users` | 🚧 stub | admin pages — ยังไม่ทำ |
+| `/recurring` | ✅ | รวม fixed-cost + subscription · CRUD template |
+| `/credit-cards` | ✅ | บัตรเครดิต 3 tabs (statement / installment / cards) — BankPicker wired กับ DB banks |
+| `/settings` | ✅ | โปรไฟล์ + ธีม + logout |
+| `/ledger` | 🚧 stub | placeholder — ยังไม่ต่อ DB |
+| `/banks` `/categories` `/users` | ✅ admin | role gating · CRUD ธนาคาร/หมวดหมู่ · list ผู้ใช้ (read-only) |
+| `/(auth)/*` | ✅ | login · register · forgot-password · reset-password (Supabase Auth + Google OAuth) |
 
 ### `/credit-cards` 3 tabs
 
@@ -94,7 +102,7 @@ docs/
 - **เดือน** = เก็บ `year` + `month` (1-12) — แสดง `YYYY/MM` เทียบด้วย `year*100+month`
 - **query รายผู้ใช้** ต้องกรอง `userId` ผ่าน `getCurrentUser()`
 - **mutation** = Server Action + `revalidatePath` + validate ด้วย zod
-- **UI** = shadcn เท่านั้น โทนมน ขอบโค้ง การ์ดนุ่ม (dark mode ทำทีหลัง)
+- **UI** = shadcn เท่านั้น โทนมน ขอบโค้ง การ์ดนุ่ม · รองรับ light/dark สลับใน `/settings` (เก็บใน `user_settings.theme`)
 - **Role** = `admin` (Banks/Categories/Users) ไม่มี userId · `user` (Cards + transactional) มี userId
 
 ## Env

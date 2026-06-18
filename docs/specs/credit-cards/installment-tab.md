@@ -116,7 +116,7 @@ return "active";
 |---|---|---|
 | บัตรเครดิต | Select | ✓ จาก `cards.filter(active)` |
 | ชื่อแผน | text | ✓ |
-| หมวดหมู่ | Select | ✓ `MOCK_CATEGORIES` |
+| หมวดหมู่ | Select | ✓ จาก DB `categories` (prop `categories` = `getCategories()`) |
 | ยอดรวม | number | ✓ |
 | ค่างวด/เดือน | number | ✓ |
 | จำนวนงวด | number (1-120) | ✓ default `10` |

@@ -1,5 +1,7 @@
 # Template Tab — รายการสมัคร
 
+> ⚠️ **DEPRECATED** — รวมเข้า [`/recurring` template-tab](../recurring/template-tab.md) แล้ว (commit `2ed81ff`) · เก็บเป็น history
+
 > ดู overview ก่อน: [`subscription.md`](./subscription.md)
 
 `tab value = "tpl"` · file: `src/features/subscription/template-view.tsx` (state อยู่ที่ `subscription-app.tsx`)

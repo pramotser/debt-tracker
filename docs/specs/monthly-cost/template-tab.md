@@ -1,5 +1,7 @@
 # Template Tab — ตั้งค่ารายการประจำ
 
+> ⚠️ **DEPRECATED** — รวมเข้า [`/recurring` template-tab](../recurring/template-tab.md) แล้ว (commit `2ed81ff`) · เก็บเป็น history
+
 > ดู overview ก่อน: [`monthly-cost.md`](./monthly-cost.md)
 
 `tab value = "tpl"` · file: `src/features/monthly-cost/template-view.tsx` (state อยู่ที่ `monthly-cost-app.tsx`)
