@@ -1,6 +1,6 @@
-import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
+import { MonthNavSkeleton } from "@/components/layout/month-nav";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -16,15 +16,7 @@ export default function Loading() {
       </div>
 
       {/* month nav */}
-      <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" disabled aria-label="เดือนก่อน">
-          <ChevronLeft />
-        </Button>
-        <Skeleton className="h-7 w-32" />
-        <Button variant="ghost" size="icon" disabled aria-label="เดือนถัดไป">
-          <ChevronRight />
-        </Button>
-      </div>
+      <MonthNavSkeleton />
 
       {/* summary card */}
       <Card className="gap-4 p-4 sm:p-6">
