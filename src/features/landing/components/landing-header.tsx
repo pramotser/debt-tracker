@@ -3,9 +3,8 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+import { BrandMark } from "@/components/layout/brand-mark";
 import { cn } from "@/lib/utils";
-
-import { BrandMark } from "./brand-mark";
 
 export function LandingHeader() {
   const [scrolled, setScrolled] = useState(false);
