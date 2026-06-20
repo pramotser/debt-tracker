@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Check, ChevronDown, ChevronUp, MoreHorizontal, Pencil, Trash2, X, XCircle } from "lucide-react";
+import { ChevronDown, ChevronUp, MoreHorizontal, Pencil, Trash2, XCircle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -317,7 +317,6 @@ function EntryRow({
   const [iDraft, setIDraft] = useState("");
 
   const canEditSplit = hasInterest && !entry.paid;
-  const isEmpty = entry.principalAmount === null;
 
   const startEdit = () => {
     setPDraft(entry.principalAmount ?? "");
@@ -334,6 +333,82 @@ function EntryRow({
     setEditing(false);
   };
 
+  const liveTotal =
+    pDraft !== "" && iDraft !== "" && Number(pDraft) >= 0 && Number(iDraft) >= 0
+      ? formatMoney((Number(pDraft) + Number(iDraft)).toFixed(2))
+      : formatMoney(entry.amount ?? "0");
+
+  if (editing) {
+    return (
+      <div className="flex flex-col gap-3 rounded-lg border border-dashed bg-muted/30 px-3 py-3">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-medium tabular-nums">
+            งวด {formatYearMonth(entry.year, entry.month)}
+          </span>
+          <span className="text-sm font-semibold tabular-nums">{liveTotal}</span>
+        </div>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+          <div className="flex flex-1 gap-3">
+            <div className="flex flex-1 flex-col gap-1 sm:w-36 sm:flex-none">
+              <label
+                htmlFor={`split-p-${entry.id}`}
+                className="text-[11px] text-muted-foreground"
+              >
+                เงินต้น
+              </label>
+              <Input
+                id={`split-p-${entry.id}`}
+                autoFocus
+                type="number"
+                inputMode="decimal"
+                value={pDraft}
+                onChange={(e) => setPDraft(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") commit();
+                  else if (e.key === "Escape") setEditing(false);
+                }}
+                className="h-9 text-right tabular-nums"
+              />
+            </div>
+            <div className="flex flex-1 flex-col gap-1 sm:w-36 sm:flex-none">
+              <label
+                htmlFor={`split-i-${entry.id}`}
+                className="text-[11px] text-muted-foreground"
+              >
+                ดอกเบี้ย
+              </label>
+              <Input
+                id={`split-i-${entry.id}`}
+                type="number"
+                inputMode="decimal"
+                value={iDraft}
+                onChange={(e) => setIDraft(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") commit();
+                  else if (e.key === "Escape") setEditing(false);
+                }}
+                className="h-9 text-right tabular-nums"
+              />
+            </div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setEditing(false)}
+            >
+              ยกเลิก
+            </Button>
+            <Button type="button" size="sm" onClick={commit}>
+              บันทึก
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={cn("flex items-center gap-3 py-2", entry.paid && "opacity-60")}>
       <Checkbox checked={entry.paid} onCheckedChange={onTogglePaid} />
@@ -341,56 +416,7 @@ function EntryRow({
         {formatYearMonth(entry.year, entry.month)}
       </div>
       <div className="min-w-0 flex-1 text-sm">
-        {editing ? (
-          <div className="flex items-center gap-1">
-            <Input
-              autoFocus
-              type="number"
-              inputMode="decimal"
-              placeholder="ต้น"
-              value={pDraft}
-              onChange={(e) => setPDraft(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") commit();
-                else if (e.key === "Escape") setEditing(false);
-              }}
-              className="h-7 w-20 text-right tabular-nums text-xs"
-            />
-            <span className="text-xs text-muted-foreground">+</span>
-            <Input
-              type="number"
-              inputMode="decimal"
-              placeholder="ดอก"
-              value={iDraft}
-              onChange={(e) => setIDraft(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") commit();
-                else if (e.key === "Escape") setEditing(false);
-              }}
-              className="h-7 w-16 text-right tabular-nums text-xs"
-            />
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              onClick={commit}
-              aria-label="บันทึก"
-              className="size-7 text-green-600 hover:text-green-700"
-            >
-              <Check className="size-4" />
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              onClick={() => setEditing(false)}
-              aria-label="ยกเลิก"
-              className="size-7 text-muted-foreground"
-            >
-              <X className="size-4" />
-            </Button>
-          </div>
-        ) : hasInterest && entry.principalAmount !== null ? (
+        {hasInterest && entry.principalAmount !== null ? (
           <button
             type="button"
             onClick={canEditSplit ? startEdit : undefined}
@@ -424,9 +450,7 @@ function EntryRow({
           entry.paid && "line-through"
         )}
       >
-        {editing && Number(pDraft) >= 0 && Number(iDraft) >= 0 && pDraft !== "" && iDraft !== ""
-          ? formatMoney((Number(pDraft) + Number(iDraft)).toFixed(2))
-          : formatMoney(entry.amount ?? "0")}
+        {formatMoney(entry.amount ?? "0")}
       </div>
     </div>
   );
