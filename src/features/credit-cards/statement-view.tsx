@@ -1,13 +1,12 @@
 "use client";
 
 import { useMemo, useOptimistic, useState, useTransition } from "react";
-import { Check, Plus, Trash2 } from "lucide-react";
+import { Check, Pencil, Plus, Trash2 } from "lucide-react";
 
 import { MonthNav } from "@/components/layout/month-nav";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatMoney } from "@/lib/format";
@@ -15,6 +14,7 @@ import { getCardColorTheme } from "@/lib/banks";
 import { cn } from "@/lib/utils";
 import type { InstallmentPlanWithProgress } from "@/server/queries/credit-card-installments";
 
+import { NumberInput } from "@/components/shared/number-input";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { STATUS } from "@/components/shared/status-tokens";
 import { SummaryStrip } from "./components/summary-strip";
@@ -68,6 +68,7 @@ export function StatementView({
   onAddCharge,
   onTogglePaid,
   onUpdateAmount,
+  onUpdateInterestSplit,
   onDelete,
   onJumpToPlan,
 }: {
@@ -81,6 +82,7 @@ export function StatementView({
   onAddCharge: () => void;
   onTogglePaid: (entry: LedgerEntry, next: boolean) => Promise<void>;
   onUpdateAmount: (entry: LedgerEntry, amount: string) => void;
+  onUpdateInterestSplit: (entry: LedgerEntry, principal: string, interest: string) => void;
   onDelete: (entry: LedgerEntry) => void;
   onJumpToPlan: (planId: string) => void;
 }) {
@@ -290,6 +292,7 @@ export function StatementView({
                 plan={plan}
                 onTogglePaid={() => handleTogglePaid(e)}
                 onUpdateAmount={(amt) => onUpdateAmount(e, amt)}
+                onUpdateInterestSplit={(p, i) => onUpdateInterestSplit(e, p, i)}
                 onDelete={() => onDelete(e)}
                 onJumpToPlan={onJumpToPlan}
               />
@@ -307,6 +310,7 @@ function StatusRailRow({
   plan,
   onTogglePaid,
   onUpdateAmount,
+  onUpdateInterestSplit,
   onDelete,
   onJumpToPlan,
 }: {
@@ -315,14 +319,19 @@ function StatusRailRow({
   plan?: InstallmentPlanWithProgress;
   onTogglePaid: () => void;
   onUpdateAmount: (amount: string) => void;
+  onUpdateInterestSplit: (principal: string, interest: string) => void;
   onDelete: () => void;
   onJumpToPlan: (planId: string) => void;
 }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("");
+  const [splitEditing, setSplitEditing] = useState(false);
+  const [pDraft, setPDraft] = useState("");
+  const [iDraft, setIDraft] = useState("");
   const isInstallment = entry.type === "CREDIT_CARD_INSTALLMENT";
-  // accent เดียวคุม rail / amount / progress current — flip ตาม paid (optimistic)
   const accent = entry.paid ? STATUS.paid.bar : STATUS.due.bar;
+  const canEditSplit = isInstallment && plan?.hasInterest && !entry.paid;
+  const hasSplit = isInstallment && plan?.hasInterest && entry.principalAmount !== null;
 
   const startEdit = () => {
     setDraft(entry.amount ?? "");
@@ -335,6 +344,20 @@ function StatusRailRow({
       onUpdateAmount(n.toFixed(2));
     }
     setEditing(false);
+  };
+
+  const startSplitEdit = () => {
+    setPDraft(entry.principalAmount ?? "");
+    setIDraft(entry.interestAmount ?? "");
+    setSplitEditing(true);
+  };
+  const commitSplit = () => {
+    const p = Number(pDraft);
+    const i = Number(iDraft);
+    if (Number.isFinite(p) && Number.isFinite(i) && p >= 0 && i >= 0) {
+      onUpdateInterestSplit(p.toFixed(2), i.toFixed(2));
+    }
+    setSplitEditing(false);
   };
 
   const cur = plan ? installmentIndex(entry, plan) : 0;
@@ -389,10 +412,8 @@ function StatusRailRow({
 
         {isInstallment || editing ? (
           editing ? (
-            <Input
+            <NumberInput
               autoFocus
-              type="number"
-              inputMode="decimal"
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
               onBlur={commit}
@@ -437,6 +458,98 @@ function StatusRailRow({
           <Trash2 />
         </Button>
       </div>
+
+      {!splitEditing && hasSplit ? (
+        <button
+          type="button"
+          onClick={canEditSplit ? startSplitEdit : undefined}
+          className={cn(
+            "ml-7 inline-flex w-fit items-center gap-1 text-xs text-muted-foreground",
+            canEditSplit && "cursor-pointer hover:text-foreground"
+          )}
+        >
+          ต้น {formatMoney(entry.principalAmount!)} + ดอก {formatMoney(entry.interestAmount ?? "0")}
+          {canEditSplit && <Pencil className="size-3 shrink-0 opacity-60" />}
+        </button>
+      ) : !splitEditing && canEditSplit ? (
+        <button
+          type="button"
+          onClick={startSplitEdit}
+          className="ml-7 inline-flex w-fit items-center gap-1 text-xs text-orange-600 hover:text-orange-700"
+        >
+          <Pencil className="size-3 shrink-0" />
+          กรอกต้น/ดอก
+        </button>
+      ) : null}
+
+      {splitEditing && (
+        <div className="mt-1 flex flex-col gap-3 rounded-lg border border-dashed bg-muted/30 px-3 py-3">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-muted-foreground">
+              แก้ไขเงินต้น / ดอกเบี้ย
+            </span>
+            <span className="text-sm font-semibold tabular-nums">
+              {pDraft !== "" && iDraft !== "" && Number(pDraft) >= 0 && Number(iDraft) >= 0
+                ? formatMoney((Number(pDraft) + Number(iDraft)).toFixed(2))
+                : formatMoney(entry.amount ?? "0")}
+            </span>
+          </div>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+            <div className="flex flex-1 gap-3">
+              <div className="flex flex-1 flex-col gap-1 sm:w-36 sm:flex-none">
+                <label
+                  htmlFor={`stmt-split-p-${entry.id}`}
+                  className="text-[11px] text-muted-foreground"
+                >
+                  เงินต้น
+                </label>
+                <NumberInput
+                  id={`stmt-split-p-${entry.id}`}
+                  autoFocus
+                  value={pDraft}
+                  onChange={(e) => setPDraft(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") commitSplit();
+                    else if (e.key === "Escape") setSplitEditing(false);
+                  }}
+                  className="h-9 text-right tabular-nums"
+                />
+              </div>
+              <div className="flex flex-1 flex-col gap-1 sm:w-36 sm:flex-none">
+                <label
+                  htmlFor={`stmt-split-i-${entry.id}`}
+                  className="text-[11px] text-muted-foreground"
+                >
+                  ดอกเบี้ย
+                </label>
+                <NumberInput
+                  id={`stmt-split-i-${entry.id}`}
+                  value={iDraft}
+                  onChange={(e) => setIDraft(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") commitSplit();
+                    else if (e.key === "Escape") setSplitEditing(false);
+                  }}
+                  className="h-9 text-right tabular-nums"
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setSplitEditing(false)}
+              >
+                ยกเลิก
+              </Button>
+              <Button type="button" size="sm" onClick={commitSplit}>
+                บันทึก
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </Card>
   );
 }

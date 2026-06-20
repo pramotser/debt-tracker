@@ -12,7 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
+import { NumberInput } from "@/components/shared/number-input";
 import { Label } from "@/components/ui/label";
 import {
   Sheet,
@@ -67,10 +67,8 @@ function SettleFormFields({
           >
             ฿
           </span>
-          <Input
+          <NumberInput
             id={`${idPrefix}-amount`}
-            type="number"
-            inputMode="decimal"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
             placeholder="8000.00"
@@ -83,22 +81,18 @@ function SettleFormFields({
       <div className="grid grid-cols-2 gap-3">
         <div className="flex flex-col gap-2">
           <Label htmlFor={`${idPrefix}-year`}>ปีที่ปิด</Label>
-          <Input
+          <NumberInput
             id={`${idPrefix}-year`}
-            type="number"
-            inputMode="numeric"
+            decimal={false}
             value={year}
             onChange={(e) => setYear(e.target.value)}
           />
         </div>
         <div className="flex flex-col gap-2">
           <Label htmlFor={`${idPrefix}-month`}>เดือนที่ปิด</Label>
-          <Input
+          <NumberInput
             id={`${idPrefix}-month`}
-            type="number"
-            inputMode="numeric"
-            min={1}
-            max={12}
+            decimal={false}
             value={month}
             onChange={(e) => setMonth(e.target.value)}
           />

@@ -13,6 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { NumberInput } from "@/components/shared/number-input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -197,12 +198,9 @@ function CardFormFields({
       <div className="grid grid-cols-2 gap-3">
         <div className="flex flex-col gap-2">
           <Label htmlFor={`${idPrefix}-stmt`}>วันตัดรอบบิล</Label>
-          <Input
+          <NumberInput
             id={`${idPrefix}-stmt`}
-            type="number"
-            inputMode="numeric"
-            min={1}
-            max={31}
+            decimal={false}
             placeholder="10"
             value={statementDay}
             onChange={(e) => setStatementDay(e.target.value)}
@@ -211,12 +209,9 @@ function CardFormFields({
         </div>
         <div className="flex flex-col gap-2">
           <Label htmlFor={`${idPrefix}-due`}>วันครบกำหนดชำระ</Label>
-          <Input
+          <NumberInput
             id={`${idPrefix}-due`}
-            type="number"
-            inputMode="numeric"
-            min={1}
-            max={31}
+            decimal={false}
             placeholder="28"
             value={dueDay}
             onChange={(e) => setDueDay(e.target.value)}
