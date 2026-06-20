@@ -316,8 +316,8 @@ function EntryRow({
   const [pDraft, setPDraft] = useState("");
   const [iDraft, setIDraft] = useState("");
 
-  const needsSplit =
-    hasInterest && !entry.paid && entry.principalAmount === null;
+  const canEditSplit = hasInterest && !entry.paid;
+  const isEmpty = entry.principalAmount === null;
 
   const startEdit = () => {
     setPDraft(entry.principalAmount ?? "");
@@ -385,14 +385,14 @@ function EntryRow({
               </span>
             )}
           </div>
-          {needsSplit && (
+          {canEditSplit && (
             <Button
               variant="ghost"
               size="sm"
               onClick={startEdit}
               className="text-xs text-orange-600"
             >
-              กรอกต้น/ดอก
+              {isEmpty ? "กรอกต้น/ดอก" : "แก้"}
             </Button>
           )}
           <div

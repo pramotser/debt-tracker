@@ -36,7 +36,7 @@ import { cn } from "@/lib/utils";
 
 import type { Category, CreditCard } from "./types";
 
-type InterestMode = "zero" | "known-split" | "unknown-split";
+type InterestMode = "zero" | "with-interest";
 
 export type PlanDraft = {
   creditCardId: string;
@@ -56,20 +56,12 @@ const INTEREST_OPTIONS: {
   value: InterestMode;
   label: string;
   helper: string;
-  comingSoon?: boolean;
 }[] = [
   { value: "zero", label: "ผ่อน 0%", helper: "ไม่มีดอกเบี้ย" },
   {
-    value: "known-split",
-    label: "มีดอกเบี้ย (รู้ split)",
-    helper: "รองรับเงินต้น/ดอกเบี้ยต่องวด",
-    comingSoon: true,
-  },
-  {
-    value: "unknown-split",
-    label: "มีดอกเบี้ย (split รู้ทีหลัง)",
-    helper: "ยังไม่รู้ split ตอนสร้าง",
-    comingSoon: true,
+    value: "with-interest",
+    label: "ผ่อนแบบมีดอกเบี้ย",
+    helper: "กรอกเงินต้น/ดอกเบี้ยต่องวด · แก้รายงวดได้ทีหลัง",
   },
 ];
 
@@ -291,21 +283,16 @@ function PlanFormFields(s: FormState) {
           >
             {INTEREST_OPTIONS.map((opt) => {
               const active = s.mode === opt.value;
-              const disabled = opt.comingSoon === true;
               return (
                 <button
                   key={opt.value}
                   type="button"
                   role="radio"
                   aria-checked={active}
-                  aria-disabled={disabled}
-                  disabled={disabled}
-                  onClick={() => !disabled && s.setMode(opt.value)}
+                  onClick={() => s.setMode(opt.value)}
                   className={cn(
                     "flex items-start gap-3 rounded-md border p-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                    disabled
-                      ? "cursor-not-allowed border-dashed border-input bg-muted/30 opacity-60"
-                      : active
+                    active
                       ? "border-primary bg-primary/5 ring-1 ring-primary/30"
                       : "border-input bg-background hover:bg-muted"
                   )}
@@ -313,24 +300,15 @@ function PlanFormFields(s: FormState) {
                   <span
                     className={cn(
                       "mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full border-2",
-                      active && !disabled
-                        ? "border-primary"
-                        : "border-muted-foreground/40"
+                      active ? "border-primary" : "border-muted-foreground/40"
                     )}
                   >
-                    {active && !disabled ? (
+                    {active ? (
                       <span className="size-1.5 rounded-full bg-primary" />
                     ) : null}
                   </span>
                   <div className="flex flex-1 flex-col gap-0.5">
-                    <span className="flex items-center gap-2 text-sm font-medium">
-                      {opt.label}
-                      {disabled ? (
-                        <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-400">
-                          เร็วๆ นี้
-                        </span>
-                      ) : null}
-                    </span>
+                    <span className="text-sm font-medium">{opt.label}</span>
                     <span className="text-xs text-muted-foreground">
                       {opt.helper}
                     </span>
@@ -341,7 +319,7 @@ function PlanFormFields(s: FormState) {
           </div>
         </div>
 
-        {s.mode === "known-split" ? (
+        {s.mode === "with-interest" ? (
           <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-2">
               <Label htmlFor={`${s.idPrefix}-principal`}>เงินต้น/งวด</Label>
@@ -359,6 +337,9 @@ function PlanFormFields(s: FormState) {
                 onChange={s.setInterest}
               />
             </div>
+            <p className="col-span-2 text-xs text-muted-foreground">
+              ถ้ายังไม่ทราบยอดแน่นอน กรอกประมาณการไปก่อน · แก้รายงวดได้ตอนได้ใบเรียกเก็บจริง
+            </p>
           </div>
         ) : null}
       </FieldSection>
@@ -433,23 +414,13 @@ export function PlanDialog({
     Number.isInteger(nMonth) &&
     nMonth >= 1 &&
     nMonth <= 12 &&
-    (mode !== "known-split" || (pPrincipal !== null && pInterest !== null));
+    (mode !== "with-interest" || (pPrincipal !== null && pInterest !== null));
 
   const handleSubmit = () => {
     if (!canSubmit || pTotal === null || pInstallment === null) return;
-    const hasInterest = mode !== "zero";
-    const principalToSend =
-      mode === "zero"
-        ? pInstallment
-        : mode === "known-split"
-        ? pPrincipal
-        : null;
-    const interestToSend =
-      mode === "zero"
-        ? "0.00"
-        : mode === "known-split"
-        ? pInterest
-        : null;
+    const hasInterest = mode === "with-interest";
+    const principalToSend = hasInterest ? pPrincipal : pInstallment;
+    const interestToSend = hasInterest ? pInterest : "0.00";
 
     onSubmit({
       creditCardId: cardId,
