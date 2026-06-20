@@ -1,6 +1,7 @@
 import Link from "next/link";
 
-import { BrandMark } from "./brand-mark";
+import { BrandMark } from "@/components/layout/brand-mark";
+
 import { RevealOnScroll } from "./reveal-on-scroll";
 
 export function LandingFinalCta() {

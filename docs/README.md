@@ -31,7 +31,9 @@ docs/
 │   ├── monthly-cost/  ⚠️ DEPRECATED    รวมเข้า recurring/ แล้ว (เก็บเป็น history)
 │   └── subscription/  ⚠️ DEPRECATED    รวมเข้า recurring/ แล้ว (เก็บเป็น history)
 ├── email-templates/                   ← เทมเพลตอีเมล (ใช้ที่ Supabase Dashboard)
-│   └── reset-password.md
+│   ├── README.md                        วิธีวาง + subject + หมายเหตุ
+│   ├── confirm-signup.html              ยืนยันอีเมลตอนสมัคร
+│   └── reset-password.html              ตั้งรหัสผ่านใหม่
 └── archive/                           ← UI mock เก่า ไม่ตรงกับของจริงแล้ว
     ├── mock.html                        HTML mock (dark theme, Tailwind CDN)
     └── prototype.jsx                    React prototype (recharts/lucide)
