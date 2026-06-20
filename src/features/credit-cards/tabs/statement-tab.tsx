@@ -16,7 +16,10 @@ import {
   toggleCreditCardChargePaid,
   updateCreditCardChargeAmount,
 } from "@/server/actions/credit-card-charges";
-import { toggleInstallmentLedgerPaid } from "@/server/actions/credit-card-installments";
+import {
+  toggleInstallmentLedgerPaid,
+  updateLedgerInterestSplit,
+} from "@/server/actions/credit-card-installments";
 import type { InstallmentPlanWithProgress } from "@/server/queries/credit-card-installments";
 import { shiftMonth, ymKey } from "@/lib/month";
 
@@ -164,6 +167,25 @@ export function StatementTab({
     });
   };
 
+  const handleUpdateInterestSplit = (entry: LedgerEntry, principal: string, interest: string) => {
+    const prev = entry;
+    const amount = (Number(principal) + Number(interest)).toFixed(2);
+    mutateCurrentMonth((p) =>
+      p.map((e) =>
+        e.id === entry.id ? { ...e, principalAmount: principal, interestAmount: interest, amount } : e
+      )
+    );
+    startMutation(async () => {
+      try {
+        await updateLedgerInterestSplit(entry.id, principal, interest);
+      } catch (err) {
+        toast.error("บันทึกไม่สำเร็จ");
+        console.error("updateLedgerInterestSplit failed", err);
+        mutateCurrentMonth((p) => p.map((e) => (e.id === entry.id ? prev : e)));
+      }
+    });
+  };
+
   const handleDelete = (entry: LedgerEntry) => {
     if (entry.type !== "CREDIT_CARD") return;
     const prev = entry;
@@ -192,6 +214,7 @@ export function StatementTab({
         onAddCharge={() => setChargeDialogOpen(true)}
         onTogglePaid={handleTogglePaid}
         onUpdateAmount={handleUpdateAmount}
+        onUpdateInterestSplit={handleUpdateInterestSplit}
         onDelete={handleDelete}
         onJumpToPlan={onJumpToPlan}
       />

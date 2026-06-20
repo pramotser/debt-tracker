@@ -95,11 +95,13 @@ return "active";
 - Middle area (เปลี่ยนตาม state):
   - `hasInterest && principalAmount !== null` → "ต้น X + ดอก Y"
   - else → note (ถ้ามี) เช่น "ปิดก่อนกำหนด"
-- ปุ่ม "กรอกต้น/ดอก" (สีส้ม) — แสดงเฉพาะ:
+- ปุ่ม "แก้" / "กรอกต้น/ดอก" (สีส้ม) — แสดงเฉพาะ:
   ```
-  hasInterest === true && !entry.paid && entry.principalAmount === null
+  hasInterest === true && !entry.paid
   ```
-  (= mode 3 "split รู้ทีหลัง" + ยังไม่จ่าย)
+  - มียอดอยู่แล้ว → label "แก้" (ใช้แก้ให้ตรง statement จริง)
+  - ยังว่าง (`principalAmount === null` · กรณี legacy data) → label "กรอกต้น/ดอก"
+  - งวดที่ paid → ไม่มีปุ่ม (ต้อง uncheck paid ก่อนถึงจะแก้ได้)
 - ตัวเลขยอดงวด (right)
 - paid → `opacity-60` + `line-through`
 
@@ -124,16 +126,15 @@ return "active";
 | เริ่มเดือน | number (1-12) | ✓ default = month ปัจจุบัน |
 | รูปแบบดอกเบี้ย | Select | ✓ — 3 mode |
 
-### 3 modes ของดอกเบี้ย
+### 2 modes ของดอกเบี้ย
 
 | mode | UI | `hasInterest` | `installmentPrincipal` | `installmentInterest` |
 |---|---|---|---|---|
 | `zero` (default) | "ผ่อน 0%" | `false` | = `installmentAmount` | `"0.00"` |
-| `known-split` | "มีดอกเบี้ย (รู้ split)" + 2 input (ต้น/ดอก) | `true` | = ค่าที่กรอก | = ค่าที่กรอก |
-| `unknown-split` | "มีดอกเบี้ย (split รู้ทีหลัง)" | `true` | `null` | `null` |
+| `with-interest` | "ผ่อนแบบมีดอกเบี้ย" + 2 input (ต้น/ดอก) | `true` | = ค่าที่กรอก | = ค่าที่กรอก |
 
 > ค่า `installmentPrincipal` / `installmentInterest` ระดับ **plan** นี้ถูก copy ลงทุก ledger row งวด ตอน create plan
-> mode 3 (`unknown-split`) → ledger row ที่ถูก insert มี `principalAmount = null` → drilldown จะแสดงปุ่ม "กรอกต้น/ดอก" เพื่อเติมรายงวด
+> หลัง create แล้ว user สามารถแก้ต้น/ดอกของแต่ละงวด (unpaid) ได้ผ่านปุ่ม "แก้" ใน drilldown (กรณีค่าจริงจาก statement ต่างจาก plan)
 
 ## SettleDialog (`settle-dialog.tsx`)
 

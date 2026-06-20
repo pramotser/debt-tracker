@@ -36,7 +36,7 @@ import { cn } from "@/lib/utils";
 
 import type { Category, CreditCard } from "./types";
 
-type InterestMode = "zero" | "known-split" | "unknown-split";
+type InterestMode = "zero" | "with-interest";
 
 export type PlanDraft = {
   creditCardId: string;
@@ -56,20 +56,12 @@ const INTEREST_OPTIONS: {
   value: InterestMode;
   label: string;
   helper: string;
-  comingSoon?: boolean;
 }[] = [
   { value: "zero", label: "ผ่อน 0%", helper: "ไม่มีดอกเบี้ย" },
   {
-    value: "known-split",
-    label: "มีดอกเบี้ย (รู้ split)",
-    helper: "รองรับเงินต้น/ดอกเบี้ยต่องวด",
-    comingSoon: true,
-  },
-  {
-    value: "unknown-split",
-    label: "มีดอกเบี้ย (split รู้ทีหลัง)",
-    helper: "ยังไม่รู้ split ตอนสร้าง",
-    comingSoon: true,
+    value: "with-interest",
+    label: "ผ่อนแบบมีดอกเบี้ย",
+    helper: "กรอกเงินต้น/ดอกเบี้ยต่องวด · แก้รายงวดได้ทีหลัง",
   },
 ];
 
@@ -167,7 +159,23 @@ function PlanFormFields(s: FormState) {
   }, [s.totalAmount, s.installments]);
 
   const showAutoHint =
-    autoSuggested !== null && autoSuggested !== s.installmentAmount;
+    s.mode === "zero" &&
+    autoSuggested !== null &&
+    autoSuggested !== s.installmentAmount;
+
+  const pPrincipal = parseAmount(s.principal);
+  const pInterest = parseAmount(s.interest);
+
+  const endYm = useMemo(() => {
+    const y = Number(s.startYear);
+    const m = Number(s.startMonth);
+    const n = Number(s.installments);
+    if (!Number.isInteger(y) || !Number.isInteger(m) || !Number.isInteger(n) || n <= 0) return null;
+    const total = m + n - 1;
+    const endYear = y + Math.floor((total - 1) / 12);
+    const endMonth = ((total - 1) % 12) + 1;
+    return `${endYear}/${String(endMonth).padStart(2, "0")}`;
+  }, [s.startYear, s.startMonth, s.installments]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -218,7 +226,7 @@ function PlanFormFields(s: FormState) {
       <FieldSection title="เงื่อนไขผ่อน">
         <div className="grid grid-cols-2 gap-3">
           <div className="flex flex-col gap-2">
-            <Label htmlFor={`${s.idPrefix}-total`}>ยอดรวม</Label>
+            <Label htmlFor={`${s.idPrefix}-total`}>ยอดทั้งหมด</Label>
             <MoneyInput
               id={`${s.idPrefix}-total`}
               value={s.totalAmount}
@@ -226,6 +234,50 @@ function PlanFormFields(s: FormState) {
               placeholder="33860.00"
             />
           </div>
+          <div className="flex flex-col gap-2">
+            <Label htmlFor={`${s.idPrefix}-installments`}>จำนวนงวด</Label>
+            <Input
+              id={`${s.idPrefix}-installments`}
+              type="number"
+              inputMode="numeric"
+              value={s.installments}
+              onChange={(e) => s.setInstallments(e.target.value)}
+              className="text-right"
+            />
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <Label>รูปแบบ</Label>
+          <div
+            role="radiogroup"
+            aria-label="รูปแบบดอกเบี้ย"
+            className="grid grid-cols-2 gap-2"
+          >
+            {INTEREST_OPTIONS.map((opt) => {
+              const active = s.mode === opt.value;
+              return (
+                <button
+                  key={opt.value}
+                  type="button"
+                  role="radio"
+                  aria-checked={active}
+                  onClick={() => s.setMode(opt.value)}
+                  className={cn(
+                    "h-9 rounded-md border text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                    active
+                      ? "border-primary bg-primary/5 font-medium text-primary ring-1 ring-primary/30"
+                      : "border-input bg-background text-foreground hover:bg-muted"
+                  )}
+                >
+                  {opt.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {s.mode === "zero" ? (
           <div className="flex flex-col gap-2">
             <Label htmlFor={`${s.idPrefix}-installment`}>ค่างวด/เดือน</Label>
             <MoneyInput
@@ -240,24 +292,48 @@ function PlanFormFields(s: FormState) {
                 onClick={() => s.setInstallmentAmount(autoSuggested!)}
                 className="self-start text-xs text-muted-foreground hover:text-foreground"
               >
-                คำนวณ: ฿{formatMoney(autoSuggested!)}{" "}
+                คำนวณจากยอด/งวด: ฿{formatMoney(autoSuggested!)}{" "}
                 <span className="underline">ใช้ค่านี้</span>
               </button>
             ) : null}
           </div>
-        </div>
-
-        <div className="grid grid-cols-3 gap-3">
-          <div className="flex flex-col gap-2">
-            <Label htmlFor={`${s.idPrefix}-installments`}>จำนวนงวด</Label>
-            <Input
-              id={`${s.idPrefix}-installments`}
-              type="number"
-              inputMode="numeric"
-              value={s.installments}
-              onChange={(e) => s.setInstallments(e.target.value)}
-            />
+        ) : (
+          <div className="flex flex-col gap-3">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="flex flex-col gap-2">
+                <Label htmlFor={`${s.idPrefix}-principal`}>เงินต้น/งวด</Label>
+                <MoneyInput
+                  id={`${s.idPrefix}-principal`}
+                  value={s.principal}
+                  onChange={s.setPrincipal}
+                />
+              </div>
+              <div className="flex flex-col gap-2">
+                <Label htmlFor={`${s.idPrefix}-interest`}>ดอกเบี้ย/งวด</Label>
+                <MoneyInput
+                  id={`${s.idPrefix}-interest`}
+                  value={s.interest}
+                  onChange={s.setInterest}
+                />
+              </div>
+            </div>
+            {pPrincipal !== null && pInterest !== null ? (
+              <div className="flex items-center justify-between rounded-md bg-muted/60 px-3 py-2">
+                <span className="text-xs text-muted-foreground">รวม/งวด</span>
+                <span className="text-sm font-medium tabular-nums">
+                  ฿{formatMoney((Number(pPrincipal) + Number(pInterest)).toFixed(2))}
+                </span>
+              </div>
+            ) : null}
+            <p className="text-xs text-muted-foreground">
+              ถ้ายังไม่ทราบยอดแน่นอน กรอกประมาณการไปก่อน · แก้รายงวดได้ตอนได้ใบเรียกเก็บจริง
+            </p>
           </div>
+        )}
+
+        <div className="h-px bg-border" />
+
+        <div className="grid grid-cols-2 gap-3">
           <div className="flex flex-col gap-2">
             <Label htmlFor={`${s.idPrefix}-year`}>เริ่มปี</Label>
             <Input
@@ -266,10 +342,11 @@ function PlanFormFields(s: FormState) {
               inputMode="numeric"
               value={s.startYear}
               onChange={(e) => s.setStartYear(e.target.value)}
+              className="text-right"
             />
           </div>
           <div className="flex flex-col gap-2">
-            <Label htmlFor={`${s.idPrefix}-month`}>เริ่มเดือน</Label>
+            <Label htmlFor={`${s.idPrefix}-month`}>เดือน</Label>
             <Input
               id={`${s.idPrefix}-month`}
               type="number"
@@ -278,87 +355,15 @@ function PlanFormFields(s: FormState) {
               max={12}
               value={s.startMonth}
               onChange={(e) => s.setStartMonth(e.target.value)}
+              className="text-right"
             />
           </div>
         </div>
 
-        <div className="flex flex-col gap-2">
-          <Label>รูปแบบดอกเบี้ย</Label>
-          <div
-            role="radiogroup"
-            aria-label="รูปแบบดอกเบี้ย"
-            className="flex flex-col gap-2"
-          >
-            {INTEREST_OPTIONS.map((opt) => {
-              const active = s.mode === opt.value;
-              const disabled = opt.comingSoon === true;
-              return (
-                <button
-                  key={opt.value}
-                  type="button"
-                  role="radio"
-                  aria-checked={active}
-                  aria-disabled={disabled}
-                  disabled={disabled}
-                  onClick={() => !disabled && s.setMode(opt.value)}
-                  className={cn(
-                    "flex items-start gap-3 rounded-md border p-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-                    disabled
-                      ? "cursor-not-allowed border-dashed border-input bg-muted/30 opacity-60"
-                      : active
-                      ? "border-primary bg-primary/5 ring-1 ring-primary/30"
-                      : "border-input bg-background hover:bg-muted"
-                  )}
-                >
-                  <span
-                    className={cn(
-                      "mt-0.5 flex size-4 shrink-0 items-center justify-center rounded-full border-2",
-                      active && !disabled
-                        ? "border-primary"
-                        : "border-muted-foreground/40"
-                    )}
-                  >
-                    {active && !disabled ? (
-                      <span className="size-1.5 rounded-full bg-primary" />
-                    ) : null}
-                  </span>
-                  <div className="flex flex-1 flex-col gap-0.5">
-                    <span className="flex items-center gap-2 text-sm font-medium">
-                      {opt.label}
-                      {disabled ? (
-                        <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-400">
-                          เร็วๆ นี้
-                        </span>
-                      ) : null}
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      {opt.helper}
-                    </span>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {s.mode === "known-split" ? (
-          <div className="grid grid-cols-2 gap-3">
-            <div className="flex flex-col gap-2">
-              <Label htmlFor={`${s.idPrefix}-principal`}>เงินต้น/งวด</Label>
-              <MoneyInput
-                id={`${s.idPrefix}-principal`}
-                value={s.principal}
-                onChange={s.setPrincipal}
-              />
-            </div>
-            <div className="flex flex-col gap-2">
-              <Label htmlFor={`${s.idPrefix}-interest`}>ดอกเบี้ย/งวด</Label>
-              <MoneyInput
-                id={`${s.idPrefix}-interest`}
-                value={s.interest}
-                onChange={s.setInterest}
-              />
-            </div>
+        {endYm ? (
+          <div className="flex items-center justify-between rounded-md bg-muted/60 px-3 py-2">
+            <span className="text-xs text-muted-foreground">จบงวดสุดท้าย</span>
+            <span className="text-sm font-medium tabular-nums">{endYm}</span>
           </div>
         ) : null}
       </FieldSection>
@@ -423,7 +428,6 @@ export function PlanDialog({
     categoryId.length > 0 &&
     name.trim().length > 0 &&
     pTotal !== null &&
-    pInstallment !== null &&
     Number.isInteger(nInstallments) &&
     nInstallments >= 1 &&
     nInstallments <= 120 &&
@@ -433,30 +437,25 @@ export function PlanDialog({
     Number.isInteger(nMonth) &&
     nMonth >= 1 &&
     nMonth <= 12 &&
-    (mode !== "known-split" || (pPrincipal !== null && pInterest !== null));
+    (mode === "zero"
+      ? pInstallment !== null
+      : pPrincipal !== null && pInterest !== null);
 
   const handleSubmit = () => {
-    if (!canSubmit || pTotal === null || pInstallment === null) return;
-    const hasInterest = mode !== "zero";
-    const principalToSend =
-      mode === "zero"
-        ? pInstallment
-        : mode === "known-split"
-        ? pPrincipal
-        : null;
-    const interestToSend =
-      mode === "zero"
-        ? "0.00"
-        : mode === "known-split"
-        ? pInterest
-        : null;
+    if (!canSubmit || pTotal === null) return;
+    const hasInterest = mode === "with-interest";
+    const principalToSend = hasInterest ? pPrincipal : pInstallment;
+    const interestToSend = hasInterest ? pInterest : "0.00";
+    const installmentAmountToSend = hasInterest
+      ? (Number(pPrincipal) + Number(pInterest)).toFixed(2)
+      : pInstallment!;
 
     onSubmit({
       creditCardId: cardId,
       categoryId,
       name: name.trim(),
       totalAmount: pTotal,
-      installmentAmount: pInstallment,
+      installmentAmount: installmentAmountToSend,
       installmentPrincipal: principalToSend,
       installmentInterest: interestToSend,
       totalInstallments: nInstallments,

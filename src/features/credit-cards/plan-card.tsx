@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ChevronDown, ChevronUp, MoreHorizontal, Trash2, XCircle } from "lucide-react";
+import { ChevronDown, ChevronUp, MoreHorizontal, Pencil, Trash2, XCircle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -316,8 +316,7 @@ function EntryRow({
   const [pDraft, setPDraft] = useState("");
   const [iDraft, setIDraft] = useState("");
 
-  const needsSplit =
-    hasInterest && !entry.paid && entry.principalAmount === null;
+  const canEditSplit = hasInterest && !entry.paid;
 
   const startEdit = () => {
     setPDraft(entry.principalAmount ?? "");
@@ -334,77 +333,136 @@ function EntryRow({
     setEditing(false);
   };
 
-  return (
-    <div className={cn("flex items-center gap-3 py-2", entry.paid && "opacity-60")}>
-      <Checkbox checked={entry.paid} onCheckedChange={onTogglePaid} />
-      <div className="w-20 shrink-0 text-xs text-muted-foreground tabular-nums">
-        {formatYearMonth(entry.year, entry.month)}
-      </div>
-      {editing ? (
-        <div className="flex flex-1 items-center gap-1.5">
-          <Input
-            autoFocus
-            type="number"
-            inputMode="decimal"
-            placeholder="เงินต้น"
-            value={pDraft}
-            onChange={(e) => setPDraft(e.target.value)}
-            className="h-8 w-24 text-right tabular-nums"
-          />
-          <span className="text-xs text-muted-foreground">+</span>
-          <Input
-            type="number"
-            inputMode="decimal"
-            placeholder="ดอกเบี้ย"
-            value={iDraft}
-            onChange={(e) => setIDraft(e.target.value)}
-            onBlur={commit}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") commit();
-              else if (e.key === "Escape") setEditing(false);
-            }}
-            className="h-8 w-24 text-right tabular-nums"
-          />
+  const liveTotal =
+    pDraft !== "" && iDraft !== "" && Number(pDraft) >= 0 && Number(iDraft) >= 0
+      ? formatMoney((Number(pDraft) + Number(iDraft)).toFixed(2))
+      : formatMoney(entry.amount ?? "0");
+
+  if (editing) {
+    return (
+      <div className="flex flex-col gap-3 rounded-lg border border-dashed bg-muted/30 px-3 py-3">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-medium tabular-nums">
+            งวด {formatYearMonth(entry.year, entry.month)}
+          </span>
+          <span className="text-sm font-semibold tabular-nums">{liveTotal}</span>
         </div>
-      ) : (
-        <>
-          <div
-            className={cn(
-              "min-w-0 flex-1 text-sm",
-              entry.paid && "line-through"
-            )}
-          >
-            {hasInterest && entry.principalAmount !== null ? (
-              <span className="text-xs text-muted-foreground">
-                ต้น {formatMoney(entry.principalAmount)} + ดอก{" "}
-                {formatMoney(entry.interestAmount ?? "0")}
-              </span>
-            ) : (
-              <span className="text-xs text-muted-foreground">
-                {entry.note ?? ""}
-              </span>
-            )}
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+          <div className="flex flex-1 gap-3">
+            <div className="flex flex-1 flex-col gap-1 sm:w-36 sm:flex-none">
+              <label
+                htmlFor={`split-p-${entry.id}`}
+                className="text-[11px] text-muted-foreground"
+              >
+                เงินต้น
+              </label>
+              <Input
+                id={`split-p-${entry.id}`}
+                autoFocus
+                type="number"
+                inputMode="decimal"
+                value={pDraft}
+                onChange={(e) => setPDraft(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") commit();
+                  else if (e.key === "Escape") setEditing(false);
+                }}
+                className="h-9 text-right tabular-nums"
+              />
+            </div>
+            <div className="flex flex-1 flex-col gap-1 sm:w-36 sm:flex-none">
+              <label
+                htmlFor={`split-i-${entry.id}`}
+                className="text-[11px] text-muted-foreground"
+              >
+                ดอกเบี้ย
+              </label>
+              <Input
+                id={`split-i-${entry.id}`}
+                type="number"
+                inputMode="decimal"
+                value={iDraft}
+                onChange={(e) => setIDraft(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") commit();
+                  else if (e.key === "Escape") setEditing(false);
+                }}
+                className="h-9 text-right tabular-nums"
+              />
+            </div>
           </div>
-          {needsSplit && (
+          <div className="flex justify-end gap-2">
             <Button
-              variant="ghost"
+              type="button"
+              variant="outline"
               size="sm"
-              onClick={startEdit}
-              className="text-xs text-orange-600"
+              onClick={() => setEditing(false)}
             >
-              กรอกต้น/ดอก
+              ยกเลิก
             </Button>
-          )}
-          <div
+            <Button type="button" size="sm" onClick={commit}>
+              บันทึก
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className={cn("flex items-start gap-3 py-2.5", entry.paid && "opacity-60")}>
+      <Checkbox
+        checked={entry.paid}
+        onCheckedChange={onTogglePaid}
+        className="mt-0.5"
+      />
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center justify-between gap-3">
+          <span className="text-sm tabular-nums">
+            {formatYearMonth(entry.year, entry.month)}
+          </span>
+          <span
             className={cn(
-              "min-w-[5rem] text-right text-sm font-semibold tabular-nums",
+              "text-sm font-semibold tabular-nums",
               entry.paid && "line-through"
             )}
           >
             {formatMoney(entry.amount ?? "0")}
-          </div>
-        </>
-      )}
+          </span>
+        </div>
+        {hasInterest && entry.principalAmount !== null ? (
+          <button
+            type="button"
+            onClick={canEditSplit ? startEdit : undefined}
+            className={cn(
+              "mt-0.5 inline-flex items-center gap-1 text-xs text-muted-foreground",
+              canEditSplit && "cursor-pointer hover:text-foreground",
+              entry.paid && "line-through"
+            )}
+          >
+            ต้น {formatMoney(entry.principalAmount)} + ดอก {formatMoney(entry.interestAmount ?? "0")}
+            {canEditSplit && <Pencil className="size-3 shrink-0 opacity-60" />}
+          </button>
+        ) : canEditSplit ? (
+          <button
+            type="button"
+            onClick={startEdit}
+            className="mt-0.5 inline-flex items-center gap-1 text-xs text-orange-600 hover:text-orange-700"
+          >
+            <Pencil className="size-3 shrink-0" />
+            กรอกต้น/ดอก
+          </button>
+        ) : entry.note ? (
+          <span
+            className={cn(
+              "mt-0.5 block text-xs text-muted-foreground",
+              entry.paid && "line-through"
+            )}
+          >
+            {entry.note}
+          </span>
+        ) : null}
+      </div>
     </div>
   );
 }
