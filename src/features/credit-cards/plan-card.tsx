@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ChevronDown, ChevronUp, MoreHorizontal, Trash2, XCircle } from "lucide-react";
+import { Check, ChevronDown, ChevronUp, MoreHorizontal, Pencil, Trash2, X, XCircle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -350,7 +350,11 @@ function EntryRow({
               placeholder="ต้น"
               value={pDraft}
               onChange={(e) => setPDraft(e.target.value)}
-              className="h-7 w-24 text-right tabular-nums text-xs"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") commit();
+                else if (e.key === "Escape") setEditing(false);
+              }}
+              className="h-7 w-20 text-right tabular-nums text-xs"
             />
             <span className="text-xs text-muted-foreground">+</span>
             <Input
@@ -359,33 +363,54 @@ function EntryRow({
               placeholder="ดอก"
               value={iDraft}
               onChange={(e) => setIDraft(e.target.value)}
-              onBlur={commit}
               onKeyDown={(e) => {
                 if (e.key === "Enter") commit();
                 else if (e.key === "Escape") setEditing(false);
               }}
-              className="h-7 w-20 text-right tabular-nums text-xs"
+              className="h-7 w-16 text-right tabular-nums text-xs"
             />
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={commit}
+              aria-label="บันทึก"
+              className="size-7 text-green-600 hover:text-green-700"
+            >
+              <Check className="size-4" />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={() => setEditing(false)}
+              aria-label="ยกเลิก"
+              className="size-7 text-muted-foreground"
+            >
+              <X className="size-4" />
+            </Button>
           </div>
         ) : hasInterest && entry.principalAmount !== null ? (
           <button
             type="button"
             onClick={canEditSplit ? startEdit : undefined}
             className={cn(
-              "text-xs text-muted-foreground",
-              canEditSplit && "cursor-pointer underline-offset-2 hover:underline hover:text-foreground",
+              "inline-flex items-center gap-1 text-xs text-muted-foreground",
+              canEditSplit && "cursor-pointer hover:text-foreground",
               entry.paid && "line-through"
             )}
           >
             ต้น {formatMoney(entry.principalAmount)} + ดอก {formatMoney(entry.interestAmount ?? "0")}
+            {canEditSplit && <Pencil className="size-3 shrink-0 opacity-60" />}
           </button>
         ) : canEditSplit ? (
           <button
             type="button"
             onClick={startEdit}
-            className="text-xs text-orange-600 hover:text-orange-700"
+            className="inline-flex items-center gap-1 text-xs text-orange-600 hover:text-orange-700"
           >
-            + กรอกต้น/ดอก
+            <Pencil className="size-3 shrink-0" />
+            กรอกต้น/ดอก
           </button>
         ) : (
           <span className={cn("text-xs text-muted-foreground", entry.paid && "line-through")}>

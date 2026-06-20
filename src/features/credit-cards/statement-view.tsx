@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useOptimistic, useState, useTransition } from "react";
-import { Check, Plus, Trash2 } from "lucide-react";
+import { Check, Pencil, Plus, Trash2, X } from "lucide-react";
 
 import { MonthNav } from "@/components/layout/month-nav";
 import { Button } from "@/components/ui/button";
@@ -412,7 +412,11 @@ function StatusRailRow({
                 placeholder="ต้น"
                 value={pDraft}
                 onChange={(e) => setPDraft(e.target.value)}
-                className="h-7 w-24 text-right tabular-nums text-xs"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") commitSplit();
+                  else if (e.key === "Escape") setSplitEditing(false);
+                }}
+                className="h-7 w-20 text-right tabular-nums text-xs"
               />
               <span className="text-xs text-muted-foreground">+</span>
               <Input
@@ -421,32 +425,53 @@ function StatusRailRow({
                 placeholder="ดอก"
                 value={iDraft}
                 onChange={(e) => setIDraft(e.target.value)}
-                onBlur={commitSplit}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") commitSplit();
                   else if (e.key === "Escape") setSplitEditing(false);
                 }}
-                className="h-7 w-20 text-right tabular-nums text-xs"
+                className="h-7 w-16 text-right tabular-nums text-xs"
               />
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={commitSplit}
+                aria-label="บันทึก"
+                className="size-7 text-green-600 hover:text-green-700"
+              >
+                <Check className="size-4" />
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={() => setSplitEditing(false)}
+                aria-label="ยกเลิก"
+                className="size-7 text-muted-foreground"
+              >
+                <X className="size-4" />
+              </Button>
             </div>
           ) : hasSplit ? (
             <button
               type="button"
               onClick={canEditSplit ? startSplitEdit : undefined}
               className={cn(
-                "mt-0.5 text-xs text-muted-foreground",
-                canEditSplit && "hover:text-foreground cursor-pointer underline-offset-2 hover:underline"
+                "mt-0.5 inline-flex items-center gap-1 text-xs text-muted-foreground",
+                canEditSplit && "cursor-pointer hover:text-foreground"
               )}
             >
               ต้น {formatMoney(entry.principalAmount!)} + ดอก {formatMoney(entry.interestAmount ?? "0")}
+              {canEditSplit && <Pencil className="size-3 shrink-0 opacity-60" />}
             </button>
           ) : canEditSplit ? (
             <button
               type="button"
               onClick={startSplitEdit}
-              className="mt-0.5 text-xs text-orange-600 hover:text-orange-700"
+              className="mt-0.5 inline-flex items-center gap-1 text-xs text-orange-600 hover:text-orange-700"
             >
-              + กรอกต้น/ดอก
+              <Pencil className="size-3 shrink-0" />
+              กรอกต้น/ดอก
             </button>
           ) : null}
         </div>
