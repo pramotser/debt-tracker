@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Plus } from "lucide-react";
 
 import { CategoryPickerGrid } from "@/components/shared/category-picker-grid";
+import { NumberInput } from "@/components/shared/number-input";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -120,10 +121,8 @@ function ChargeFormFields({
           >
             ฿
           </span>
-          <Input
+          <NumberInput
             id={`${idPrefix}-amount`}
-            type="number"
-            inputMode="decimal"
             placeholder="0.00"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}

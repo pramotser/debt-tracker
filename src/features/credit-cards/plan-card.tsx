@@ -12,11 +12,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
 import { formatMoney, formatYearMonth } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 import { CategoryBadge } from "@/components/shared/category-badge";
+import { NumberInput } from "@/components/shared/number-input";
 import { StatusBadge } from "@/components/shared/status-badge";
 import type { StatusKey } from "@/components/shared/status-tokens";
 import { Segments } from "./components/segments";
@@ -356,11 +356,9 @@ function EntryRow({
               >
                 เงินต้น
               </label>
-              <Input
+              <NumberInput
                 id={`split-p-${entry.id}`}
                 autoFocus
-                type="number"
-                inputMode="decimal"
                 value={pDraft}
                 onChange={(e) => setPDraft(e.target.value)}
                 onKeyDown={(e) => {
@@ -377,10 +375,8 @@ function EntryRow({
               >
                 ดอกเบี้ย
               </label>
-              <Input
+              <NumberInput
                 id={`split-i-${entry.id}`}
-                type="number"
-                inputMode="decimal"
                 value={iDraft}
                 onChange={(e) => setIDraft(e.target.value)}
                 onKeyDown={(e) => {

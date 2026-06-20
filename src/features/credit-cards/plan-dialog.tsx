@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Plus } from "lucide-react";
 
 import { CategoryPickerGrid } from "@/components/shared/category-picker-grid";
+import { NumberInput } from "@/components/shared/number-input";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -108,10 +109,8 @@ function MoneyInput({
       >
         ฿
       </span>
-      <Input
+      <NumberInput
         id={id}
-        type="number"
-        inputMode="decimal"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
@@ -236,10 +235,9 @@ function PlanFormFields(s: FormState) {
           </div>
           <div className="flex flex-col gap-2">
             <Label htmlFor={`${s.idPrefix}-installments`}>จำนวนงวด</Label>
-            <Input
+            <NumberInput
               id={`${s.idPrefix}-installments`}
-              type="number"
-              inputMode="numeric"
+              decimal={false}
               value={s.installments}
               onChange={(e) => s.setInstallments(e.target.value)}
               className="text-right"
@@ -336,10 +334,9 @@ function PlanFormFields(s: FormState) {
         <div className="grid grid-cols-2 gap-3">
           <div className="flex flex-col gap-2">
             <Label htmlFor={`${s.idPrefix}-year`}>เริ่มปี</Label>
-            <Input
+            <NumberInput
               id={`${s.idPrefix}-year`}
-              type="number"
-              inputMode="numeric"
+              decimal={false}
               value={s.startYear}
               onChange={(e) => s.setStartYear(e.target.value)}
               className="text-right"
@@ -347,12 +344,9 @@ function PlanFormFields(s: FormState) {
           </div>
           <div className="flex flex-col gap-2">
             <Label htmlFor={`${s.idPrefix}-month`}>เดือน</Label>
-            <Input
+            <NumberInput
               id={`${s.idPrefix}-month`}
-              type="number"
-              inputMode="numeric"
-              min={1}
-              max={12}
+              decimal={false}
               value={s.startMonth}
               onChange={(e) => s.setStartMonth(e.target.value)}
               className="text-right"

@@ -7,7 +7,6 @@ import { MonthNav } from "@/components/layout/month-nav";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatMoney } from "@/lib/format";
@@ -15,6 +14,7 @@ import { getCardColorTheme } from "@/lib/banks";
 import { cn } from "@/lib/utils";
 import type { InstallmentPlanWithProgress } from "@/server/queries/credit-card-installments";
 
+import { NumberInput } from "@/components/shared/number-input";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { STATUS } from "@/components/shared/status-tokens";
 import { SummaryStrip } from "./components/summary-strip";
@@ -412,10 +412,8 @@ function StatusRailRow({
 
         {isInstallment || editing ? (
           editing ? (
-            <Input
+            <NumberInput
               autoFocus
-              type="number"
-              inputMode="decimal"
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
               onBlur={commit}
@@ -505,11 +503,9 @@ function StatusRailRow({
                 >
                   เงินต้น
                 </label>
-                <Input
+                <NumberInput
                   id={`stmt-split-p-${entry.id}`}
                   autoFocus
-                  type="number"
-                  inputMode="decimal"
                   value={pDraft}
                   onChange={(e) => setPDraft(e.target.value)}
                   onKeyDown={(e) => {
@@ -526,10 +522,8 @@ function StatusRailRow({
                 >
                   ดอกเบี้ย
                 </label>
-                <Input
+                <NumberInput
                   id={`stmt-split-i-${entry.id}`}
-                  type="number"
-                  inputMode="decimal"
                   value={iDraft}
                   onChange={(e) => setIDraft(e.target.value)}
                   onKeyDown={(e) => {

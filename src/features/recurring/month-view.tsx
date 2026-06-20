@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Info, Plus, Trash2 } from "lucide-react";
+import { Info, Pencil, Plus, Trash2 } from "lucide-react";
 
 import { CategoryBadge } from "@/components/shared/category-badge";
+import { NumberInput } from "@/components/shared/number-input";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { STATUS } from "@/components/shared/status-tokens";
 import { MonthNav } from "@/components/layout/month-nav";
@@ -12,7 +13,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatMoney } from "@/lib/format";
@@ -401,30 +401,27 @@ function ItemRow({
         />
 
         {editing ? (
-          <Input
-            autoFocus
-            type="number"
-            inputMode="decimal"
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            onBlur={commit}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") commit();
-              else if (e.key === "Escape") setEditing(false);
-            }}
-            className="h-9 w-28 text-right tabular-nums"
-          />
+          <div
+            className={cn(
+              "min-w-[6rem] text-right text-base font-semibold tabular-nums",
+              item.paid && "line-through"
+            )}
+            style={{ color: item.amount === null ? STATUS.due.bar : accent }}
+          >
+            {item.amount === null ? "—" : formatMoney(item.amount)}
+          </div>
         ) : (
           <Button
             variant="ghost"
             onClick={startEdit}
             className={cn(
-              "h-auto min-w-[6rem] justify-end px-2 py-1 text-base font-semibold tabular-nums",
+              "h-auto min-w-[6rem] justify-end gap-1.5 px-2 py-1 text-base font-semibold tabular-nums",
               item.paid && "line-through"
             )}
             style={{ color: item.amount === null ? STATUS.due.bar : accent }}
           >
             {item.amount === null ? "แตะเพื่อกรอก" : formatMoney(item.amount)}
+            <Pencil className="size-3 shrink-0 opacity-60" />
           </Button>
         )}
         <Button
@@ -437,6 +434,48 @@ function ItemRow({
           <Trash2 />
         </Button>
       </div>
+
+      {editing && (
+        <div className="mt-1 flex flex-col gap-3 rounded-lg border border-dashed bg-muted/30 px-3 py-3">
+          <span className="text-xs font-medium text-muted-foreground">
+            แก้ไขยอดเงิน
+          </span>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+            <div className="flex flex-1 flex-col gap-1">
+              <label
+                htmlFor={`recurring-amount-${item.id}`}
+                className="text-[11px] text-muted-foreground"
+              >
+                ยอดเงิน
+              </label>
+              <NumberInput
+                id={`recurring-amount-${item.id}`}
+                autoFocus
+                value={draft}
+                onChange={(e) => setDraft(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") commit();
+                  else if (e.key === "Escape") setEditing(false);
+                }}
+                className="h-9 text-right tabular-nums"
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setEditing(false)}
+              >
+                ยกเลิก
+              </Button>
+              <Button type="button" size="sm" onClick={commit}>
+                บันทึก
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </Card>
   );
 }
