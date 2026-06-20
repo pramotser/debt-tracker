@@ -410,18 +410,32 @@ function EntryRow({
   }
 
   return (
-    <div className={cn("flex items-center gap-3 py-2", entry.paid && "opacity-60")}>
-      <Checkbox checked={entry.paid} onCheckedChange={onTogglePaid} />
-      <div className="w-20 shrink-0 text-xs text-muted-foreground tabular-nums">
-        {formatYearMonth(entry.year, entry.month)}
-      </div>
-      <div className="min-w-0 flex-1 text-sm">
+    <div className={cn("flex items-start gap-3 py-2.5", entry.paid && "opacity-60")}>
+      <Checkbox
+        checked={entry.paid}
+        onCheckedChange={onTogglePaid}
+        className="mt-0.5"
+      />
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center justify-between gap-3">
+          <span className="text-sm tabular-nums">
+            {formatYearMonth(entry.year, entry.month)}
+          </span>
+          <span
+            className={cn(
+              "text-sm font-semibold tabular-nums",
+              entry.paid && "line-through"
+            )}
+          >
+            {formatMoney(entry.amount ?? "0")}
+          </span>
+        </div>
         {hasInterest && entry.principalAmount !== null ? (
           <button
             type="button"
             onClick={canEditSplit ? startEdit : undefined}
             className={cn(
-              "inline-flex items-center gap-1 text-xs text-muted-foreground",
+              "mt-0.5 inline-flex items-center gap-1 text-xs text-muted-foreground",
               canEditSplit && "cursor-pointer hover:text-foreground",
               entry.paid && "line-through"
             )}
@@ -433,24 +447,21 @@ function EntryRow({
           <button
             type="button"
             onClick={startEdit}
-            className="inline-flex items-center gap-1 text-xs text-orange-600 hover:text-orange-700"
+            className="mt-0.5 inline-flex items-center gap-1 text-xs text-orange-600 hover:text-orange-700"
           >
             <Pencil className="size-3 shrink-0" />
             กรอกต้น/ดอก
           </button>
-        ) : (
-          <span className={cn("text-xs text-muted-foreground", entry.paid && "line-through")}>
-            {entry.note ?? ""}
+        ) : entry.note ? (
+          <span
+            className={cn(
+              "mt-0.5 block text-xs text-muted-foreground",
+              entry.paid && "line-through"
+            )}
+          >
+            {entry.note}
           </span>
-        )}
-      </div>
-      <div
-        className={cn(
-          "min-w-[5rem] text-right text-sm font-semibold tabular-nums",
-          entry.paid && "line-through"
-        )}
-      >
-        {formatMoney(entry.amount ?? "0")}
+        ) : null}
       </div>
     </div>
   );

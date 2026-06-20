@@ -403,28 +403,6 @@ function StatusRailRow({
             )}
           </div>
           <div className="text-xs text-muted-foreground">{cardName}</div>
-          {splitEditing ? null : hasSplit ? (
-            <button
-              type="button"
-              onClick={canEditSplit ? startSplitEdit : undefined}
-              className={cn(
-                "mt-0.5 inline-flex items-center gap-1 text-xs text-muted-foreground",
-                canEditSplit && "cursor-pointer hover:text-foreground"
-              )}
-            >
-              ต้น {formatMoney(entry.principalAmount!)} + ดอก {formatMoney(entry.interestAmount ?? "0")}
-              {canEditSplit && <Pencil className="size-3 shrink-0 opacity-60" />}
-            </button>
-          ) : canEditSplit ? (
-            <button
-              type="button"
-              onClick={startSplitEdit}
-              className="mt-0.5 inline-flex items-center gap-1 text-xs text-orange-600 hover:text-orange-700"
-            >
-              <Pencil className="size-3 shrink-0" />
-              กรอกต้น/ดอก
-            </button>
-          ) : null}
         </div>
 
         <StatusBadge
@@ -482,6 +460,29 @@ function StatusRailRow({
           <Trash2 />
         </Button>
       </div>
+
+      {!splitEditing && hasSplit ? (
+        <button
+          type="button"
+          onClick={canEditSplit ? startSplitEdit : undefined}
+          className={cn(
+            "ml-7 inline-flex w-fit items-center gap-1 text-xs text-muted-foreground",
+            canEditSplit && "cursor-pointer hover:text-foreground"
+          )}
+        >
+          ต้น {formatMoney(entry.principalAmount!)} + ดอก {formatMoney(entry.interestAmount ?? "0")}
+          {canEditSplit && <Pencil className="size-3 shrink-0 opacity-60" />}
+        </button>
+      ) : !splitEditing && canEditSplit ? (
+        <button
+          type="button"
+          onClick={startSplitEdit}
+          className="ml-7 inline-flex w-fit items-center gap-1 text-xs text-orange-600 hover:text-orange-700"
+        >
+          <Pencil className="size-3 shrink-0" />
+          กรอกต้น/ดอก
+        </button>
+      ) : null}
 
       {splitEditing && (
         <div className="mt-1 flex flex-col gap-3 rounded-lg border border-dashed bg-muted/30 px-3 py-3">
