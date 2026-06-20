@@ -340,71 +340,69 @@ function EntryRow({
       <div className="w-20 shrink-0 text-xs text-muted-foreground tabular-nums">
         {formatYearMonth(entry.year, entry.month)}
       </div>
-      {editing ? (
-        <div className="flex flex-1 items-center gap-1.5">
-          <Input
-            autoFocus
-            type="number"
-            inputMode="decimal"
-            placeholder="เงินต้น"
-            value={pDraft}
-            onChange={(e) => setPDraft(e.target.value)}
-            className="h-8 w-24 text-right tabular-nums"
-          />
-          <span className="text-xs text-muted-foreground">+</span>
-          <Input
-            type="number"
-            inputMode="decimal"
-            placeholder="ดอกเบี้ย"
-            value={iDraft}
-            onChange={(e) => setIDraft(e.target.value)}
-            onBlur={commit}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") commit();
-              else if (e.key === "Escape") setEditing(false);
-            }}
-            className="h-8 w-24 text-right tabular-nums"
-          />
-        </div>
-      ) : (
-        <>
-          <div
+      <div className="min-w-0 flex-1 text-sm">
+        {editing ? (
+          <div className="flex items-center gap-1">
+            <Input
+              autoFocus
+              type="number"
+              inputMode="decimal"
+              placeholder="ต้น"
+              value={pDraft}
+              onChange={(e) => setPDraft(e.target.value)}
+              className="h-7 w-24 text-right tabular-nums text-xs"
+            />
+            <span className="text-xs text-muted-foreground">+</span>
+            <Input
+              type="number"
+              inputMode="decimal"
+              placeholder="ดอก"
+              value={iDraft}
+              onChange={(e) => setIDraft(e.target.value)}
+              onBlur={commit}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") commit();
+                else if (e.key === "Escape") setEditing(false);
+              }}
+              className="h-7 w-20 text-right tabular-nums text-xs"
+            />
+          </div>
+        ) : hasInterest && entry.principalAmount !== null ? (
+          <button
+            type="button"
+            onClick={canEditSplit ? startEdit : undefined}
             className={cn(
-              "min-w-0 flex-1 text-sm",
+              "text-xs text-muted-foreground",
+              canEditSplit && "cursor-pointer underline-offset-2 hover:underline hover:text-foreground",
               entry.paid && "line-through"
             )}
           >
-            {hasInterest && entry.principalAmount !== null ? (
-              <span className="text-xs text-muted-foreground">
-                ต้น {formatMoney(entry.principalAmount)} + ดอก{" "}
-                {formatMoney(entry.interestAmount ?? "0")}
-              </span>
-            ) : (
-              <span className="text-xs text-muted-foreground">
-                {entry.note ?? ""}
-              </span>
-            )}
-          </div>
-          {canEditSplit && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={startEdit}
-              className="text-xs text-orange-600"
-            >
-              {isEmpty ? "กรอกต้น/ดอก" : "แก้"}
-            </Button>
-          )}
-          <div
-            className={cn(
-              "min-w-[5rem] text-right text-sm font-semibold tabular-nums",
-              entry.paid && "line-through"
-            )}
+            ต้น {formatMoney(entry.principalAmount)} + ดอก {formatMoney(entry.interestAmount ?? "0")}
+          </button>
+        ) : canEditSplit ? (
+          <button
+            type="button"
+            onClick={startEdit}
+            className="text-xs text-orange-600 hover:text-orange-700"
           >
-            {formatMoney(entry.amount ?? "0")}
-          </div>
-        </>
-      )}
+            + กรอกต้น/ดอก
+          </button>
+        ) : (
+          <span className={cn("text-xs text-muted-foreground", entry.paid && "line-through")}>
+            {entry.note ?? ""}
+          </span>
+        )}
+      </div>
+      <div
+        className={cn(
+          "min-w-[5rem] text-right text-sm font-semibold tabular-nums",
+          entry.paid && "line-through"
+        )}
+      >
+        {editing && Number(pDraft) >= 0 && Number(iDraft) >= 0 && pDraft !== "" && iDraft !== ""
+          ? formatMoney((Number(pDraft) + Number(iDraft)).toFixed(2))
+          : formatMoney(entry.amount ?? "0")}
+      </div>
     </div>
   );
 }

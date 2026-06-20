@@ -68,6 +68,7 @@ export function StatementView({
   onAddCharge,
   onTogglePaid,
   onUpdateAmount,
+  onUpdateInterestSplit,
   onDelete,
   onJumpToPlan,
 }: {
@@ -81,6 +82,7 @@ export function StatementView({
   onAddCharge: () => void;
   onTogglePaid: (entry: LedgerEntry, next: boolean) => Promise<void>;
   onUpdateAmount: (entry: LedgerEntry, amount: string) => void;
+  onUpdateInterestSplit: (entry: LedgerEntry, principal: string, interest: string) => void;
   onDelete: (entry: LedgerEntry) => void;
   onJumpToPlan: (planId: string) => void;
 }) {
@@ -290,6 +292,7 @@ export function StatementView({
                 plan={plan}
                 onTogglePaid={() => handleTogglePaid(e)}
                 onUpdateAmount={(amt) => onUpdateAmount(e, amt)}
+                onUpdateInterestSplit={(p, i) => onUpdateInterestSplit(e, p, i)}
                 onDelete={() => onDelete(e)}
                 onJumpToPlan={onJumpToPlan}
               />
@@ -307,6 +310,7 @@ function StatusRailRow({
   plan,
   onTogglePaid,
   onUpdateAmount,
+  onUpdateInterestSplit,
   onDelete,
   onJumpToPlan,
 }: {
@@ -315,14 +319,19 @@ function StatusRailRow({
   plan?: InstallmentPlanWithProgress;
   onTogglePaid: () => void;
   onUpdateAmount: (amount: string) => void;
+  onUpdateInterestSplit: (principal: string, interest: string) => void;
   onDelete: () => void;
   onJumpToPlan: (planId: string) => void;
 }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("");
+  const [splitEditing, setSplitEditing] = useState(false);
+  const [pDraft, setPDraft] = useState("");
+  const [iDraft, setIDraft] = useState("");
   const isInstallment = entry.type === "CREDIT_CARD_INSTALLMENT";
-  // accent เดียวคุม rail / amount / progress current — flip ตาม paid (optimistic)
   const accent = entry.paid ? STATUS.paid.bar : STATUS.due.bar;
+  const canEditSplit = isInstallment && plan?.hasInterest && !entry.paid;
+  const hasSplit = isInstallment && plan?.hasInterest && entry.principalAmount !== null;
 
   const startEdit = () => {
     setDraft(entry.amount ?? "");
@@ -335,6 +344,20 @@ function StatusRailRow({
       onUpdateAmount(n.toFixed(2));
     }
     setEditing(false);
+  };
+
+  const startSplitEdit = () => {
+    setPDraft(entry.principalAmount ?? "");
+    setIDraft(entry.interestAmount ?? "");
+    setSplitEditing(true);
+  };
+  const commitSplit = () => {
+    const p = Number(pDraft);
+    const i = Number(iDraft);
+    if (Number.isFinite(p) && Number.isFinite(i) && p >= 0 && i >= 0) {
+      onUpdateInterestSplit(p.toFixed(2), i.toFixed(2));
+    }
+    setSplitEditing(false);
   };
 
   const cur = plan ? installmentIndex(entry, plan) : 0;
@@ -380,6 +403,52 @@ function StatusRailRow({
             )}
           </div>
           <div className="text-xs text-muted-foreground">{cardName}</div>
+          {splitEditing ? (
+            <div className="mt-1.5 flex items-center gap-1">
+              <Input
+                autoFocus
+                type="number"
+                inputMode="decimal"
+                placeholder="ต้น"
+                value={pDraft}
+                onChange={(e) => setPDraft(e.target.value)}
+                className="h-7 w-24 text-right tabular-nums text-xs"
+              />
+              <span className="text-xs text-muted-foreground">+</span>
+              <Input
+                type="number"
+                inputMode="decimal"
+                placeholder="ดอก"
+                value={iDraft}
+                onChange={(e) => setIDraft(e.target.value)}
+                onBlur={commitSplit}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") commitSplit();
+                  else if (e.key === "Escape") setSplitEditing(false);
+                }}
+                className="h-7 w-20 text-right tabular-nums text-xs"
+              />
+            </div>
+          ) : hasSplit ? (
+            <button
+              type="button"
+              onClick={canEditSplit ? startSplitEdit : undefined}
+              className={cn(
+                "mt-0.5 text-xs text-muted-foreground",
+                canEditSplit && "hover:text-foreground cursor-pointer underline-offset-2 hover:underline"
+              )}
+            >
+              ต้น {formatMoney(entry.principalAmount!)} + ดอก {formatMoney(entry.interestAmount ?? "0")}
+            </button>
+          ) : canEditSplit ? (
+            <button
+              type="button"
+              onClick={startSplitEdit}
+              className="mt-0.5 text-xs text-orange-600 hover:text-orange-700"
+            >
+              + กรอกต้น/ดอก
+            </button>
+          ) : null}
         </div>
 
         <StatusBadge
