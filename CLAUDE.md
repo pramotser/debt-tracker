@@ -15,7 +15,7 @@ Next.js 16 App Router + TS · shadcn/ui + Tailwind v4 (UI เดียว ห้
 
 ## Conventions
 - เงิน = `numeric(12,2)`; แสดงผลผ่าน `lib/format.ts` เสมอ (ห้าม hardcode สัญลักษณ์เงิน)
-- เดือน = เก็บ `year` + `month` (1-12); แสดง `YYYY/MM`; เทียบด้วย `year*100+month`
+- เดือน = เก็บ `year` + `month` (1-12); แสดง `YYYY/MM`; เทียบด้วย `year*100+month`; UI ตัวเปลี่ยนเดือน `[<] YYYY/MM [>]` ใช้ shared `components/layout/month-nav.tsx` (รองรับ `month=null` → year-only) ห้าม inline chevron + label เอง
 - query ข้อมูลราย user ต้องกรอง `userId` ผ่าน `lib/auth.ts` → `getCurrentUser()` (Supabase Auth · throw ถ้าไม่ login)
 - **Read** = Server Component เรียก `server/queries` โดยตรง
 - **Mutation** = Server Action (`server/actions`) + `revalidatePath` + validate ด้วย zod ทุกครั้ง
@@ -35,7 +35,7 @@ Next.js 16 App Router + TS · shadcn/ui + Tailwind v4 (UI เดียว ห้
 ## Schema
 
 ### Enums
-- `ledger_entry_type`: `FIXED_COST` | `SUBSCRIPTION` | `CREDIT_CARD` | `CREDIT_CARD_INSTALLMENT` | `ONE_TIME_COST`
+- `ledger_entry_type`: `FIXED_COST` | `CREDIT_CARD` | `CREDIT_CARD_INSTALLMENT` | `ONE_TIME_COST`
 - `cycle_type`: `monthly` | `yearly` (ใช้กับ `recurring_templates`)
 - `installment_status`: `active` | `early_settled` (completed/near-end = derive ฝั่ง UI)
 - `user_role`: `admin` | `user`
@@ -94,7 +94,7 @@ Next.js 16 App Router + TS · shadcn/ui + Tailwind v4 (UI เดียว ห้
 - ✅ `/recurring` — **รวม fixed-cost + subscription** (เดิม `/monthly-cost` + `/subscription` ถูกลบ · commit `2ed81ff`) · 2 tabs (รายการเดือนนี้ / ตั้งค่ารายการประจำ) · template + month ledger + import + 3-way amount edit
 - ✅ `/credit-cards` — 3 tabs (statement / installment / cards) · BankPicker wired กับ DB banks
 - ✅ `/settings` — profile + theme + logout
-- 🚧 `/ledger` — stub (placeholder, ยังไม่ต่อ DB) · มี **design spec** แล้ว (`docs/specs/ledger/ledger.md`) รอเจ้าของเคาะ open questions
+- ✅ `/ledger` — master view รวมทุก type · read-only + deep-link · filter (search/month-or-year/type/category/paid) · infinite scroll (cursor pagination · PAGE_SIZE=50) · summary aggregate · nav (sidebar + bottom-nav ช่องที่ 5)
 
 **Admin (role gating · `notFound()` ถ้าไม่ใช่ admin):**
 - ✅ `/banks` — CRUD ธนาคาร · brand colors · filter
@@ -124,7 +124,7 @@ Next.js 16 App Router + TS · shadcn/ui + Tailwind v4 (UI เดียว ห้
   - `installment-tab.md` — แผนผ่อน logic ทั้งหมด
   - `cards-tab.md` — CRUD บัตร
 - `docs/specs/settings/settings.md` — settings (profile + theme + logout)
-- `docs/specs/ledger/ledger.md` — ⚠️ **design spec** (ledger ยังเป็น stub) — read-only master view + open questions รอเจ้าของเคาะ
+- `docs/specs/ledger/ledger.md` — `/ledger` master view (read-only) · filter/search/sort · infinite scroll · type label + deep-link map · mock seed
 - `docs/specs/admin/admin.md` — admin section (role gating + banks + categories + users)
 - `docs/deployment.md` — production runbook
 

@@ -1,79 +1,127 @@
-# Ledger — spec (design · ยังไม่ build)
+# Ledger — spec (✅ built)
 
 route `/ledger` · **มุมมองรวมธุรกรรมทุกประเภทในที่เดียว** (master view ของ `ledger_entries`)
 
-> สถานะ: 🚧 stub (`src/app/(portal)/ledger/page.tsx` = placeholder การ์ดเปล่า ยังไม่ต่อ DB)
-> ไฟล์นี้ = **design spec** จาก /po · มี open questions ที่เจ้าของต้องเคาะก่อน handoff /sa → /ui → /impl
+> สถานะ: ✅ built · read-only v1 + cursor pagination + deep-link · ใช้งานจริงได้แล้ว
 
 ## Overview
 
 ทุกหน้าอื่นเป็น "view เฉพาะกลุ่ม" ของตาราง `ledger_entries`:
-- `/recurring` = `FIXED_COST` + `ONE_TIME_COST`
-- `/credit-cards` = `CREDIT_CARD` + `CREDIT_CARD_INSTALLMENT`
-- `/dashboard` = aggregate (chart/KPI)
 
-`/ledger` = **ตารางดิบรวมทุก type** พร้อม filter — ใช้ค้นหา/ตรวจสอบ/มองภาพรวมข้ามโมดูล (เช่น "ทุกอย่างในเดือน 2026/03", "ทุกรายการที่ยังไม่จ่าย", "ทุกอย่างหมวดท่องเที่ยวข้าม recurring + บัตร")
+| หน้า | scope |
+|---|---|
+| `/recurring` | `FIXED_COST` + `ONE_TIME_COST` (เน้น **จัดการ** template + เช็คเดือนนี้) |
+| `/credit-cards` | `CREDIT_CARD` + `CREDIT_CARD_INSTALLMENT` (เน้น **จัดการ** บัตร + แผนผ่อน) |
+| `/dashboard` | aggregate (chart/KPI) |
+| `/ledger` | **ทุก row ทุก type** + filter + search · cross-module **read-only** |
 
 ## User story
 
 ในฐานะ user ฉันอยากเห็น **รายการเงินทุกประเภทในที่เดียว** กรองตามเดือน/ประเภท/หมวด/สถานะจ่าย และค้นด้วยชื่อ เพื่อตรวจสอบว่าเดือนนี้จ่ายอะไรไปบ้างโดยไม่ต้องไล่ทีละหน้า
 
-## Scope (ข้อเสนอ /po — รอเจ้าของยืนยัน)
+## Scope (v1 — built)
 
-**v1 = read-only** — `/ledger` ไม่แก้/ลบ row (mutation อยู่ที่โมดูลเจ้าของ เพราะแต่ละ type มีกฎต่างกัน: installment split, settle ก่อนกำหนด, 3-way amount edit ฯลฯ) · แต่ละ row มีปุ่ม **"ไปที่ต้นทาง"** deep-link ไปหน้าที่แก้ได้จริง (map ด้วย `type` + `?y=&m=`)
+- ✅ **read-only** · mutation อยู่ที่โมดูลเจ้าของ
+- ✅ แต่ละ row มีไอคอน ↗ deep-link ไปต้นทาง (map ด้วย `type` + `?y=&m=`)
+- ✅ default = เดือนปัจจุบัน + toggle "ทั้งปี" ได้
+- ✅ sort = `year DESC, month DESC, createdAt DESC, id DESC`
+- ✅ **infinite scroll** ผ่าน cursor pagination (PAGE_SIZE = 50)
 
-> เหตุผล: ทำ read-only ก่อน = value สูง (ค้นหา/audit) + effort ต่ำ + ไม่เสี่ยงทำ mutation ข้าม type ผิดกฎ · editable ค่อยพิจารณา v2
+## Features
 
-## Acceptance criteria
+### Filter bar — [src/features/ledger/ledger-filters.tsx](../../../src/features/ledger/ledger-filters.tsx)
+- 🔍 ค้นหาชื่อ — debounce 300ms · ใช้ `name ILIKE %q%`
+- 📅 เดือน `[<] YYYY/MM [>]` — ใช้ shared [MonthNav](../../../src/components/layout/month-nav.tsx) · toggle "ทั้งปี" → `YYYY (ทั้งปี)`
+- ประเภท — multi-select 4 ค่า · checkbox ใน Popover
+- หมวด — multi-select · ค้นในหมวด · checkbox ใน Popover
+- สถานะ — Popover: ทั้งหมด / จ่ายแล้ว / ค้างจ่าย
+- ล้างตัวกรอง — reset `searchParams` ทั้งหมด
+- state ทั้งหมด sync ผ่าน URL `searchParams` → bookmark/share ลิงก์ filter ได้
 
-- [ ] แสดง `ledger_entries` ของ user ครบทุก type ในมุมมองเดียว
-- [ ] Filter: ช่วงเดือน (default = เดือนปัจจุบัน) · type (multi) · หมวดหมู่ (multi) · สถานะจ่าย (ทั้งหมด/จ่ายแล้ว/ค้าง) · ค้นหาชื่อ (text)
-- [ ] Summary แถวบน: ยอดรวม / จ่ายแล้ว / ค้างจ่าย (ตาม filter ปัจจุบัน)
-- [ ] แต่ละ row: ชื่อ · type badge · หมวดหมู่ badge · `YYYY/MM` · ยอด (`formatMoney`) · สถานะ (paid/due) · ปุ่มไปต้นทาง
-- [ ] รายการผ่อน (`CREDIT_CARD_INSTALLMENT`) แสดง principal/interest ได้ (ถ้ามี)
-- [ ] empty state เมื่อ filter ไม่เจอ
-- [ ] mobile: stack การ์ดต่อ row (ห้ามตารางล้นจอ · ยอดเงินห้าม wrap)
-- [ ] เพิ่ม `/ledger` เข้า nav (ดู §nav ด้านล่าง)
+### Summary card — [src/app/(portal)/ledger/page.tsx](../../../src/app/(portal)/ledger/page.tsx)
+- ยอดรวม · จ่ายแล้ว · ค้างจ่าย (ยอด + จำนวน) ตาม filter ปัจจุบัน
+- มาจาก `getLedgerSummary()` (aggregate SUM/COUNT) **ไม่ใช่** sum ฝั่ง client → ค่าครบเสมอแม้ pagination ยังโหลดไม่หมด
 
-## UI sketch
+### List + infinite scroll — [src/features/ledger/ledger-list.tsx](../../../src/features/ledger/ledger-list.tsx)
+- หน้าแรก SSR (50 rows) · หน้าต่อ ๆ ไปผ่าน Server Action `fetchMoreLedgerEntries`
+- `IntersectionObserver` กับ `rootMargin: "400px 0px"` — โหลดก่อนถึงก้น 400px = smooth ไม่กระตุก
+- `inflight` ref กัน double-fire ตอน scroll เร็ว
+- group by เดือนเกิดฝั่ง render → page ถัดไปรวมกับ group เดิมได้
+- skeleton 3 rows ตอนรอ + error fallback card
 
-```
-รายการทั้งหมด
-[ 🔍 ค้นหาชื่อ ]  [เดือน: 2026/06 ▾ – ทั้งปี]  [ประเภท ▾]  [หมวด ▾]  [สถานะ ▾]
-┌──────────────────────────────────────────────────────────┐
-│  ยอดรวม ฿X,XXX   จ่ายแล้ว ฿X (N)   ค้างจ่าย ฿X (N)          │
-├──────────────────────────────────────────────────────────┤
-│  2026/06                                                   │
-│  ค่าไฟ            [รายจ่ายประจำ] [บ้าน]   ฿800   ค้าง  ↗   │
-│  Netflix          [รายจ่ายประจำ] [บันเทิง] ฿349   จ่ายแล้ว ↗ │
-│  iPhone งวด 3/10  [ผ่อนชำระ]    [มือถือ]  ฿2,500 ค้าง  ↗   │
-│  ร้านกาแฟ         [รูดบัตร]     [อาหาร]   ฿120   จ่ายแล้ว ↗ │
-└──────────────────────────────────────────────────────────┘
-```
-
-> group by เดือน (เมื่อ filter เป็นช่วงหลายเดือน) · ภายในเดือนเรียง `createdAt` หรือ amount (เคาะใน open questions)
+### Row card — [src/features/ledger/ledger-row.tsx](../../../src/features/ledger/ledger-row.tsx)
+- accent bar (paid=เขียว / due=ส้ม)
+- ชื่อ · type badge · category badge
+- INSTALLMENT/CC แสดง `เงินต้น X · ดอกเบี้ย Y` ใต้ชื่อถ้ามี
+- ขวา: ยอด + StatusBadge + ↗ deep-link
 
 ## Type label / deep-link mapping
 
-| `type` | badge label | ไปต้นทาง |
-|---|---|---|
-| `FIXED_COST` | รายจ่ายประจำ | `/recurring?y=&m=` |
-| `SUBSCRIPTION` | สมาชิก/บริการ | `/recurring?y=&m=` (legacy data) |
-| `ONE_TIME_COST` | ครั้งเดียว | `/recurring?y=&m=` |
-| `CREDIT_CARD` | รูดบัตร | `/credit-cards?y=&m=` |
-| `CREDIT_CARD_INSTALLMENT` | ผ่อนชำระ | `/credit-cards?y=&m=` |
+label/สี/path อยู่ที่ [src/features/ledger/types.ts](../../../src/features/ledger/types.ts) (`LEDGER_TYPE_META`) — แชร์ใช้ทั้ง filter checkbox + row badge
 
-## Data dependency
+| `type` | badge label | สี | ไปต้นทาง |
+|---|---|---|---|
+| `FIXED_COST` | รายจ่ายประจำ | น้ำเงิน | `/recurring?y=&m=` |
+| `ONE_TIME_COST` | ครั้งเดียว | เทา | `/recurring?y=&m=` |
+| `CREDIT_CARD` | รูดบัตร | ม่วง | `/credit-cards?y=&m=` |
+| `CREDIT_CARD_INSTALLMENT` | ผ่อนชำระ | กุหลาบ | `/credit-cards?y=&m=` |
 
-- **มีอยู่แล้ว:** `ledger_entries` (ทุก column ที่ต้องใช้ครบ · index `(userId, year, month, type)` รองรับ filter เดือน+type) · `categories` (label/สี) · `credit_cards` + `banks` (label row บัตร — optional v1)
-- **ต้องเพิ่ม:** query ใหม่ `listAllLedgerEntries(filters)` ใน `server/queries/ledger-entries.ts` (filter userId + year/month range + type[] + category[] + paid + name ILIKE)
-- **ไม่ต้องแตะ schema** — read-only v1 ใช้ของเดิมทั้งหมด
+> `SUBSCRIPTION` ถูกลบจาก enum (migration `0008_drop_subscription_enum.sql`) เพราะ `/recurring` รวม fixed+sub แล้ว · ไม่มี code path ไหน insert ค่านี้อีก
 
-## Nav (สำคัญ — ตอนนี้ orphan)
+## Server queries — [src/server/queries/ledger-entries.ts](../../../src/server/queries/ledger-entries.ts)
 
-⚠️ `/ledger` **ไม่อยู่ใน `sidebar.tsx` และ `bottom-nav.tsx`** — เข้าได้แค่พิมพ์ URL ตรง ๆ · ตอน build ต้องเพิ่มลิงก์:
-- sidebar: ใต้ "บัตรเครดิต" (icon แนะนำ `ReceiptText` / `ScrollText`)
-- bottom-nav: มี 4 ช่องแล้ว (หน้าหลัก/รายการ/บัตร/ตั้งค่า) → ถ้าจะเพิ่มที่ 5 ต้องเช็ค layout มือถือ (เคาะใน open questions)
+### `listAllLedgerEntries(filters, cursor?, limit=50)`
+ดึงหนึ่งหน้าของ ledger ตาม filter
+
+- `filters`: `{ year, month, types?, categoryIds?, paid?, q? }`
+  - `month: null` = ทั้งปี (filter ด้วย year อย่างเดียว)
+  - `types[]`/`categoryIds[]` ว่าง = ไม่กรอง
+  - `paid: null` = ทั้งหมด
+- `cursor`: `{ year, month, createdAt (ISO), id }` หรือ `null` (หน้าแรก)
+- return `{ items, nextCursor }` — `nextCursor: null` = หมดแล้ว
+
+**กลไก cursor:** ใช้ Postgres row tuple compare ตรงกับ `orderBy` 4 ตัว · cast ฝั่ง app เพื่อ type ตรง:
+```ts
+(year, month, createdAt, id) < (?, ?, ?::timestamptz, ?::uuid)
+```
+ขอ `limit + 1` rows เพื่อรู้ว่ามีหน้าต่อมั้ย
+
+### `getLedgerSummary(filters)`
+aggregate รวม + นับ ตาม filter เดียวกัน · return `{ totalAmount, paidAmount, totalCount, paidCount }`
+
+ใช้ `COUNT(*) FILTER (WHERE paid = true)` แยกในเดียว → 1 query
+
+## Server action — [src/server/actions/ledger.ts](../../../src/server/actions/ledger.ts)
+
+`fetchMoreLedgerEntries(filters, cursor, limit?)` — zod validate ทั้ง filters + cursor · `getCurrentUser()` ใน query กัน cross-user
+
+## Page params → state
+
+| URL param | type | default | หมายเหตุ |
+|---|---|---|---|
+| `y` | number | ปีปัจจุบัน | |
+| `m` | number \| `"all"` | เดือนปัจจุบัน | `"all"` = ดูทั้งปี |
+| `types` | csv enum | "" (ทั้งหมด) | เช่น `FIXED_COST,CREDIT_CARD` |
+| `cats` | csv string | "" (ทั้งหมด) | category ids |
+| `paid` | `"paid"` \| `"due"` \| undef | undef (ทั้งหมด) | |
+| `q` | string | "" | name search |
+
+filter เปลี่ยน = URL เปลี่ยน = `LedgerList key` เปลี่ยน → remount client (รีเซ็ต items state)
+
+## Nav
+
+- ✅ [sidebar.tsx](../../../src/components/layout/sidebar.tsx) — "รายการทั้งหมด" icon `ScrollText` ใต้ "บัตรเครดิต"
+- ✅ [bottom-nav.tsx](../../../src/components/layout/bottom-nav.tsx) — 5 ช่อง (เพิ่ม "ทั้งหมด" ระหว่างบัตร–ตั้งค่า)
+
+## Mock seed
+
+[scripts/seed-ledger-mock.ts](../../../scripts/seed-ledger-mock.ts) — generate 250 rows tag `note='mock'` กระจาย 12 เดือน (ครึ่งหนึ่งอยู่เดือนปัจจุบัน → เห็น pagination ชัด)
+
+```bash
+PATH=/opt/homebrew/opt/node@24/bin:$PATH npx tsx --env-file=.env.local scripts/seed-ledger-mock.ts <user_id>
+# --clean       seed ซ้ำ ลบ mock เก่าก่อน
+# --clean-only  ลบอย่างเดียว
+```
 
 ## Out of scope (v1)
 
@@ -81,17 +129,20 @@ route `/ledger` · **มุมมองรวมธุรกรรมทุก�
 - export CSV / PDF
 - bulk action (mark paid หลายอัน)
 - กราฟ/วิเคราะห์ (อยู่ที่ /dashboard แล้ว)
+- toggle ซ่อนงวด installment อนาคต — ใช้ filter เดือนแทนได้
 
-## Open questions (เจ้าของเคาะก่อน /sa)
+## Decisions made (จาก open questions เดิม)
 
-1. **read-only v1 ใช่ไหม?** (ข้อเสนอ: ใช่ + deep-link) หรืออยากแก้ paid/amount inline ได้เลย?
-2. **ช่วงเวลา default** — เดือนปัจจุบัน, ทั้งปี, หรือ "ล่าสุด N รายการ" + infinite scroll? (ข้อเสนอ: เดือนปัจจุบัน + เลือกช่วงได้)
-3. **เรียงลำดับ** — ตามวันที่สร้าง, ยอดมาก→น้อย, หรือ paid ก่อน? (ข้อเสนอ: createdAt ใหม่→เก่า ใน group เดือน)
-4. **bottom-nav ช่องที่ 5** — ยอมให้มือถือมี 5 ช่อง หรือ /ledger เป็น desktop-sidebar เท่านั้น?
-5. **รวม row ผ่อนทุกงวดในอนาคต** — `ledger_entries` materialize ทุกงวดตั้งแต่สร้างแผน → /ledger จะเห็นงวดเดือนหน้า ๆ ด้วย · ต้องการให้แสดงหรือซ่อนงวดอนาคต?
+1. **read-only v1 + deep-link** — ✅
+2. **default = เดือนปัจจุบัน + toggle ทั้งปี** — ✅
+3. **sort = createdAt DESC** — ✅ (เพิ่ม `id DESC` เป็น tie-breaker ให้ cursor stable)
+4. **bottom-nav = 5 ช่อง** — ✅ (เลือกใส่ทั้งบนมือถือเพราะ user ขอเทส)
+5. **งวด installment อนาคต** — ✅ แสดงตามปกติ · filter เดือน/ปีจัดการอยู่แล้ว
 
-## Handoff (เมื่อเจ้าของเคาะ open questions)
+## Future ideas (v2+)
 
-- **/sa** — ออกแบบ shape ของ `listAllLedgerEntries(filters)` + กลยุทธ์ join label (categories/cards) ฝั่ง query vs ฝั่ง app
-- **/ui** — wireframe filter bar + row card (mobile-first) ตาม sketch
-- **/impl** — query + page + filter client component + เพิ่ม nav link
+- export CSV
+- bulk mark-paid (ตรวจกฎต่อ type ก่อน)
+- "เฉลี่ยต่อเดือน" / "หมวดที่จ่ายเยอะสุด" ใน summary เมื่อ filter = ทั้งปี
+- search ขยายไป note field
+- ปุ่ม "บันทึก filter" → preset

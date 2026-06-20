@@ -6,6 +6,7 @@ import {
   CreditCard,
   LayoutDashboard,
   ListChecks,
+  ScrollText,
   Settings,
   type LucideIcon,
 } from "lucide-react";
@@ -16,8 +17,9 @@ type NavLink = { href: string; label: string; icon: LucideIcon };
 
 const links: NavLink[] = [
   { href: "/dashboard", label: "หน้าหลัก", icon: LayoutDashboard },
-  { href: "/recurring", label: "รายการค่าใช้จ่าย", icon: ListChecks },
+  { href: "/recurring", label: "รายการประจำ", icon: ListChecks },
   { href: "/credit-cards", label: "บัตร", icon: CreditCard },
+  { href: "/ledger", label: "ทั้งหมด", icon: ScrollText },
   { href: "/settings", label: "ตั้งค่า", icon: Settings },
 ];
 
