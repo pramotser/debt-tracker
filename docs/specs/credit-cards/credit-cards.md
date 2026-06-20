@@ -16,7 +16,7 @@ route `/credit-cards` · หน้าเดียว 3 tabs · โมดูล�
 
 ## Data fetch (server)
 
-`src/app/(portal)/credit-cards/page.tsx` parse `?y=` + `?m=` (default = เดือนปัจจุบัน · validate `y` 1970-9999, `m` 1-12) แล้ว `Promise.all` 4 query:
+`src/app/(portal)/credit-cards/page.tsx` parse `?y=` + `?m=` (default = เดือนปัจจุบัน · validate `y` 1970-9999, `m` 1-12) แล้ว `Promise.all` 6 query:
 
 | Query | ใช้ที่ |
 |---|---|
@@ -24,8 +24,10 @@ route `/credit-cards` · หน้าเดียว 3 tabs · โมดูล�
 | `listInstallmentPlans()` | tab 2 + tab 1 (lookup card ของงวดผ่อน) |
 | `listCreditCardLedgerByMonth(y, m)` | tab 1 statement |
 | `listAllInstallmentEntries()` | tab 2 (client-side filter รายแผน) |
+| `getCategories()` | dropdown หมวดหมู่ใน ChargeDialog / PlanDialog (DB) |
+| `listBanks()` | BankPicker ใน CardDialog + chip สีบัตร (DB banks) |
 
-ส่งทั้งหมดเป็น props ลง `<CreditCardsApp>` (orchestrator client component)
+ส่งทั้งหมดเป็น props ลง `<CreditCardsApp>` (orchestrator client component · prop `categories` + `banks` ไหลลงทุก tab)
 
 ## Data model (สรุป)
 
@@ -33,7 +35,7 @@ route `/credit-cards` · หน้าเดียว 3 tabs · โมดูล�
 
 ```
 credit_cards
-  ├─ userId, bankId (text mock), name, lastFourDigits?
+  ├─ userId, bankId (text · logical FK → banks.id, ไม่มี FK formal), name, lastFourDigits?
   ├─ cardNetwork? ('visa' | 'mastercard' | 'jcb' | 'amex' | 'unionpay')
   ├─ statementDate? (1-31), dueDate? (1-31)
   └─ active
@@ -118,9 +120,9 @@ state ภายใน tab:
 - shadcn-only · เงินผ่าน `formatMoney` · เดือนผ่าน `formatYearMonth` (`YYYY/MM`)
 - Tab trigger style = underline pure (active = `font-semibold text-primary` + `border-b-2`)
 - ทุก mutation = **optimistic UI** + rollback ใน catch · `toast.error` ทุกครั้งที่ fail
-- mock dropdowns ใช้ `src/features/credit-cards/mock.ts`:
-  - `MOCK_BANKS` (6 ธนาคาร — UOB, TTB, SCB, KBank, KKP, KTC) — derive จาก `BANK_LIST` ใน `lib/banks.ts`
-  - `MOCK_CATEGORIES` (7 หมวด — อาหาร, น้ำมัน, ช้อปปิ้ง, อิเล็กทรอนิกส์, เฟอร์นิเจอร์, ท่องเที่ยว, อื่นๆ)
-- bank brand (label/bg/fg) อยู่ใน `src/lib/banks.ts` — single source ของ bank color ที่ใช้บนหน้า CardFace
+- dropdowns ดึงจาก DB (ไม่มี mock แล้ว — `mock.ts` ถูกลบ):
+  - **ธนาคาร** = prop `banks` (จาก `listBanks()`) → `BankPicker` · chip สีจาก `bank.brandBg` / `bank.brandFg` (DB)
+  - **หมวดหมู่** = prop `categories` (จาก `getCategories()`) → ใช้ใน ChargeDialog / PlanDialog
+- bank brand (สี chip) = **column `brandBg` / `brandFg` ใน `banks` table** (admin แก้ผ่าน `/banks`) — single source ของสีแบงก์บน CardFace
   - **ข้อยกเว้นที่ตั้งใจ** ของกฎ "ห้าม hardcode สี" — สีอื่นใน UI ยังต้องผ่าน token shadcn/Tailwind
-- card network constants + label อยู่ใน `lib/banks.ts` (`CARD_NETWORKS`, `getNetworkLabel`)
+- `src/lib/banks.ts` เหลือบทบาทแคบลง = **card color themes** (`CARD_COLOR_THEMES` / `getCardColorTheme` — blue/navy/teal/plum) + **card network** (`CARD_NETWORKS` / `getNetworkLabel`) เท่านั้น · bank brand ย้ายไป DB แล้ว (`getBankBrand`/`BANKS`/`BANK_LIST` = legacy)

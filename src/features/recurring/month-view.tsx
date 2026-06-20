@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronLeft, ChevronRight, Info, Plus, Trash2 } from "lucide-react";
+import { Info, Plus, Trash2 } from "lucide-react";
 
 import { CategoryBadge } from "@/components/shared/category-badge";
 import { StatusBadge } from "@/components/shared/status-badge";
 import { STATUS } from "@/components/shared/status-tokens";
+import { MonthNav } from "@/components/layout/month-nav";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,7 +15,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
-import { formatMoney, formatYearMonth } from "@/lib/format";
+import { formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 import type {
@@ -82,25 +83,12 @@ export function MonthView({
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center gap-3">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={onPrev}
-          aria-label="เดือนก่อน"
-        >
-          <ChevronLeft />
-        </Button>
-        <span className="text-xl font-bold tabular-nums">
-          {formatYearMonth(ym.year, ym.month)}
-        </span>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={onNext}
-          aria-label="เดือนถัดไป"
-        >
-          <ChevronRight />
-        </Button>
+        <MonthNav
+          year={ym.year}
+          month={ym.month}
+          onPrev={onPrev}
+          onNext={onNext}
+        />
         <Button onClick={onAdd} className="ml-auto">
           <Plus />
           เพิ่มรายการ

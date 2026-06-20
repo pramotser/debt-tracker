@@ -128,7 +128,7 @@ useEffect(() => {
 |---|---|---|---|
 | บัตร | Select | ✓ | จาก `cards.filter(active)` |
 | รายการ | text | ✓ | autoFocus |
-| หมวดหมู่ | Select | ✓ | `MOCK_CATEGORIES` |
+| หมวดหมู่ | Select | ✓ | จาก DB `categories` (prop `categories` = `getCategories()`) |
 | ยอดเงิน | number | ✓ | `>= 0`, ทศนิยม 2 ตำแหน่ง |
 
 > **ไม่มี input year/month** — ใช้ `ym` ที่ดูอยู่เสมอ

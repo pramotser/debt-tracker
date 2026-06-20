@@ -8,6 +8,7 @@ import {
   LayoutDashboard,
   ListChecks,
   LogOut,
+  ScrollText,
   Settings,
   Tag,
   Users,
@@ -25,6 +26,7 @@ const mainLinks: NavLink[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/recurring", label: "รายการค่าใช้จ่าย", icon: ListChecks },
   { href: "/credit-cards", label: "บัตรเครดิต", icon: CreditCard },
+  { href: "/ledger", label: "รายการทั้งหมด", icon: ScrollText },
 ];
 
 const adminLinks: NavLink[] = [

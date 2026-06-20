@@ -1,5 +1,6 @@
-import { ChevronLeft, ChevronRight, Loader2, Plus } from "lucide-react";
+import { Loader2, Plus } from "lucide-react";
 
+import { MonthNavSkeleton } from "@/components/layout/month-nav";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -18,15 +19,7 @@ export default function Loading() {
 
       {/* month nav + add charge button */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" disabled aria-label="เดือนก่อน">
-            <ChevronLeft />
-          </Button>
-          <Skeleton className="h-7 w-32" />
-          <Button variant="ghost" size="icon" disabled aria-label="เดือนถัดไป">
-            <ChevronRight />
-          </Button>
-        </div>
+        <MonthNavSkeleton />
         <Button disabled>
           <Plus />
           เพิ่มรายการรูด

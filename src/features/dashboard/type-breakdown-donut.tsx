@@ -18,14 +18,12 @@ const TYPE_LABEL: Record<LedgerEntryType, string> = {
   FIXED_COST: "ค่าใช้จ่ายรายเดือน",
   CREDIT_CARD: "บัตรเครดิต",
   ONE_TIME_COST: "ค่าใช้จ่ายอื่น ๆ",
-  SUBSCRIPTION: "Subscription",
 };
 
 const TYPE_COLOR: Record<LedgerEntryType, string> = {
   CREDIT_CARD_INSTALLMENT: "var(--chart-1)",
   FIXED_COST: "var(--chart-2)",
   CREDIT_CARD: "var(--chart-3)",
-  SUBSCRIPTION: "var(--chart-4)",
   ONE_TIME_COST: "var(--chart-5)",
 };
 
