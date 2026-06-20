@@ -2,7 +2,6 @@ import { pgEnum } from "drizzle-orm/pg-core";
 
 export const LEDGER_ENTRY_TYPES = [
   "FIXED_COST",
-  "SUBSCRIPTION",
   "CREDIT_CARD",
   "CREDIT_CARD_INSTALLMENT",
   "ONE_TIME_COST",
