@@ -13,6 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { NumberInput } from "@/components/shared/number-input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -155,12 +156,9 @@ function CategoryFormFields({
       <div className="grid grid-cols-2 gap-3">
         <div className="flex flex-col gap-2">
           <Label htmlFor={`${idPrefix}-sort`}>ลำดับ</Label>
-          <Input
+          <NumberInput
             id={`${idPrefix}-sort`}
-            type="number"
-            inputMode="numeric"
-            min={0}
-            max={9999}
+            decimal={false}
             placeholder="0"
             value={sortOrder}
             onChange={(e) => setSortOrder(e.target.value)}

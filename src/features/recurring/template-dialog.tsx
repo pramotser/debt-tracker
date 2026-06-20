@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Calendar as CalendarIcon, Pencil, Plus } from "lucide-react";
 
 import { CategoryPickerGrid } from "@/components/shared/category-picker-grid";
+import { NumberInput } from "@/components/shared/number-input";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
 import {
@@ -100,10 +101,8 @@ function TemplateFormFields({
           >
             ฿
           </span>
-          <Input
+          <NumberInput
             id={`${idPrefix}-amount`}
-            type="number"
-            inputMode="decimal"
             placeholder="เว้นว่างได้ (กรอกทีหลัง)"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
