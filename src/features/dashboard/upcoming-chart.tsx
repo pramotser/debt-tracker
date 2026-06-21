@@ -37,6 +37,9 @@ export function UpcomingChart({ data }: { data: MonthTotal[] }) {
     <Card>
       <CardHeader>
         <CardTitle className="text-base">รายจ่าย 6 เดือนข้างหน้า</CardTitle>
+        <p className="text-xs text-muted-foreground">
+          ประมาณการ · รวมรายการประจำที่คาดว่าจะเกิด
+        </p>
       </CardHeader>
       <CardContent>
         {hasAny ? (

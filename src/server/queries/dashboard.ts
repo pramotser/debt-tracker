@@ -1,6 +1,6 @@
 import "server-only";
 
-import { and, asc, desc, eq, sql } from "drizzle-orm";
+import { and, asc, desc, eq, isNotNull, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 
 import { db } from "@/db";
@@ -137,7 +137,10 @@ export async function getTrailingTotals(
 }
 
 // -----------------------------------------------------------------------------
-// 2.3 ไปข้างหน้า n เดือน (ไม่รวมเดือนอ้างอิง) ไว้ใช้ทั้ง bar "เดือนข้างหน้า"
+// 2.3 ไปข้างหน้า n เดือน (ไม่รวมเดือนอ้างอิง) = "ประมาณการ" รายจ่ายล่วงหน้า
+// recurring ลง ledger เฉพาะเดือนที่ user import เอง → เดือนอนาคตต้อง project เพิ่ม
+//   ยอด = ledger จริง (ยกเว้น recurring กันนับซ้ำ) + project รายการประจำ active
+//   defaultAmount NULL → fallback ยอดล่าสุดที่เคยลงของ template นั้น
 // -----------------------------------------------------------------------------
 export async function getUpcomingTotals(
   year: number,
@@ -146,7 +149,96 @@ export async function getUpcomingTotals(
 ): Promise<MonthTotal[]> {
   const user = await getCurrentUser();
   const months = buildMonthRange(year, month, n, "forward");
-  return sumByMonthInRange(user.id, months);
+  const keys = months.map((m) => m.year * 100 + m.month);
+  const startKey = Math.min(...keys);
+  const endKey = Math.max(...keys);
+
+  const [ledgerRows, templates, recurringAmounts] = await Promise.all([
+    // 1) ยอดจริงใน ledger ยกเว้น recurring (installment/one-time/รูดบัตร) — กันนับซ้ำกับ projection
+    db
+      .select({
+        year: ledgerEntries.year,
+        month: ledgerEntries.month,
+        total: sql<string>`COALESCE(SUM(${ledgerEntries.amount}), 0)`,
+      })
+      .from(ledgerEntries)
+      .where(
+        and(
+          eq(ledgerEntries.userId, user.id),
+          sql`${ledgerEntries.year} * 100 + ${ledgerEntries.month} BETWEEN ${startKey} AND ${endKey}`,
+          sql`${ledgerEntries.sourceType} IS DISTINCT FROM 'recurring_template'`
+        )
+      )
+      .groupBy(ledgerEntries.year, ledgerEntries.month),
+    // 2) รายการประจำที่ยัง active
+    db
+      .select({
+        id: recurringTemplates.id,
+        defaultAmount: recurringTemplates.defaultAmount,
+        billingCycle: recurringTemplates.billingCycle,
+        renewDate: recurringTemplates.renewDate,
+      })
+      .from(recurringTemplates)
+      .where(
+        and(
+          eq(recurringTemplates.userId, user.id),
+          eq(recurringTemplates.active, true)
+        )
+      ),
+    // 3) ยอด recurring ที่เคยลงจริง (ไว้หา "ยอดล่าสุด" ตอน defaultAmount NULL)
+    db
+      .select({
+        sourceId: ledgerEntries.sourceId,
+        year: ledgerEntries.year,
+        month: ledgerEntries.month,
+        amount: ledgerEntries.amount,
+      })
+      .from(ledgerEntries)
+      .where(
+        and(
+          eq(ledgerEntries.userId, user.id),
+          eq(ledgerEntries.sourceType, "recurring_template"),
+          isNotNull(ledgerEntries.amount)
+        )
+      ),
+  ]);
+
+  const ledgerByKey = new Map(
+    ledgerRows.map((r) => [r.year * 100 + r.month, Number(r.total)])
+  );
+
+  // ยอดล่าสุดต่อ template = row ที่ key (year*100+month) มากสุด
+  const lastAmountById = new Map<string, number>();
+  const lastKeyById = new Map<string, number>();
+  for (const r of recurringAmounts) {
+    if (!r.sourceId || r.amount == null) continue;
+    const key = r.year * 100 + r.month;
+    if (key >= (lastKeyById.get(r.sourceId) ?? -Infinity)) {
+      lastKeyById.set(r.sourceId, key);
+      lastAmountById.set(r.sourceId, Number(r.amount));
+    }
+  }
+
+  type Tmpl = (typeof templates)[number];
+  const effectiveAmount = (t: Tmpl): number =>
+    t.defaultAmount != null
+      ? Number(t.defaultAmount)
+      : (lastAmountById.get(t.id) ?? 0);
+
+  // monthly = ทุกเดือน · yearly = เฉพาะเดือนที่ตรง renewDate (ไม่มี renewDate → ไม่ project)
+  const billsIn = (t: Tmpl, m: number): boolean => {
+    if (t.billingCycle === "monthly") return true;
+    if (!t.renewDate) return false;
+    return Number(t.renewDate.slice(5, 7)) === m;
+  };
+
+  return months.map((m) => {
+    const ledger = ledgerByKey.get(m.year * 100 + m.month) ?? 0;
+    const recurring = templates
+      .filter((t) => billsIn(t, m.month))
+      .reduce((s, t) => s + effectiveAmount(t), 0);
+    return { year: m.year, month: m.month, total: ledger + recurring };
+  });
 }
 
 // -----------------------------------------------------------------------------
