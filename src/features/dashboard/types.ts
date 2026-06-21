@@ -7,6 +7,8 @@ import type {
   TypeBreakdownItem,
 } from "@/server/queries/dashboard";
 
+// หมายเหตุ: timeline (getThisMonthTimeline + this-month-timeline.tsx) ถูกซ่อนไว้ก่อน
+// รอ logic รอบบัตรเครดิต (วันตัด/วันครบกำหนด) — re-enable แล้วค่อยเพิ่ม timeline/todayDay กลับ
 export type DashboardData = {
   year: number;
   month: number;
@@ -16,6 +18,7 @@ export type DashboardData = {
   typeBreakdown: TypeBreakdownItem[];
   typeBreakdownThisMonth: TypeBreakdownItem[];
   categoryFlow: CategoryFlowItem[];
+  categoryFlowThisMonth: CategoryFlowItem[];
   installments: InstallmentProgressItem[];
   heatmap: HeatmapByYear;
 };

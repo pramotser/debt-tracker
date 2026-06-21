@@ -1,6 +1,7 @@
 import "server-only";
 
-import { and, asc, desc, eq, sql } from "drizzle-orm";
+import { and, asc, desc, eq, isNotNull, sql } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 
 import { db } from "@/db";
 import {
@@ -8,6 +9,7 @@ import {
   creditCardInstallments,
   creditCards,
   ledgerEntries,
+  recurringTemplates,
   type LedgerEntryType,
 } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
@@ -134,8 +136,77 @@ export async function getTrailingTotals(
   return sumByMonthInRange(user.id, months);
 }
 
+// รายการประจำ project ไปข้างหน้า — คืนฟังก์ชัน (เดือน 1-12) → ยอด recurring ที่คาดว่าจะเกิด
+//   monthly = ทุกเดือน · yearly = เฉพาะเดือนตรง renewDate
+//   defaultAmount NULL → fallback ยอดล่าสุดที่เคยลงของ template นั้น
+// ใช้ร่วม upcoming chart + heatmap (เติมเดือนที่ยังไม่ลง ledger)
+async function buildRecurringProjector(
+  userId: string
+): Promise<(month: number) => number> {
+  const [templates, recurringAmounts] = await Promise.all([
+    db
+      .select({
+        id: recurringTemplates.id,
+        defaultAmount: recurringTemplates.defaultAmount,
+        billingCycle: recurringTemplates.billingCycle,
+        renewDate: recurringTemplates.renewDate,
+      })
+      .from(recurringTemplates)
+      .where(
+        and(
+          eq(recurringTemplates.userId, userId),
+          eq(recurringTemplates.active, true)
+        )
+      ),
+    db
+      .select({
+        sourceId: ledgerEntries.sourceId,
+        year: ledgerEntries.year,
+        month: ledgerEntries.month,
+        amount: ledgerEntries.amount,
+      })
+      .from(ledgerEntries)
+      .where(
+        and(
+          eq(ledgerEntries.userId, userId),
+          eq(ledgerEntries.sourceType, "recurring_template"),
+          isNotNull(ledgerEntries.amount)
+        )
+      ),
+  ]);
+
+  // ยอดล่าสุดต่อ template = row ที่ key (year*100+month) มากสุด
+  const lastAmountById = new Map<string, number>();
+  const lastKeyById = new Map<string, number>();
+  for (const r of recurringAmounts) {
+    if (!r.sourceId || r.amount == null) continue;
+    const key = r.year * 100 + r.month;
+    if (key >= (lastKeyById.get(r.sourceId) ?? -Infinity)) {
+      lastKeyById.set(r.sourceId, key);
+      lastAmountById.set(r.sourceId, Number(r.amount));
+    }
+  }
+
+  type Tmpl = (typeof templates)[number];
+  const effectiveAmount = (t: Tmpl): number =>
+    t.defaultAmount != null
+      ? Number(t.defaultAmount)
+      : (lastAmountById.get(t.id) ?? 0);
+  const billsIn = (t: Tmpl, m: number): boolean => {
+    if (t.billingCycle === "monthly") return true;
+    if (!t.renewDate) return false;
+    return Number(t.renewDate.slice(5, 7)) === m;
+  };
+
+  return (month: number) =>
+    templates
+      .filter((t) => billsIn(t, month))
+      .reduce((s, t) => s + effectiveAmount(t), 0);
+}
+
 // -----------------------------------------------------------------------------
-// 2.3 ไปข้างหน้า n เดือน (ไม่รวมเดือนอ้างอิง) ไว้ใช้ทั้ง bar "เดือนข้างหน้า"
+// 2.3 ไปข้างหน้า n เดือน (ไม่รวมเดือนอ้างอิง) = "ประมาณการ" รายจ่ายล่วงหน้า
+//   ยอด = ledger จริง (ยกเว้น recurring กันนับซ้ำ) + project รายการประจำ active
 // -----------------------------------------------------------------------------
 export async function getUpcomingTotals(
   year: number,
@@ -144,7 +215,39 @@ export async function getUpcomingTotals(
 ): Promise<MonthTotal[]> {
   const user = await getCurrentUser();
   const months = buildMonthRange(year, month, n, "forward");
-  return sumByMonthInRange(user.id, months);
+  const keys = months.map((m) => m.year * 100 + m.month);
+  const startKey = Math.min(...keys);
+  const endKey = Math.max(...keys);
+
+  const [ledgerRows, project] = await Promise.all([
+    // ยอดจริงใน ledger ยกเว้น recurring (installment/one-time/รูดบัตร) — กันนับซ้ำกับ projection
+    db
+      .select({
+        year: ledgerEntries.year,
+        month: ledgerEntries.month,
+        total: sql<string>`COALESCE(SUM(${ledgerEntries.amount}), 0)`,
+      })
+      .from(ledgerEntries)
+      .where(
+        and(
+          eq(ledgerEntries.userId, user.id),
+          sql`${ledgerEntries.year} * 100 + ${ledgerEntries.month} BETWEEN ${startKey} AND ${endKey}`,
+          sql`${ledgerEntries.sourceType} IS DISTINCT FROM 'recurring_template'`
+        )
+      )
+      .groupBy(ledgerEntries.year, ledgerEntries.month),
+    buildRecurringProjector(user.id),
+  ]);
+
+  const ledgerByKey = new Map(
+    ledgerRows.map((r) => [r.year * 100 + r.month, Number(r.total)])
+  );
+
+  return months.map((m) => ({
+    year: m.year,
+    month: m.month,
+    total: (ledgerByKey.get(m.year * 100 + m.month) ?? 0) + project(m.month),
+  }));
 }
 
 // -----------------------------------------------------------------------------
@@ -246,6 +349,51 @@ export async function getCategoryFlow(): Promise<CategoryFlowItem[]> {
     .filter((r) => r.total > 0);
 }
 
+// เหมือน getCategoryFlow แต่กรองเฉพาะเดือนปัจจุบัน (ใช้ใน tab เดือนนี้)
+export async function getCategoryFlowByMonth(
+  year: number,
+  month: number
+): Promise<CategoryFlowItem[]> {
+  const user = await getCurrentUser();
+  const rows = await db
+    .select({
+      categoryId: ledgerEntries.categoryId,
+      name: categories.name,
+      icon: categories.icon,
+      colorBg: categories.colorBg,
+      colorFg: categories.colorFg,
+      total: sql<string>`COALESCE(SUM(${ledgerEntries.amount}), 0)`,
+    })
+    .from(ledgerEntries)
+    .leftJoin(categories, eq(categories.id, ledgerEntries.categoryId))
+    .where(
+      and(
+        eq(ledgerEntries.userId, user.id),
+        eq(ledgerEntries.year, year),
+        eq(ledgerEntries.month, month)
+      )
+    )
+    .groupBy(
+      ledgerEntries.categoryId,
+      categories.name,
+      categories.icon,
+      categories.colorBg,
+      categories.colorFg
+    )
+    .orderBy(desc(sql`COALESCE(SUM(${ledgerEntries.amount}), 0)`));
+
+  return rows
+    .map((r) => ({
+      categoryId: r.categoryId,
+      name: r.name,
+      icon: r.icon,
+      colorBg: r.colorBg,
+      colorFg: r.colorFg,
+      total: Number(r.total),
+    }))
+    .filter((r) => r.total > 0);
+}
+
 // -----------------------------------------------------------------------------
 // 2.6 ความคืบหน้าแผนผ่อน (active only)
 // -----------------------------------------------------------------------------
@@ -301,19 +449,22 @@ export async function getInstallmentProgress(): Promise<
     )
     .orderBy(asc(creditCardInstallments.name));
 
-  return rows.map((r) => {
-    const remainingPeriods = Math.max(0, r.totalInstallments - r.paidCount);
-    const installmentAmount = Number(r.installmentAmount);
-    return {
-      id: r.id,
-      name: r.name,
-      cardName: r.cardName,
-      installmentAmount,
-      totalInstallments: r.totalInstallments,
-      paidCount: r.paidCount,
-      remaining: remainingPeriods * installmentAmount,
-    };
-  });
+  return rows
+    .map((r) => {
+      const remainingPeriods = Math.max(0, r.totalInstallments - r.paidCount);
+      const installmentAmount = Number(r.installmentAmount);
+      return {
+        id: r.id,
+        name: r.name,
+        cardName: r.cardName,
+        installmentAmount,
+        totalInstallments: r.totalInstallments,
+        paidCount: r.paidCount,
+        remaining: remainingPeriods * installmentAmount,
+      };
+    })
+    // เหลือผ่อนมากสุดขึ้นก่อน
+    .sort((a, b) => b.remaining - a.remaining);
 }
 
 // -----------------------------------------------------------------------------
@@ -331,36 +482,182 @@ export type HeatmapByYear = {
   byYear: Record<number, HeatmapCell[]>;
 };
 
-function emptyYearCells(): HeatmapCell[] {
-  return Array.from({ length: 12 }, (_, i) => ({ month: i + 1, total: 0 }));
-}
-
+// cover view: เดือนที่ยังไม่ลง recurring ลง ledger (โดยเฉพาะเดือนอนาคต) จะเป็นช่องขาว
+// → เติมประมาณการ recurring เข้าไปเหมือน upcoming chart · เดือนที่ลง recurring จริงแล้ว
+// (อดีต/ปัจจุบัน) ใช้ ledger ตรงๆ กันนับซ้ำ
 export async function getHeatmapByYears(
-  fallbackYear: number
+  fallbackYear: number,
+  currentMonth: number
 ): Promise<HeatmapByYear> {
   const user = await getCurrentUser();
-  const rows = await db
-    .select({
-      year: ledgerEntries.year,
-      month: ledgerEntries.month,
-      total: sql<string>`COALESCE(SUM(${ledgerEntries.amount}), 0)`,
-    })
-    .from(ledgerEntries)
-    .where(eq(ledgerEntries.userId, user.id))
-    .groupBy(ledgerEntries.year, ledgerEntries.month)
-    .orderBy(asc(ledgerEntries.year), asc(ledgerEntries.month));
+  const [rows, project] = await Promise.all([
+    db
+      .select({
+        year: ledgerEntries.year,
+        month: ledgerEntries.month,
+        total: sql<string>`COALESCE(SUM(${ledgerEntries.amount}), 0)`,
+        recurringTotal: sql<string>`COALESCE(SUM(CASE WHEN ${ledgerEntries.sourceType} = 'recurring_template' THEN ${ledgerEntries.amount} ELSE 0 END), 0)`,
+        recurringCount: sql<number>`COUNT(*) FILTER (WHERE ${ledgerEntries.sourceType} = 'recurring_template')::int`,
+      })
+      .from(ledgerEntries)
+      .where(eq(ledgerEntries.userId, user.id))
+      .groupBy(ledgerEntries.year, ledgerEntries.month),
+    buildRecurringProjector(user.id),
+  ]);
+
+  const ledgerByKey = new Map<
+    number,
+    { total: number; recurringTotal: number; recurringCount: number }
+  >();
+  const yearSet = new Set<number>([fallbackYear]);
+  for (const r of rows) {
+    ledgerByKey.set(r.year * 100 + r.month, {
+      total: Number(r.total),
+      recurringTotal: Number(r.recurringTotal),
+      recurringCount: r.recurringCount,
+    });
+    yearSet.add(r.year);
+  }
+
+  const currentKey = fallbackYear * 100 + currentMonth;
 
   const byYear: Record<number, HeatmapCell[]> = {};
-  for (const r of rows) {
-    if (!byYear[r.year]) byYear[r.year] = emptyYearCells();
-    byYear[r.year][r.month - 1].total = Number(r.total);
+  for (const y of yearSet) {
+    byYear[y] = Array.from({ length: 12 }, (_, i) => {
+      const month = i + 1;
+      const key = y * 100 + month;
+      const L = ledgerByKey.get(key);
+      const base = L?.total ?? 0;
+      const hasRecurring = (L?.recurringCount ?? 0) > 0;
+      // เดือนอนาคตที่ยังไม่ลง recurring → เติมประมาณการ · ที่เหลือใช้ ledger จริง
+      const total =
+        key > currentKey && !hasRecurring
+          ? base - (L?.recurringTotal ?? 0) + project(month)
+          : base;
+      return { month, total };
+    });
   }
-  // ให้ปี fallback (ปัจจุบัน) มีอยู่เสมอ
-  if (!byYear[fallbackYear]) byYear[fallbackYear] = emptyYearCells();
 
-  const years = Object.keys(byYear)
-    .map((y) => Number(y))
-    .sort((a, b) => a - b);
-
+  const years = [...yearSet].sort((a, b) => a - b);
   return { years, byYear };
+}
+
+// -----------------------------------------------------------------------------
+// 2.8 timeline เดือนนี้ — รายการต้องจ่าย เรียงตาม "วันครบกำหนด"
+// ledger ไม่เก็บ day → resolve จาก source ผ่าน sourceType/sourceId:
+//   credit_card             → credit_cards.dueDate
+//   credit_card_installment → installment → card.dueDate
+//   recurring_template      → renewDate (เอาเฉพาะวัน)
+//   null/manual             → ไม่มีวัน (กองท้าย)
+// join ผ่าน sourceId (text) → cast id ต้นทางเป็น ::text เหมือน query อื่น
+// -----------------------------------------------------------------------------
+export type TimelineItem = {
+  id: string;
+  name: string;
+  type: LedgerEntryType;
+  amount: number | null; // null = ยังไม่ระบุยอด
+  paid: boolean;
+  day: number | null; // null = ไม่ระบุวัน
+  cardName: string | null; // ชื่อบัตร (credit_card / installment) ถ้ามี
+};
+
+export async function getThisMonthTimeline(
+  year: number,
+  month: number
+): Promise<TimelineItem[]> {
+  const user = await getCurrentUser();
+
+  const directCard = alias(creditCards, "direct_card");
+  const instCard = alias(creditCards, "inst_card");
+
+  const rows = await db
+    .select({
+      id: ledgerEntries.id,
+      name: ledgerEntries.name,
+      type: ledgerEntries.type,
+      amount: ledgerEntries.amount,
+      paid: ledgerEntries.paid,
+      sourceType: ledgerEntries.sourceType,
+      directDueDate: directCard.dueDate,
+      directCardName: directCard.name,
+      instDueDate: instCard.dueDate,
+      instCardName: instCard.name,
+      renewDate: recurringTemplates.renewDate,
+    })
+    .from(ledgerEntries)
+    .leftJoin(
+      directCard,
+      and(
+        eq(ledgerEntries.sourceType, "credit_card"),
+        eq(ledgerEntries.sourceId, sql`${directCard.id}::text`)
+      )
+    )
+    .leftJoin(
+      creditCardInstallments,
+      and(
+        eq(ledgerEntries.sourceType, "credit_card_installment"),
+        eq(ledgerEntries.sourceId, sql`${creditCardInstallments.id}::text`)
+      )
+    )
+    .leftJoin(instCard, eq(instCard.id, creditCardInstallments.creditCardId))
+    .leftJoin(
+      recurringTemplates,
+      and(
+        eq(ledgerEntries.sourceType, "recurring_template"),
+        eq(ledgerEntries.sourceId, sql`${recurringTemplates.id}::text`)
+      )
+    )
+    .where(
+      and(
+        eq(ledgerEntries.userId, user.id),
+        eq(ledgerEntries.year, year),
+        eq(ledgerEntries.month, month)
+      )
+    );
+
+  // dueDate=31 แต่เดือนนี้ไม่มีวันที่ 31 → clamp เป็นวันสุดท้ายของเดือน
+  const lastDay = new Date(year, month, 0).getDate();
+  const clampDay = (d: number | null): number | null =>
+    d == null ? null : Math.min(Math.max(d, 1), lastDay);
+
+  const items: TimelineItem[] = rows.map((r) => {
+    let day: number | null = null;
+    let cardName: string | null = null;
+
+    switch (r.sourceType) {
+      case "credit_card":
+        day = r.directDueDate;
+        cardName = r.directCardName;
+        break;
+      case "credit_card_installment":
+        day = r.instDueDate;
+        cardName = r.instCardName;
+        break;
+      case "recurring_template":
+        // renewDate = 'YYYY-MM-DD' → เอาเฉพาะวัน
+        day = r.renewDate ? Number(r.renewDate.slice(8, 10)) : null;
+        break;
+      default:
+        day = null;
+    }
+
+    return {
+      id: r.id,
+      name: r.name,
+      type: r.type,
+      amount: r.amount == null ? null : Number(r.amount),
+      paid: r.paid,
+      day: clampDay(day),
+      cardName,
+    };
+  });
+
+  // เรียง: มีวัน (asc) ก่อน → ไม่ระบุวันไว้ท้าย · วันเดียวกัน ยังไม่จ่ายขึ้นก่อน
+  return items.sort((a, b) => {
+    const da = a.day ?? Infinity;
+    const dbb = b.day ?? Infinity;
+    if (da !== dbb) return da - dbb;
+    if (a.paid !== b.paid) return a.paid ? 1 : -1;
+    return 0;
+  });
 }
