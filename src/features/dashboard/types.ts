@@ -4,18 +4,17 @@ import type {
   InstallmentProgressItem,
   MonthTotal,
   ThisMonthSummary,
-  TimelineItem,
   TypeBreakdownItem,
 } from "@/server/queries/dashboard";
 
+// หมายเหตุ: timeline (getThisMonthTimeline + this-month-timeline.tsx) ถูกซ่อนไว้ก่อน
+// รอ logic รอบบัตรเครดิต (วันตัด/วันครบกำหนด) — re-enable แล้วค่อยเพิ่ม timeline/todayDay กลับ
 export type DashboardData = {
   year: number;
   month: number;
-  todayDay: number; // วันที่ของวันนี้ (server) — ใช้คำนวณ "อีก N วัน" / "เลยกำหนด"
   summary: ThisMonthSummary;
   trailing: MonthTotal[];
   upcoming: MonthTotal[];
-  timeline: TimelineItem[];
   typeBreakdown: TypeBreakdownItem[];
   typeBreakdownThisMonth: TypeBreakdownItem[];
   categoryFlow: CategoryFlowItem[];

@@ -8,7 +8,6 @@ import { formatMoney, formatYearMonth } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { MonthTotal } from "@/server/queries/dashboard";
 
-import { ThisMonthTimeline } from "./this-month-timeline";
 import { TypeBreakdownDonut } from "./type-breakdown-donut";
 import type { DashboardData } from "./types";
 
@@ -24,8 +23,7 @@ function computeMoM(
 }
 
 export function ThisMonthTab({ data }: { data: DashboardData }) {
-  const { year, month, todayDay, summary, trailing, timeline, typeBreakdownThisMonth } =
-    data;
+  const { year, month, summary, trailing, typeBreakdownThisMonth } = data;
   const { total, paid, due, naCount, entryCount } = summary;
 
   const paidPct = total > 0 ? Math.round((paid / total) * 100) : 0;
@@ -128,19 +126,12 @@ export function ThisMonthTab({ data }: { data: DashboardData }) {
         ) : null}
       </Card>
 
-      {/* desktop: timeline ครึ่งซ้าย · donut ครึ่งขวา → mobile stack */}
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:items-start">
-        <ThisMonthTimeline
-          items={timeline}
-          year={year}
-          month={month}
-          todayDay={todayDay}
-        />
-        <TypeBreakdownDonut
-          data={typeBreakdownThisMonth}
-          title="รายจ่ายตามประเภทเดือนนี้"
-        />
-      </div>
+      {/* timeline (this-month-timeline.tsx) ซ่อนไว้ก่อน รอ logic รอบบัตรเครดิต
+          (วันตัด/วันครบกำหนด) ที่รูดข้ามรอบให้ถูกก่อน */}
+      <TypeBreakdownDonut
+        data={typeBreakdownThisMonth}
+        title="รายจ่ายตามประเภทเดือนนี้"
+      />
     </div>
   );
 }
