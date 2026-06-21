@@ -10,19 +10,21 @@ export function CategoryFlowList({
   data,
   title = "เงินไหลไปหมวดไหน",
   scroll = false,
+  fill = false,
 }: {
   data: CategoryFlowItem[];
   title?: string;
-  scroll?: boolean;
+  scroll?: boolean; // cap 260px แล้ว scroll
+  fill?: boolean; // ยืดเต็มความสูงการ์ด (ให้ balance กับคอลัมน์ข้างๆ) แล้ว scroll
 }) {
   const max = data.reduce((m, d) => (d.total > m ? d.total : m), 0);
 
   return (
-    <Card>
+    <Card className={cn(fill && "h-full")}>
       <CardHeader>
         <CardTitle className="text-base">{title}</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className={cn(fill && "flex min-h-0 flex-1 flex-col")}>
         {data.length === 0 ? (
           <div className="flex h-[180px] items-center justify-center text-sm text-muted-foreground">
             ยังไม่มีรายการ
@@ -31,7 +33,8 @@ export function CategoryFlowList({
           <ul
             className={cn(
               "flex flex-col gap-3",
-              scroll && "max-h-[260px] overflow-y-auto pr-1"
+              fill && "min-h-0 flex-1 overflow-y-auto pr-1",
+              !fill && scroll && "max-h-[260px] overflow-y-auto pr-1"
             )}
           >
             {data.map((d) => {

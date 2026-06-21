@@ -151,8 +151,8 @@ export function ThisMonthTab({ data }: { data: DashboardData }) {
 
       {/* timeline (this-month-timeline.tsx) ซ่อนไว้ก่อน รอ logic รอบบัตรเครดิต
           (วันตัด/วันครบกำหนด) ที่รูดข้ามรอบให้ถูกก่อน */}
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:items-start">
-        {/* ซ้าย: insight (MoM) เหนือ donut · ขวา: category flow เต็มความสูง */}
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        {/* ซ้าย (insight + donut) = ตัวกำหนดความสูงแถว */}
         <div className="flex flex-col gap-4">
           {insightCard}
           <TypeBreakdownDonut
@@ -160,10 +160,16 @@ export function ThisMonthTab({ data }: { data: DashboardData }) {
             title="รายจ่ายตามประเภทเดือนนี้"
           />
         </div>
-        <CategoryFlowList
-          data={categoryFlowThisMonth}
-          title="เงินไหลไปหมวดไหนเดือนนี้"
-        />
+        {/* ขวา: ดึง category ออกจาก flow (absolute) ให้สูงเท่าซ้ายเป๊ะ แล้ว scroll ถ้าเกิน */}
+        <div className="relative">
+          <div className="md:absolute md:inset-0">
+            <CategoryFlowList
+              data={categoryFlowThisMonth}
+              title="เงินไหลไปหมวดไหนเดือนนี้"
+              fill
+            />
+          </div>
+        </div>
       </div>
     </div>
   );
