@@ -10,7 +10,7 @@ import type { DashboardData } from "./types";
 
 export function OverviewTab({ data }: { data: DashboardData }) {
   return (
-    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:items-start">
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
       {/* แถว 1: แนวโน้มย้อนหลัง | ข้างหน้า */}
       <MonthlyTrendChart data={data.trailing} />
       <UpcomingChart data={data.upcoming} />

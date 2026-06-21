@@ -81,8 +81,8 @@ export function MonthlyHeatmap({
           </span>
         )}
       </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-6 gap-2 sm:grid-cols-12">
+      <CardContent className="flex flex-1 flex-col">
+        <div className="grid flex-1 grid-cols-6 gap-2 sm:grid-cols-12">
           {cells.map((c) => (
             <div
               key={c.month}
@@ -91,7 +91,7 @@ export function MonthlyHeatmap({
             >
               <div
                 className={cn(
-                  "h-10 w-full rounded-md transition-colors",
+                  "min-h-10 w-full flex-1 rounded-md transition-colors",
                   intensityClass(c.total, max)
                 )}
                 aria-label={`${formatMonthShortTh(c.month)} ${formatMoney(c.total)}`}

@@ -63,7 +63,7 @@ export function MonthlyTrendChart({ data }: { data: MonthTotal[] }) {
       <CardContent>
         {hasAny ? (
           <ChartContainer config={config} className="h-[220px] w-full">
-            <LineChart data={chartData} margin={{ left: 4, right: 12 }}>
+            <LineChart data={chartData} margin={{ top: 12, left: 4, right: 12 }}>
               <CartesianGrid vertical={false} strokeDasharray="3 3" />
               <XAxis
                 dataKey="label"
