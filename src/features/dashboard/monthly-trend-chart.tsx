@@ -1,6 +1,6 @@
 "use client";
 
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
+import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -26,18 +26,34 @@ export function MonthlyTrendChart({ data }: { data: MonthTotal[] }) {
     total: d.total,
   }));
   const hasAny = chartData.some((d) => d.total > 0);
+  const lastIndex = chartData.length - 1;
+
+  // จุดสุดท้าย = หัวลูกศรชี้ไปข้างหน้า · จุดอื่น = dot กลมเล็ก
+  const renderDot = (props: { cx?: number; cy?: number; index?: number }) => {
+    const { cx, cy, index } = props;
+    const key = `dot-${index}`;
+    if (cx == null || cy == null) return <g key={key} />;
+    if (index === lastIndex) {
+      return (
+        <path
+          key={key}
+          d={`M ${cx - 3} ${cy - 6} L ${cx + 8} ${cy} L ${cx - 3} ${cy + 6} Z`}
+          fill="var(--color-total)"
+        />
+      );
+    }
+    return <circle key={key} cx={cx} cy={cy} r={3} fill="var(--color-total)" />;
+  };
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">
-          แนวโน้ม 6 เดือนย้อนหลัง
-        </CardTitle>
+        <CardTitle className="text-base">แนวโน้ม 6 เดือนย้อนหลัง</CardTitle>
       </CardHeader>
       <CardContent>
         {hasAny ? (
           <ChartContainer config={config} className="h-[220px] w-full">
-            <BarChart data={chartData}>
+            <LineChart data={chartData} margin={{ left: 4, right: 16 }}>
               <CartesianGrid vertical={false} strokeDasharray="3 3" />
               <XAxis
                 dataKey="label"
@@ -63,12 +79,15 @@ export function MonthlyTrendChart({ data }: { data: MonthTotal[] }) {
                   />
                 }
               />
-              <Bar
+              <Line
+                type="monotone"
                 dataKey="total"
-                fill="var(--color-total)"
-                radius={[6, 6, 0, 0]}
+                stroke="var(--color-total)"
+                strokeWidth={2}
+                dot={renderDot}
+                activeDot={{ r: 5 }}
               />
-            </BarChart>
+            </LineChart>
           </ChartContainer>
         ) : (
           <div className="flex h-[220px] items-center justify-center text-sm text-muted-foreground">
