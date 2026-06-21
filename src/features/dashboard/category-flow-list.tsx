@@ -3,25 +3,40 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getCategoryIcon } from "@/lib/categories";
 import { formatMoney } from "@/lib/format";
+import { cn } from "@/lib/utils";
 import type { CategoryFlowItem } from "@/server/queries/dashboard";
 
-export function CategoryFlowList({ data }: { data: CategoryFlowItem[] }) {
+export function CategoryFlowList({
+  data,
+  title = "เงินไหลไปหมวดไหน",
+  scroll = false,
+  fill = false,
+}: {
+  data: CategoryFlowItem[];
+  title?: string;
+  scroll?: boolean; // cap 260px แล้ว scroll
+  fill?: boolean; // ยืดเต็มความสูงการ์ด (ให้ balance กับคอลัมน์ข้างๆ) แล้ว scroll
+}) {
   const max = data.reduce((m, d) => (d.total > m ? d.total : m), 0);
 
   return (
-    <Card>
+    <Card className={cn(fill && "h-full")}>
       <CardHeader>
-        <CardTitle className="text-base">
-          เงินไหลไปหมวดไหน
-        </CardTitle>
+        <CardTitle className="text-base">{title}</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className={cn(fill && "flex min-h-0 flex-1 flex-col")}>
         {data.length === 0 ? (
           <div className="flex h-[180px] items-center justify-center text-sm text-muted-foreground">
             ยังไม่มีรายการ
           </div>
         ) : (
-          <ul className="flex flex-col gap-3">
+          <ul
+            className={cn(
+              "flex flex-col gap-3",
+              fill && "min-h-0 flex-1 overflow-y-auto pr-1",
+              !fill && scroll && "max-h-[260px] overflow-y-auto pr-1"
+            )}
+          >
             {data.map((d) => {
               const ratio = max > 0 ? d.total / max : 0;
               const Icon = getCategoryIcon(d.icon);

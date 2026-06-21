@@ -1,19 +1,41 @@
 "use client";
 
-import { Card, CardContent } from "@/components/ui/card";
+import { TrendingDown, TrendingUp, Minus } from "lucide-react";
+
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { formatMoney, formatYearMonth } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import type { MonthTotal } from "@/server/queries/dashboard";
 
-import { MonthlyTrendChart } from "./monthly-trend-chart";
+import { CategoryFlowList } from "./category-flow-list";
 import { TypeBreakdownDonut } from "./type-breakdown-donut";
 import type { DashboardData } from "./types";
 
+// เทียบยอดรวมทั้งเดือนกับเดือนก่อนหน้า · null ถ้า <2 เดือน หรือเดือนก่อนเป็น 0
+function computeMoM(
+  trailing: MonthTotal[]
+): { pct: number; diff: number } | null {
+  if (trailing.length < 2) return null;
+  const current = trailing[trailing.length - 1].total;
+  const prev = trailing[trailing.length - 2].total;
+  if (prev === 0) return null;
+  return { pct: Math.round(((current - prev) / prev) * 100), diff: current - prev };
+}
+
 export function ThisMonthTab({ data }: { data: DashboardData }) {
-  const { year, month, summary, trailing, typeBreakdownThisMonth } = data;
+  const {
+    year,
+    month,
+    summary,
+    trailing,
+    typeBreakdownThisMonth,
+    categoryFlowThisMonth,
+  } = data;
   const { total, paid, due, naCount, entryCount } = summary;
 
   const paidPct = total > 0 ? Math.round((paid / total) * 100) : 0;
+  const mom = computeMoM(trailing);
 
   const progressMessage = (() => {
     if (entryCount === 0) return "ยังไม่มีรายการเดือนนี้";
@@ -21,6 +43,55 @@ export function ThisMonthTab({ data }: { data: DashboardData }) {
     if (due <= 0) return "จ่ายครบทุกรายการแล้ว 🎉";
     return `ค้างอยู่ ${formatMoney(due)}`;
   })();
+
+  // การ์ดข้อสังเกต — ตอนนี้มี MoM เทียบเดือนก่อน (มากกว่า=แดง · น้อยกว่า=เขียว)
+  // เผื่อ insight อื่นในอนาคต ค่อย push row เพิ่มใน CardContent นี้
+  const insightCard = (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">ข้อสังเกต</CardTitle>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-2">
+        {mom ? (
+          <div
+            className={cn(
+              "flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg px-3 py-2 text-sm",
+              mom.pct > 0 &&
+                "bg-rose-50 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300",
+              mom.pct < 0 &&
+                "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300",
+              mom.pct === 0 && "bg-muted text-muted-foreground"
+            )}
+          >
+            {mom.pct > 0 ? (
+              <TrendingUp className="size-4 shrink-0" />
+            ) : mom.pct < 0 ? (
+              <TrendingDown className="size-4 shrink-0" />
+            ) : (
+              <Minus className="size-4 shrink-0" />
+            )}
+            <span className="font-medium">
+              {mom.pct > 0
+                ? `จ่ายมากกว่าเดือนก่อน ${mom.pct}%`
+                : mom.pct < 0
+                  ? `จ่ายน้อยกว่าเดือนก่อน ${Math.abs(mom.pct)}%`
+                  : "เท่ากับเดือนก่อน"}
+            </span>
+            {mom.pct !== 0 ? (
+              <span className="whitespace-nowrap tabular-nums opacity-80">
+                ({mom.diff > 0 ? "+" : "−"}
+                {formatMoney(Math.abs(mom.diff))})
+              </span>
+            ) : null}
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            ยังไม่มีข้อมูลพอเปรียบเทียบกับเดือนก่อน
+          </p>
+        )}
+      </CardContent>
+    </Card>
+  );
 
   return (
     <div className="flex flex-col gap-4">
@@ -78,12 +149,27 @@ export function ThisMonthTab({ data }: { data: DashboardData }) {
         )}
       </Card>
 
+      {/* timeline (this-month-timeline.tsx) ซ่อนไว้ก่อน รอ logic รอบบัตรเครดิต
+          (วันตัด/วันครบกำหนด) ที่รูดข้ามรอบให้ถูกก่อน */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <MonthlyTrendChart data={trailing} />
-        <TypeBreakdownDonut
-          data={typeBreakdownThisMonth}
-          title="รายจ่ายตามประเภทเดือนนี้"
-        />
+        {/* ซ้าย (insight + donut) = ตัวกำหนดความสูงแถว */}
+        <div className="flex flex-col gap-4">
+          {insightCard}
+          <TypeBreakdownDonut
+            data={typeBreakdownThisMonth}
+            title="รายจ่ายตามประเภทเดือนนี้"
+          />
+        </div>
+        {/* ขวา: ดึง category ออกจาก flow (absolute) ให้สูงเท่าซ้ายเป๊ะ แล้ว scroll ถ้าเกิน */}
+        <div className="relative">
+          <div className="md:absolute md:inset-0">
+            <CategoryFlowList
+              data={categoryFlowThisMonth}
+              title="เงินไหลไปหมวดไหนเดือนนี้"
+              fill
+            />
+          </div>
+        </div>
       </div>
     </div>
   );

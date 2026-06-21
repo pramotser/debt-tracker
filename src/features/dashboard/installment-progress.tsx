@@ -23,7 +23,7 @@ export function InstallmentProgress({
             ไม่มีแผนผ่อนที่ active
           </div>
         ) : (
-          <ul className="flex flex-col gap-4">
+          <ul className="flex max-h-[260px] flex-col gap-4 overflow-y-auto pr-1">
             {data.map((d) => {
               const pct =
                 d.totalInstallments > 0
