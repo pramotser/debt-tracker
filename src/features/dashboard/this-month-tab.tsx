@@ -1,19 +1,33 @@
 "use client";
 
-import { Card, CardContent } from "@/components/ui/card";
+import { TrendingDown, TrendingUp, Minus } from "lucide-react";
+
+import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { formatMoney, formatYearMonth } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import type { MonthTotal } from "@/server/queries/dashboard";
 
-import { MonthlyTrendChart } from "./monthly-trend-chart";
 import { TypeBreakdownDonut } from "./type-breakdown-donut";
 import type { DashboardData } from "./types";
+
+// เทียบยอดรวมทั้งเดือนกับเดือนก่อนหน้า · null ถ้า <2 เดือน หรือเดือนก่อนเป็น 0
+function computeMoM(
+  trailing: MonthTotal[]
+): { pct: number; diff: number } | null {
+  if (trailing.length < 2) return null;
+  const current = trailing[trailing.length - 1].total;
+  const prev = trailing[trailing.length - 2].total;
+  if (prev === 0) return null;
+  return { pct: Math.round(((current - prev) / prev) * 100), diff: current - prev };
+}
 
 export function ThisMonthTab({ data }: { data: DashboardData }) {
   const { year, month, summary, trailing, typeBreakdownThisMonth } = data;
   const { total, paid, due, naCount, entryCount } = summary;
 
   const paidPct = total > 0 ? Math.round((paid / total) * 100) : 0;
+  const mom = computeMoM(trailing);
 
   const progressMessage = (() => {
     if (entryCount === 0) return "ยังไม่มีรายการเดือนนี้";
@@ -76,15 +90,46 @@ export function ThisMonthTab({ data }: { data: DashboardData }) {
             {progressMessage}
           </div>
         )}
+
+        {mom ? (
+          <div
+            className={cn(
+              "flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg px-3 py-2 text-sm",
+              mom.pct > 0 &&
+                "bg-rose-50 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300",
+              mom.pct < 0 &&
+                "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300",
+              mom.pct === 0 && "bg-muted text-muted-foreground"
+            )}
+          >
+            {mom.pct > 0 ? (
+              <TrendingUp className="size-4 shrink-0" />
+            ) : mom.pct < 0 ? (
+              <TrendingDown className="size-4 shrink-0" />
+            ) : (
+              <Minus className="size-4 shrink-0" />
+            )}
+            <span className="font-medium">
+              {mom.pct > 0
+                ? `จ่ายมากกว่าเดือนก่อน ${mom.pct}%`
+                : mom.pct < 0
+                  ? `จ่ายน้อยกว่าเดือนก่อน ${Math.abs(mom.pct)}%`
+                  : "เท่ากับเดือนก่อน"}
+            </span>
+            {mom.pct !== 0 ? (
+              <span className="whitespace-nowrap tabular-nums opacity-80">
+                ({mom.diff > 0 ? "+" : "−"}
+                {formatMoney(Math.abs(mom.diff))})
+              </span>
+            ) : null}
+          </div>
+        ) : null}
       </Card>
 
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <MonthlyTrendChart data={trailing} />
-        <TypeBreakdownDonut
-          data={typeBreakdownThisMonth}
-          title="รายจ่ายตามประเภทเดือนนี้"
-        />
-      </div>
+      <TypeBreakdownDonut
+        data={typeBreakdownThisMonth}
+        title="รายจ่ายตามประเภทเดือนนี้"
+      />
     </div>
   );
 }
