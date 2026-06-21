@@ -440,19 +440,22 @@ export async function getInstallmentProgress(): Promise<
     )
     .orderBy(asc(creditCardInstallments.name));
 
-  return rows.map((r) => {
-    const remainingPeriods = Math.max(0, r.totalInstallments - r.paidCount);
-    const installmentAmount = Number(r.installmentAmount);
-    return {
-      id: r.id,
-      name: r.name,
-      cardName: r.cardName,
-      installmentAmount,
-      totalInstallments: r.totalInstallments,
-      paidCount: r.paidCount,
-      remaining: remainingPeriods * installmentAmount,
-    };
-  });
+  return rows
+    .map((r) => {
+      const remainingPeriods = Math.max(0, r.totalInstallments - r.paidCount);
+      const installmentAmount = Number(r.installmentAmount);
+      return {
+        id: r.id,
+        name: r.name,
+        cardName: r.cardName,
+        installmentAmount,
+        totalInstallments: r.totalInstallments,
+        paidCount: r.paidCount,
+        remaining: remainingPeriods * installmentAmount,
+      };
+    })
+    // เหลือผ่อนมากสุดขึ้นก่อน
+    .sort((a, b) => b.remaining - a.remaining);
 }
 
 // -----------------------------------------------------------------------------

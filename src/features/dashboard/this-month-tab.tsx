@@ -2,7 +2,7 @@
 
 import { TrendingDown, TrendingUp, Minus } from "lucide-react";
 
-import { Card } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { formatMoney, formatYearMonth } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -44,40 +44,54 @@ export function ThisMonthTab({ data }: { data: DashboardData }) {
     return `ค้างอยู่ ${formatMoney(due)}`;
   })();
 
-  // เทียบเดือนก่อน — แยกออกมาวางเหนือ donut (มากกว่า=แดง · น้อยกว่า=เขียว)
-  const momInsight = mom ? (
-    <div
-      className={cn(
-        "flex flex-wrap items-center gap-x-2 gap-y-1 rounded-xl border px-4 py-3 text-sm",
-        mom.pct > 0 &&
-          "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-900 dark:bg-rose-950/50 dark:text-rose-300",
-        mom.pct < 0 &&
-          "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/50 dark:text-emerald-300",
-        mom.pct === 0 && "bg-muted text-muted-foreground"
-      )}
-    >
-      {mom.pct > 0 ? (
-        <TrendingUp className="size-4 shrink-0" />
-      ) : mom.pct < 0 ? (
-        <TrendingDown className="size-4 shrink-0" />
-      ) : (
-        <Minus className="size-4 shrink-0" />
-      )}
-      <span className="font-medium">
-        {mom.pct > 0
-          ? `จ่ายมากกว่าเดือนก่อน ${mom.pct}%`
-          : mom.pct < 0
-            ? `จ่ายน้อยกว่าเดือนก่อน ${Math.abs(mom.pct)}%`
-            : "เท่ากับเดือนก่อน"}
-      </span>
-      {mom.pct !== 0 ? (
-        <span className="whitespace-nowrap tabular-nums opacity-80">
-          ({mom.diff > 0 ? "+" : "−"}
-          {formatMoney(Math.abs(mom.diff))})
-        </span>
-      ) : null}
-    </div>
-  ) : null;
+  // การ์ดข้อสังเกต — ตอนนี้มี MoM เทียบเดือนก่อน (มากกว่า=แดง · น้อยกว่า=เขียว)
+  // เผื่อ insight อื่นในอนาคต ค่อย push row เพิ่มใน CardContent นี้
+  const insightCard = (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">ข้อสังเกต</CardTitle>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-2">
+        {mom ? (
+          <div
+            className={cn(
+              "flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg px-3 py-2 text-sm",
+              mom.pct > 0 &&
+                "bg-rose-50 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300",
+              mom.pct < 0 &&
+                "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300",
+              mom.pct === 0 && "bg-muted text-muted-foreground"
+            )}
+          >
+            {mom.pct > 0 ? (
+              <TrendingUp className="size-4 shrink-0" />
+            ) : mom.pct < 0 ? (
+              <TrendingDown className="size-4 shrink-0" />
+            ) : (
+              <Minus className="size-4 shrink-0" />
+            )}
+            <span className="font-medium">
+              {mom.pct > 0
+                ? `จ่ายมากกว่าเดือนก่อน ${mom.pct}%`
+                : mom.pct < 0
+                  ? `จ่ายน้อยกว่าเดือนก่อน ${Math.abs(mom.pct)}%`
+                  : "เท่ากับเดือนก่อน"}
+            </span>
+            {mom.pct !== 0 ? (
+              <span className="whitespace-nowrap tabular-nums opacity-80">
+                ({mom.diff > 0 ? "+" : "−"}
+                {formatMoney(Math.abs(mom.diff))})
+              </span>
+            ) : null}
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            ยังไม่มีข้อมูลพอเปรียบเทียบกับเดือนก่อน
+          </p>
+        )}
+      </CardContent>
+    </Card>
+  );
 
   return (
     <div className="flex flex-col gap-4">
@@ -140,7 +154,7 @@ export function ThisMonthTab({ data }: { data: DashboardData }) {
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:items-start">
         {/* ซ้าย: insight (MoM) เหนือ donut · ขวา: category flow เต็มความสูง */}
         <div className="flex flex-col gap-4">
-          {momInsight}
+          {insightCard}
           <TypeBreakdownDonut
             data={typeBreakdownThisMonth}
             title="รายจ่ายตามประเภทเดือนนี้"

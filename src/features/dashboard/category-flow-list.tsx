@@ -3,14 +3,17 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getCategoryIcon } from "@/lib/categories";
 import { formatMoney } from "@/lib/format";
+import { cn } from "@/lib/utils";
 import type { CategoryFlowItem } from "@/server/queries/dashboard";
 
 export function CategoryFlowList({
   data,
   title = "เงินไหลไปหมวดไหน",
+  scroll = false,
 }: {
   data: CategoryFlowItem[];
   title?: string;
+  scroll?: boolean;
 }) {
   const max = data.reduce((m, d) => (d.total > m ? d.total : m), 0);
 
@@ -25,7 +28,12 @@ export function CategoryFlowList({
             ยังไม่มีรายการ
           </div>
         ) : (
-          <ul className="flex flex-col gap-3">
+          <ul
+            className={cn(
+              "flex flex-col gap-3",
+              scroll && "max-h-[260px] overflow-y-auto pr-1"
+            )}
+          >
             {data.map((d) => {
               const ratio = max > 0 ? d.total / max : 0;
               const Icon = getCategoryIcon(d.icon);
