@@ -44,6 +44,41 @@ export function ThisMonthTab({ data }: { data: DashboardData }) {
     return `ค้างอยู่ ${formatMoney(due)}`;
   })();
 
+  // เทียบเดือนก่อน — แยกออกมาวางเหนือ donut (มากกว่า=แดง · น้อยกว่า=เขียว)
+  const momInsight = mom ? (
+    <div
+      className={cn(
+        "flex flex-wrap items-center gap-x-2 gap-y-1 rounded-xl border px-4 py-3 text-sm",
+        mom.pct > 0 &&
+          "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-900 dark:bg-rose-950/50 dark:text-rose-300",
+        mom.pct < 0 &&
+          "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/50 dark:text-emerald-300",
+        mom.pct === 0 && "bg-muted text-muted-foreground"
+      )}
+    >
+      {mom.pct > 0 ? (
+        <TrendingUp className="size-4 shrink-0" />
+      ) : mom.pct < 0 ? (
+        <TrendingDown className="size-4 shrink-0" />
+      ) : (
+        <Minus className="size-4 shrink-0" />
+      )}
+      <span className="font-medium">
+        {mom.pct > 0
+          ? `จ่ายมากกว่าเดือนก่อน ${mom.pct}%`
+          : mom.pct < 0
+            ? `จ่ายน้อยกว่าเดือนก่อน ${Math.abs(mom.pct)}%`
+            : "เท่ากับเดือนก่อน"}
+      </span>
+      {mom.pct !== 0 ? (
+        <span className="whitespace-nowrap tabular-nums opacity-80">
+          ({mom.diff > 0 ? "+" : "−"}
+          {formatMoney(Math.abs(mom.diff))})
+        </span>
+      ) : null}
+    </div>
+  ) : null;
+
   return (
     <div className="flex flex-col gap-4">
       {/* KPI summary */}
@@ -98,49 +133,19 @@ export function ThisMonthTab({ data }: { data: DashboardData }) {
             {progressMessage}
           </div>
         )}
-
-        {mom ? (
-          <div
-            className={cn(
-              "flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg px-3 py-2 text-sm",
-              mom.pct > 0 &&
-                "bg-rose-50 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300",
-              mom.pct < 0 &&
-                "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300",
-              mom.pct === 0 && "bg-muted text-muted-foreground"
-            )}
-          >
-            {mom.pct > 0 ? (
-              <TrendingUp className="size-4 shrink-0" />
-            ) : mom.pct < 0 ? (
-              <TrendingDown className="size-4 shrink-0" />
-            ) : (
-              <Minus className="size-4 shrink-0" />
-            )}
-            <span className="font-medium">
-              {mom.pct > 0
-                ? `จ่ายมากกว่าเดือนก่อน ${mom.pct}%`
-                : mom.pct < 0
-                  ? `จ่ายน้อยกว่าเดือนก่อน ${Math.abs(mom.pct)}%`
-                  : "เท่ากับเดือนก่อน"}
-            </span>
-            {mom.pct !== 0 ? (
-              <span className="whitespace-nowrap tabular-nums opacity-80">
-                ({mom.diff > 0 ? "+" : "−"}
-                {formatMoney(Math.abs(mom.diff))})
-              </span>
-            ) : null}
-          </div>
-        ) : null}
       </Card>
 
       {/* timeline (this-month-timeline.tsx) ซ่อนไว้ก่อน รอ logic รอบบัตรเครดิต
           (วันตัด/วันครบกำหนด) ที่รูดข้ามรอบให้ถูกก่อน */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:items-start">
-        <TypeBreakdownDonut
-          data={typeBreakdownThisMonth}
-          title="รายจ่ายตามประเภทเดือนนี้"
-        />
+        {/* ซ้าย: insight (MoM) เหนือ donut · ขวา: category flow เต็มความสูง */}
+        <div className="flex flex-col gap-4">
+          {momInsight}
+          <TypeBreakdownDonut
+            data={typeBreakdownThisMonth}
+            title="รายจ่ายตามประเภทเดือนนี้"
+          />
+        </div>
         <CategoryFlowList
           data={categoryFlowThisMonth}
           title="เงินไหลไปหมวดไหนเดือนนี้"
