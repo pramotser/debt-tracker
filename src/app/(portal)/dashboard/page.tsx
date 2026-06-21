@@ -5,6 +5,7 @@ import {
   getHeatmapByYears,
   getInstallmentProgress,
   getThisMonthSummary,
+  getThisMonthTimeline,
   getTrailingTotals,
   getTypeBreakdown,
   getTypeBreakdownByMonth,
@@ -15,11 +16,13 @@ export default async function DashboardPage() {
   const now = new Date();
   const year = now.getFullYear();
   const month = now.getMonth() + 1;
+  const todayDay = now.getDate();
 
   const [
     summary,
     trailing,
     upcoming,
+    timeline,
     typeBreakdown,
     typeBreakdownThisMonth,
     categoryFlow,
@@ -29,6 +32,7 @@ export default async function DashboardPage() {
     getThisMonthSummary(year, month),
     getTrailingTotals(year, month, 6),
     getUpcomingTotals(year, month, 6),
+    getThisMonthTimeline(year, month),
     getTypeBreakdown(),
     getTypeBreakdownByMonth(year, month),
     getCategoryFlow(),
@@ -39,9 +43,11 @@ export default async function DashboardPage() {
   const data: DashboardData = {
     year,
     month,
+    todayDay,
     summary,
     trailing,
     upcoming,
+    timeline,
     typeBreakdown,
     typeBreakdownThisMonth,
     categoryFlow,

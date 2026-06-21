@@ -1,6 +1,7 @@
 import "server-only";
 
 import { and, asc, desc, eq, sql } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 
 import { db } from "@/db";
 import {
@@ -8,6 +9,7 @@ import {
   creditCardInstallments,
   creditCards,
   ledgerEntries,
+  recurringTemplates,
   type LedgerEntryType,
 } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
@@ -363,4 +365,124 @@ export async function getHeatmapByYears(
     .sort((a, b) => a - b);
 
   return { years, byYear };
+}
+
+// -----------------------------------------------------------------------------
+// 2.8 timeline เดือนนี้ — รายการต้องจ่าย เรียงตาม "วันครบกำหนด"
+// ledger ไม่เก็บ day → resolve จาก source ผ่าน sourceType/sourceId:
+//   credit_card             → credit_cards.dueDate
+//   credit_card_installment → installment → card.dueDate
+//   recurring_template      → renewDate (เอาเฉพาะวัน)
+//   null/manual             → ไม่มีวัน (กองท้าย)
+// join ผ่าน sourceId (text) → cast id ต้นทางเป็น ::text เหมือน query อื่น
+// -----------------------------------------------------------------------------
+export type TimelineItem = {
+  id: string;
+  name: string;
+  type: LedgerEntryType;
+  amount: number | null; // null = ยังไม่ระบุยอด
+  paid: boolean;
+  day: number | null; // null = ไม่ระบุวัน
+  cardName: string | null; // ชื่อบัตร (credit_card / installment) ถ้ามี
+};
+
+export async function getThisMonthTimeline(
+  year: number,
+  month: number
+): Promise<TimelineItem[]> {
+  const user = await getCurrentUser();
+
+  const directCard = alias(creditCards, "direct_card");
+  const instCard = alias(creditCards, "inst_card");
+
+  const rows = await db
+    .select({
+      id: ledgerEntries.id,
+      name: ledgerEntries.name,
+      type: ledgerEntries.type,
+      amount: ledgerEntries.amount,
+      paid: ledgerEntries.paid,
+      sourceType: ledgerEntries.sourceType,
+      directDueDate: directCard.dueDate,
+      directCardName: directCard.name,
+      instDueDate: instCard.dueDate,
+      instCardName: instCard.name,
+      renewDate: recurringTemplates.renewDate,
+    })
+    .from(ledgerEntries)
+    .leftJoin(
+      directCard,
+      and(
+        eq(ledgerEntries.sourceType, "credit_card"),
+        eq(ledgerEntries.sourceId, sql`${directCard.id}::text`)
+      )
+    )
+    .leftJoin(
+      creditCardInstallments,
+      and(
+        eq(ledgerEntries.sourceType, "credit_card_installment"),
+        eq(ledgerEntries.sourceId, sql`${creditCardInstallments.id}::text`)
+      )
+    )
+    .leftJoin(instCard, eq(instCard.id, creditCardInstallments.creditCardId))
+    .leftJoin(
+      recurringTemplates,
+      and(
+        eq(ledgerEntries.sourceType, "recurring_template"),
+        eq(ledgerEntries.sourceId, sql`${recurringTemplates.id}::text`)
+      )
+    )
+    .where(
+      and(
+        eq(ledgerEntries.userId, user.id),
+        eq(ledgerEntries.year, year),
+        eq(ledgerEntries.month, month)
+      )
+    );
+
+  // dueDate=31 แต่เดือนนี้ไม่มีวันที่ 31 → clamp เป็นวันสุดท้ายของเดือน
+  const lastDay = new Date(year, month, 0).getDate();
+  const clampDay = (d: number | null): number | null =>
+    d == null ? null : Math.min(Math.max(d, 1), lastDay);
+
+  const items: TimelineItem[] = rows.map((r) => {
+    let day: number | null = null;
+    let cardName: string | null = null;
+
+    switch (r.sourceType) {
+      case "credit_card":
+        day = r.directDueDate;
+        cardName = r.directCardName;
+        break;
+      case "credit_card_installment":
+        day = r.instDueDate;
+        cardName = r.instCardName;
+        break;
+      case "recurring_template":
+        // renewDate = 'YYYY-MM-DD' → เอาเฉพาะวัน
+        day = r.renewDate ? Number(r.renewDate.slice(8, 10)) : null;
+        break;
+      default:
+        day = null;
+    }
+
+    return {
+      id: r.id,
+      name: r.name,
+      type: r.type,
+      amount: r.amount == null ? null : Number(r.amount),
+      paid: r.paid,
+      day: clampDay(day),
+      cardName,
+    };
+  });
+
+  // เรียง: มีวัน (asc) ก่อน → ไม่ระบุวันไว้ท้าย · วันเดียวกัน ยังไม่จ่ายขึ้นก่อน
+  return items.sort((a, b) => {
+    const da = a.day ?? Infinity;
+    const dbb = b.day ?? Infinity;
+    if (da !== dbb) return da - dbb;
+    if (a.paid !== b.paid) return a.paid ? 1 : -1;
+    return 0;
+  });
 }
