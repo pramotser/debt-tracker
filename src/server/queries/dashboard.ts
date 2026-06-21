@@ -248,6 +248,51 @@ export async function getCategoryFlow(): Promise<CategoryFlowItem[]> {
     .filter((r) => r.total > 0);
 }
 
+// เหมือน getCategoryFlow แต่กรองเฉพาะเดือนปัจจุบัน (ใช้ใน tab เดือนนี้)
+export async function getCategoryFlowByMonth(
+  year: number,
+  month: number
+): Promise<CategoryFlowItem[]> {
+  const user = await getCurrentUser();
+  const rows = await db
+    .select({
+      categoryId: ledgerEntries.categoryId,
+      name: categories.name,
+      icon: categories.icon,
+      colorBg: categories.colorBg,
+      colorFg: categories.colorFg,
+      total: sql<string>`COALESCE(SUM(${ledgerEntries.amount}), 0)`,
+    })
+    .from(ledgerEntries)
+    .leftJoin(categories, eq(categories.id, ledgerEntries.categoryId))
+    .where(
+      and(
+        eq(ledgerEntries.userId, user.id),
+        eq(ledgerEntries.year, year),
+        eq(ledgerEntries.month, month)
+      )
+    )
+    .groupBy(
+      ledgerEntries.categoryId,
+      categories.name,
+      categories.icon,
+      categories.colorBg,
+      categories.colorFg
+    )
+    .orderBy(desc(sql`COALESCE(SUM(${ledgerEntries.amount}), 0)`));
+
+  return rows
+    .map((r) => ({
+      categoryId: r.categoryId,
+      name: r.name,
+      icon: r.icon,
+      colorBg: r.colorBg,
+      colorFg: r.colorFg,
+      total: Number(r.total),
+    }))
+    .filter((r) => r.total > 0);
+}
+
 // -----------------------------------------------------------------------------
 // 2.6 ความคืบหน้าแผนผ่อน (active only)
 // -----------------------------------------------------------------------------

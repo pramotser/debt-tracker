@@ -18,6 +18,7 @@ export type DashboardData = {
   typeBreakdown: TypeBreakdownItem[];
   typeBreakdownThisMonth: TypeBreakdownItem[];
   categoryFlow: CategoryFlowItem[];
+  categoryFlowThisMonth: CategoryFlowItem[];
   installments: InstallmentProgressItem[];
   heatmap: HeatmapByYear;
 };

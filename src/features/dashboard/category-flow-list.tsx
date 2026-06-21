@@ -5,15 +5,19 @@ import { getCategoryIcon } from "@/lib/categories";
 import { formatMoney } from "@/lib/format";
 import type { CategoryFlowItem } from "@/server/queries/dashboard";
 
-export function CategoryFlowList({ data }: { data: CategoryFlowItem[] }) {
+export function CategoryFlowList({
+  data,
+  title = "เงินไหลไปหมวดไหน",
+}: {
+  data: CategoryFlowItem[];
+  title?: string;
+}) {
   const max = data.reduce((m, d) => (d.total > m ? d.total : m), 0);
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">
-          เงินไหลไปหมวดไหน
-        </CardTitle>
+        <CardTitle className="text-base">{title}</CardTitle>
       </CardHeader>
       <CardContent>
         {data.length === 0 ? (

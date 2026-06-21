@@ -2,6 +2,7 @@ import { DashboardTabs } from "@/features/dashboard/dashboard-tabs";
 import type { DashboardData } from "@/features/dashboard/types";
 import {
   getCategoryFlow,
+  getCategoryFlowByMonth,
   getHeatmapByYears,
   getInstallmentProgress,
   getThisMonthSummary,
@@ -23,6 +24,7 @@ export default async function DashboardPage() {
     typeBreakdown,
     typeBreakdownThisMonth,
     categoryFlow,
+    categoryFlowThisMonth,
     installments,
     heatmap,
   ] = await Promise.all([
@@ -32,6 +34,7 @@ export default async function DashboardPage() {
     getTypeBreakdown(),
     getTypeBreakdownByMonth(year, month),
     getCategoryFlow(),
+    getCategoryFlowByMonth(year, month),
     getInstallmentProgress(),
     getHeatmapByYears(year),
   ]);
@@ -45,6 +48,7 @@ export default async function DashboardPage() {
     typeBreakdown,
     typeBreakdownThisMonth,
     categoryFlow,
+    categoryFlowThisMonth,
     installments,
     heatmap,
   };
