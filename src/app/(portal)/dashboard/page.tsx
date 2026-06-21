@@ -36,7 +36,7 @@ export default async function DashboardPage() {
     getCategoryFlow(),
     getCategoryFlowByMonth(year, month),
     getInstallmentProgress(),
-    getHeatmapByYears(year),
+    getHeatmapByYears(year, month),
   ]);
 
   const data: DashboardData = {
