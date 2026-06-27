@@ -33,16 +33,18 @@ export function LandingHeader() {
         <nav className="flex items-center gap-2">
           <Link
             href="/login"
-            className="inline-flex items-center rounded-xl px-4 py-2.5 text-[15px] font-medium transition-colors hover:bg-foreground/5"
+            className="inline-flex items-center rounded-xl bg-foreground px-4 py-2.5 text-[15px] font-medium text-background shadow-[0_8px_20px_-10px_rgba(15,23,42,0.55)] transition-transform hover:-translate-y-px hover:shadow-[0_12px_26px_-10px_rgba(15,23,42,0.6)]"
           >
             เข้าสู่ระบบ
           </Link>
+          {/* --- ปิดชั่วคราว: ปุ่มสมัครสมาชิก (เหลือเฉพาะ login Google) ---
           <Link
             href="/register"
             className="inline-flex items-center rounded-xl bg-foreground px-4 py-2.5 text-[15px] font-medium text-background shadow-[0_8px_20px_-10px_rgba(15,23,42,0.55)] transition-transform hover:-translate-y-px hover:shadow-[0_12px_26px_-10px_rgba(15,23,42,0.6)]"
           >
             สมัคร
           </Link>
+          --- จบส่วนที่ปิด --- */}
         </nav>
       </div>
     </header>

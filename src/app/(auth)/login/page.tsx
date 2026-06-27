@@ -1,33 +1,47 @@
 "use client";
 
-import { AlertCircle, Loader2 } from "lucide-react";
-import Link from "next/link";
-import { useActionState } from "react";
-
 import { AuthBrand } from "@/components/layout/auth-brand";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
 import { GoogleSignInButton } from "@/features/auth/google-sign-in-button";
-import { PasswordInput } from "@/features/auth/password-input";
-import { signInWithPassword } from "@/server/actions/auth";
+
+// --- ปิดชั่วคราว: login ด้วย email/password + สมัครสมาชิก (เหลือเฉพาะ Google) ---
+// import { AlertCircle, Loader2 } from "lucide-react";
+// import Link from "next/link";
+// import { useActionState } from "react";
+// import { Alert, AlertDescription } from "@/components/ui/alert";
+// import { Button } from "@/components/ui/button";
+// import { CardFooter } from "@/components/ui/card";
+// import { Input } from "@/components/ui/input";
+// import { Label } from "@/components/ui/label";
+// import { Separator } from "@/components/ui/separator";
+// import { PasswordInput } from "@/features/auth/password-input";
+// import { signInWithPassword } from "@/server/actions/auth";
 
 export default function LoginPage() {
-  const [state, action, pending] = useActionState(signInWithPassword, undefined);
+  // const [state, action, pending] = useActionState(signInWithPassword, undefined);
 
   return (
     <>
       <AuthBrand />
+      <Card>
+        <CardHeader className="text-center">
+          <CardTitle>เข้าสู่ระบบ</CardTitle>
+          <CardDescription>ใช้บัญชี Google ของคุณเพื่อเข้าใช้งาน</CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4">
+          <div className="flex flex-col gap-2">
+            <GoogleSignInButton />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* --- ปิดชั่วคราว: form email/password + ปุ่มสมัครสมาชิก ---
       <Card>
         <CardHeader className="text-center">
           <CardTitle>เข้าสู่ระบบ</CardTitle>
@@ -96,6 +110,7 @@ export default function LoginPage() {
           </p>
         </CardFooter>
       </Card>
+      --- จบส่วนที่ปิด --- */}
     </>
   );
 }

@@ -23,8 +23,9 @@ export function LandingHero() {
           </p>
 
           <div className="flex flex-wrap items-center gap-3">
+            {/* ปิดสมัคร: ชี้ปุ่มหลักไป login Google แทน /register */}
             <Link
-              href="/register"
+              href="/login"
               className="inline-flex items-center rounded-2xl bg-foreground px-6 py-3.5 text-[16px] font-medium text-background shadow-[0_8px_20px_-10px_rgba(15,23,42,0.55)] transition-transform hover:-translate-y-px hover:shadow-[0_12px_26px_-10px_rgba(15,23,42,0.6)]"
             >
               เข้าไปลองดู
