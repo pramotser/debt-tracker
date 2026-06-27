@@ -1,3 +1,12 @@
+import { redirect } from "next/navigation";
+
+// --- ปิดการสมัครสมาชิกชั่วคราว: เหลือเฉพาะ login ด้วย Google ---
+// เข้า /register ตรง ๆ ให้เด้งไป /login (โค้ดฟอร์มเดิมเก็บไว้ด้านล่างเป็น comment)
+export default function RegisterPage() {
+  redirect("/login");
+}
+
+/* --- ฟอร์มสมัครสมาชิกเดิม (email/password) — ปิดไว้ ค่อยเปิดกลับถ้าต้องการ ---
 "use client";
 
 import Link from "next/link";
@@ -116,3 +125,4 @@ export default function RegisterPage() {
     </>
   );
 }
+--- จบฟอร์มเดิม --- */

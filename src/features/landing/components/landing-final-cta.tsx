@@ -14,20 +14,15 @@ export function LandingFinalCta() {
               อยากลองคุมเงินแบบเห็นภาพไหม
             </h2>
             <p className="mb-6 text-[16.5px] text-[#4B5B73]">
-              สมัครแล้วลองดึงค่าใช้จ่ายเดือนนี้เข้ามาดูได้เลย
+              เข้าสู่ระบบด้วย Google แล้วลองดึงค่าใช้จ่ายเดือนนี้เข้ามาดูได้เลย
             </p>
             <div className="flex flex-wrap justify-center gap-3">
-              <Link
-                href="/register"
-                className="inline-flex items-center rounded-2xl bg-foreground px-6 py-3.5 text-[16px] font-medium text-background shadow-[0_8px_20px_-10px_rgba(15,23,42,0.55)] transition-transform hover:-translate-y-px hover:shadow-[0_12px_26px_-10px_rgba(15,23,42,0.6)]"
-              >
-                เข้าไปลองดู
-              </Link>
+              {/* ปิดสมัคร: ชี้ปุ่มหลักไป login Google แทน /register */}
               <Link
                 href="/login"
-                className="inline-flex items-center rounded-2xl px-6 py-3.5 text-[16px] font-medium transition-colors hover:bg-foreground/5"
+                className="inline-flex items-center rounded-2xl bg-foreground px-6 py-3.5 text-[16px] font-medium text-background shadow-[0_8px_20px_-10px_rgba(15,23,42,0.55)] transition-transform hover:-translate-y-px hover:shadow-[0_12px_26px_-10px_rgba(15,23,42,0.6)]"
               >
-                เข้าสู่ระบบ
+                เข้าสู่ระบบด้วย Google
               </Link>
             </div>
           </RevealOnScroll>
