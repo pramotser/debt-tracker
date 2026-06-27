@@ -12,9 +12,8 @@ export function LandingFriendSteps() {
             <div className="mb-2.5 text-[13px] font-semibold uppercase tracking-[0.04em] text-[#7FE0C0]">
               ได้ลิงก์มาแล้ว เริ่มยังไง
             </div>
-            <h2 className="max-w-[24ch] text-[clamp(25px,3.1vw,34px)] font-bold leading-[1.22] tracking-[-0.01em]">
-              ล็อกอินครั้งเดียว{" "}
-              <span className="whitespace-nowrap">แล้วเริ่มจดได้เลย</span>
+            <h2 className="whitespace-nowrap text-[clamp(20px,3.1vw,34px)] font-bold leading-[1.22] tracking-[-0.01em]">
+              ล็อกอินครั้งเดียว แล้วเริ่มจดได้เลย
             </h2>
             <p className="mt-3 max-w-[46ch] text-[16px] text-[#B9C4D4]">
               แอปนี้ทำไว้ใช้ส่วนตัว เลยเปิดให้เพื่อนที่สนใจลองด้วย ข้อมูลของแต่ละคนแยกกัน
