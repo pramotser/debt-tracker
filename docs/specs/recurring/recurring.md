@@ -12,6 +12,8 @@ route `/recurring` · header **"รายการค่าใช้จ่าย
 | 1 | `month` (default) | รายการเดือนนี้ | [`month-tab.md`](./month-tab.md) |
 | 2 | `tpl` | ตั้งค่ารายการประจำ | [`template-tab.md`](./template-tab.md) |
 
+> ⚙️ Auto-generate รายการประจำทุกต้นเดือน (Vercel Cron) → [`auto-generate.md`](./auto-generate.md)
+
 > Tab ไม่ใช้ `keepMounted` — state ทั้งหมดอยู่ที่ orchestrator `RecurringApp` แล้ว สลับ tab ไม่รีเซ็ตเพราะ component ไม่ unmount
 
 ## Data fetch (server)

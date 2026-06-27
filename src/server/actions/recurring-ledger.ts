@@ -11,6 +11,7 @@ import {
   type LedgerEntry,
 } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth";
+import { insertRecurringEntries } from "@/server/recurring/generate";
 
 const PAGE_PATH = "/recurring";
 const SOURCE_TYPE = "recurring_template";
@@ -170,54 +171,23 @@ export async function importRecurringToMonth(
   const parsedMonth = monthSchema.parse(month);
   const user = await getCurrentUser();
 
-  const [templates, existing] = await Promise.all([
-    db
-      .select()
-      .from(recurringTemplates)
-      .where(
-        and(
-          eq(recurringTemplates.userId, user.id),
-          inArray(recurringTemplates.id, parsedIds)
-        )
-      ),
-    db
-      .select({ sourceId: ledgerEntries.sourceId })
-      .from(ledgerEntries)
-      .where(
-        and(
-          eq(ledgerEntries.userId, user.id),
-          eq(ledgerEntries.year, parsedYear),
-          eq(ledgerEntries.month, parsedMonth),
-          eq(ledgerEntries.sourceType, SOURCE_TYPE)
-        )
-      ),
-  ]);
+  const templates = await db
+    .select()
+    .from(recurringTemplates)
+    .where(
+      and(
+        eq(recurringTemplates.userId, user.id),
+        inArray(recurringTemplates.id, parsedIds)
+      )
+    );
 
-  const existingSourceIds = new Set(
-    existing.map((e) => e.sourceId).filter((v): v is string => v !== null)
+  // insert + dedupe ด้วย sourceId ใช้ helper เดียวกับ auto-gen (cron)
+  const added = await insertRecurringEntries(
+    user.id,
+    templates,
+    parsedYear,
+    parsedMonth
   );
-
-  const toInsert = templates
-    .filter((t) => !existingSourceIds.has(t.id))
-    .map((t) => ({
-      userId: user.id,
-      categoryId: t.categoryId,
-      sourceType: SOURCE_TYPE,
-      sourceId: t.id,
-      type: "FIXED_COST" as const,
-      name: t.name,
-      amount: t.defaultAmount,
-      year: parsedYear,
-      month: parsedMonth,
-      paid: false,
-    }));
-
-  if (toInsert.length === 0) {
-    revalidatePath(PAGE_PATH);
-    return [];
-  }
-
-  const added = await db.insert(ledgerEntries).values(toInsert).returning();
   revalidatePath(PAGE_PATH);
   return added;
 }
