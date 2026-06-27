@@ -142,6 +142,17 @@
   --sidebar-ring: #34d399;
 }
 
+/* Landing — floating teaser card animation */
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
