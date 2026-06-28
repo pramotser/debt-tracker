@@ -1,8 +1,36 @@
 import { formatDemoNumber } from "../constants";
 
-// 6-month bars — matches real monthly-trend-chart.tsx visual structure
+// 6-month line — mirror real monthly-trend-chart.tsx (LineChart + monotone)
 const MONTHS = ["ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค."];
 const SERIES = [4800, 8200, 6500, 11400, 9100, 14400];
+const Y_MAX = 15000;
+
+// จุดในระบบ viewBox 100×100 (preserveAspectRatio=none + non-scaling-stroke)
+const POINTS = SERIES.map((v, i) => ({
+  x: (i / (SERIES.length - 1)) * 100,
+  y: (1 - v / Y_MAX) * 100,
+}));
+
+// Catmull-Rom → cubic bezier ให้โค้งนุ่มแบบ type="monotone"
+function smoothPath(pts: { x: number; y: number }[]) {
+  if (pts.length < 2) return "";
+  const d = [`M ${pts[0].x} ${pts[0].y}`];
+  for (let i = 0; i < pts.length - 1; i++) {
+    const p0 = pts[i - 1] ?? pts[i];
+    const p1 = pts[i];
+    const p2 = pts[i + 1];
+    const p3 = pts[i + 2] ?? p2;
+    const cp1x = p1.x + (p2.x - p0.x) / 6;
+    const cp1y = p1.y + (p2.y - p0.y) / 6;
+    const cp2x = p2.x - (p3.x - p1.x) / 6;
+    const cp2y = p2.y - (p3.y - p1.y) / 6;
+    d.push(`C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${p2.x} ${p2.y}`);
+  }
+  return d.join(" ");
+}
+
+const LINE_PATH = smoothPath(POINTS);
+const AREA_PATH = `${LINE_PATH} L 100 100 L 0 100 Z`;
 
 // heatmap: 12 เดือน × level 0-3
 const HEATMAP = [0, 1, 2, 2, 3, 2, 3, 1, 2, 2, 1, 0];
@@ -42,7 +70,7 @@ export function LandingDashboardDemo() {
             <span>0</span>
           </div>
 
-          {/* chart area: dashed grid + bars */}
+          {/* chart area: dashed grid + line (mirror real LineChart) */}
           <div className="relative flex-1">
             <div className="pointer-events-none absolute inset-x-0 top-0 flex h-[150px] flex-col justify-between">
               {[0, 1, 2, 3].map((i) => (
@@ -53,17 +81,32 @@ export function LandingDashboardDemo() {
               ))}
             </div>
 
-            <div className="relative flex h-[150px] items-end gap-2">
-              {SERIES.map((value, i) => {
-                const h = Math.round((value / 15000) * 150);
-                return (
-                  <div
-                    key={MONTHS[i]}
-                    className="flex-1 rounded-t-md bg-[#1B2A45]"
-                    style={{ height: `${h}px`, minHeight: 4 }}
-                  />
-                );
-              })}
+            <div className="relative h-[150px]">
+              <svg
+                viewBox="0 0 100 100"
+                preserveAspectRatio="none"
+                className="absolute inset-0 h-full w-full overflow-visible"
+              >
+                <path d={AREA_PATH} fill="#16243F" fillOpacity={0.06} />
+                <path
+                  d={LINE_PATH}
+                  fill="none"
+                  stroke="#16243F"
+                  strokeWidth={2}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  vectorEffect="non-scaling-stroke"
+                />
+              </svg>
+
+              {/* dots — div แยกไว้ให้กลมเป๊ะ (svg ถูก stretch แนวนอน) */}
+              {POINTS.map((p, i) => (
+                <span
+                  key={MONTHS[i]}
+                  className="absolute size-[7px] -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-[#16243F]"
+                  style={{ left: `${p.x}%`, top: `${p.y}%` }}
+                />
+              ))}
             </div>
 
             <div className="mt-1 flex gap-2">
