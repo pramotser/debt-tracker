@@ -1,13 +1,6 @@
 "use client";
 
 import { AuthBrand } from "@/components/layout/auth-brand";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { GoogleSignInButton } from "@/features/auth/google-sign-in-button";
 
 // --- ปิดชั่วคราว: login ด้วย email/password + สมัครสมาชิก (เหลือเฉพาะ Google) ---
@@ -16,7 +9,6 @@ import { GoogleSignInButton } from "@/features/auth/google-sign-in-button";
 // import { useActionState } from "react";
 // import { Alert, AlertDescription } from "@/components/ui/alert";
 // import { Button } from "@/components/ui/button";
-// import { CardFooter } from "@/components/ui/card";
 // import { Input } from "@/components/ui/input";
 // import { Label } from "@/components/ui/label";
 // import { Separator } from "@/components/ui/separator";
@@ -24,93 +16,38 @@ import { GoogleSignInButton } from "@/features/auth/google-sign-in-button";
 // import { signInWithPassword } from "@/server/actions/auth";
 
 export default function LoginPage() {
-  // const [state, action, pending] = useActionState(signInWithPassword, undefined);
-
   return (
     <>
       <AuthBrand />
-      <Card>
-        <CardHeader className="text-center">
-          <CardTitle>เข้าสู่ระบบ</CardTitle>
-          <CardDescription>ใช้บัญชี Google ของคุณเพื่อเข้าใช้งาน</CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-4">
-          <div className="flex flex-col gap-2">
-            <GoogleSignInButton />
-          </div>
-        </CardContent>
-      </Card>
 
-      {/* --- ปิดชั่วคราว: form email/password + ปุ่มสมัครสมาชิก ---
-      <Card>
-        <CardHeader className="text-center">
-          <CardTitle>เข้าสู่ระบบ</CardTitle>
-          <CardDescription>ใช้บัญชีของคุณเพื่อเข้าใช้งาน</CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-4">
-          <form action={action} className="flex flex-col gap-4">
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                required
-                autoComplete="email"
-              />
-            </div>
-            <div className="flex flex-col gap-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="password">รหัสผ่าน</Label>
-                <Link
-                  href="/forgot-password"
-                  className="text-xs text-muted-foreground underline-offset-4 hover:underline"
-                >
-                  ลืมรหัสผ่าน?
-                </Link>
-              </div>
-              <PasswordInput
-                id="password"
-                name="password"
-                required
-                minLength={6}
-                autoComplete="current-password"
-              />
-            </div>
-            {state?.error ? (
-              <Alert variant="destructive">
-                <AlertCircle />
-                <AlertDescription>{state.error}</AlertDescription>
-              </Alert>
-            ) : null}
-            <Button type="submit" disabled={pending} className="w-full">
-              {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-              {pending ? "กำลังเข้าสู่ระบบ..." : "เข้าสู่ระบบ"}
-            </Button>
-          </form>
-          <div className="relative">
-            <Separator />
-            <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-2 text-xs text-muted-foreground">
-              หรือ
-            </span>
-          </div>
-          <div className="flex flex-col gap-2">
-            <GoogleSignInButton />
-          </div>
-        </CardContent>
-        <CardFooter className="justify-center">
-          <p className="text-sm text-muted-foreground">
-            ยังไม่มีบัญชี?{" "}
-            <Link
-              href="/register"
-              className="font-medium text-foreground underline-offset-4 hover:underline"
-            >
-              สมัครสมาชิก
-            </Link>
+      <div className="rounded-[24px] border border-foreground/10 bg-card p-7 shadow-[0_1px_2px_rgba(22,36,63,0.04),0_24px_56px_-28px_rgba(22,36,63,0.32)] sm:p-8">
+        <div className="mb-7 text-center">
+          <h1 className="text-[24px] font-bold tracking-[-0.01em]">
+            เข้าสู่ระบบ
+          </h1>
+          <p className="mt-2 text-[14.5px] text-[#4B5B73]">
+            ใช้บัญชี Google ของคุณเพื่อเริ่มใช้งานได้เลย
           </p>
-        </CardFooter>
-      </Card>
-      --- จบส่วนที่ปิด --- */}
+        </div>
+
+        <GoogleSignInButton />
+
+        <p className="mt-5 flex items-center justify-center gap-1.5 text-center text-[12.5px] text-[#8A99AD]">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+            <path
+              d="M12 2l7 3v6c0 4.4-3 8.4-7 9.5C8 19.4 5 15.4 5 11V5l7-3z"
+              stroke="#2E9E6B"
+              strokeWidth="1.8"
+              strokeLinejoin="round"
+            />
+          </svg>
+          ล็อกอินปลอดภัยด้วย Google · ข้อมูลของแต่ละคนแยกกัน
+        </p>
+      </div>
+
+      <p className="mt-6 text-center text-[13px] text-[#8A99AD]">
+        แอปนี้ทำไว้ใช้เอง เปิดให้เพื่อนที่สนใจลองด้วยครับ
+      </p>
     </>
   );
 }

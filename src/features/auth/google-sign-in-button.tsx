@@ -20,13 +20,13 @@ function GoogleButton() {
     <Button
       type="submit"
       variant="outline"
-      className="w-full"
       disabled={pending}
+      className="h-12 w-full rounded-xl border-foreground/15 text-[15px] font-medium shadow-[0_1px_2px_rgba(22,36,63,0.04)] transition-transform hover:-translate-y-px hover:bg-foreground/[0.03] disabled:translate-y-0"
     >
       {pending ? (
-        <Loader2 className="h-4 w-4 animate-spin" />
+        <Loader2 className="h-5 w-5 animate-spin" />
       ) : (
-        <GoogleIcon className="h-4 w-4" />
+        <GoogleIcon className="h-5 w-5" />
       )}
       เข้าสู่ระบบด้วย Google
     </Button>
