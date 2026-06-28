@@ -73,13 +73,25 @@ export function CreditCardsApp({
           variant="line"
           className="h-auto w-full justify-start gap-6 rounded-none border-b border-border bg-transparent p-0"
         >
-          <TabsTrigger value="statement" className={tabTriggerClass}>
+          <TabsTrigger
+            value="statement"
+            data-tour="cc-tab-statement"
+            className={tabTriggerClass}
+          >
             รายการชำระบัตรเครดิต
           </TabsTrigger>
-          <TabsTrigger value="installment" className={tabTriggerClass}>
+          <TabsTrigger
+            value="installment"
+            data-tour="cc-tab-installment"
+            className={tabTriggerClass}
+          >
             รายการผ่อนชำระ
           </TabsTrigger>
-          <TabsTrigger value="mine" className={tabTriggerClass}>
+          <TabsTrigger
+            value="mine"
+            data-tour="cc-tab-mine"
+            className={tabTriggerClass}
+          >
             บัตรของฉัน
           </TabsTrigger>
         </TabsList>

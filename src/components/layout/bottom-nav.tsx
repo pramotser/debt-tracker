@@ -45,6 +45,7 @@ export function BottomNav() {
           <Link
             key={l.href}
             href={l.href}
+            data-tour={`nav-${l.href.slice(1)}`}
             aria-label={l.label}
             aria-current={active ? "page" : undefined}
             className={cn(

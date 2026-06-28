@@ -109,7 +109,9 @@ export default async function LedgerPage({
   return (
     <div className="flex flex-col gap-5">
       <div>
-        <h1 className="text-xl font-bold">รายการทั้งหมด</h1>
+        <h1 data-tour="ledger-title" className="text-xl font-bold">
+          รายการทั้งหมด
+        </h1>
         <p className="text-sm text-muted-foreground">
           รวมธุรกรรมทุกประเภทในที่เดียว · ดูอย่างเดียว · กดไอคอนลูกศรเพื่อไปแก้ที่ต้นทาง
         </p>

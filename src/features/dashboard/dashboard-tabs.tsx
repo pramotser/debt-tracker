@@ -15,10 +15,18 @@ export function DashboardTabs({ data }: { data: DashboardData }) {
   return (
     <Tabs defaultValue={"this-month" satisfies TabValue}>
       <TabsList className="-mx-1 flex w-full flex-nowrap justify-start gap-6 overflow-x-auto rounded-none border-b bg-transparent px-1">
-        <TabsTrigger value="this-month" className={tabTriggerClass}>
+        <TabsTrigger
+          value="this-month"
+          data-tour="dash-tab-thismonth"
+          className={tabTriggerClass}
+        >
           เดือนนี้ต้องจ่ายอะไรบ้าง
         </TabsTrigger>
-        <TabsTrigger value="overview" className={tabTriggerClass}>
+        <TabsTrigger
+          value="overview"
+          data-tour="dash-tab-overview"
+          className={tabTriggerClass}
+        >
           ภาพรวมรายจ่าย
         </TabsTrigger>
       </TabsList>

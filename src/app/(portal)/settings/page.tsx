@@ -22,7 +22,7 @@ export default async function SettingsPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <Card>
+      <Card data-tour="settings-profile">
         <CardHeader>
           <CardTitle>ข้อมูลส่วนตัว</CardTitle>
           <CardDescription>
@@ -47,7 +47,7 @@ export default async function SettingsPage() {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card data-tour="settings-theme">
         <CardHeader>
           <CardTitle>ธีม</CardTitle>
           <CardDescription>
