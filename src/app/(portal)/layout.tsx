@@ -1,5 +1,6 @@
 import { BottomNav } from "@/components/layout/bottom-nav";
 import { Sidebar } from "@/components/layout/sidebar";
+import { Onboarding } from "@/features/onboarding/onboarding";
 import { ThemeSync } from "@/features/settings/theme-sync";
 import { getCurrentUser } from "@/lib/auth";
 import { formatFullName } from "@/lib/format";
@@ -19,6 +20,10 @@ export default async function PortalLayout({
   return (
     <div className="min-h-screen bg-background">
       <ThemeSync serverTheme={settings.theme} />
+      <Onboarding
+        firstName={user.firstName}
+        onboarded={settings.onboardedAt !== null}
+      />
       <Sidebar displayName={displayName} role={user.role} />
       <BottomNav />
       <main className="md:ml-[240px]">

@@ -8,6 +8,7 @@ export type UserSettingsView = {
   currency: string;
   language: string;
   theme: string;
+  onboardedAt: Date | null;
 };
 
 export async function getUserSettings(): Promise<UserSettingsView> {
@@ -18,6 +19,7 @@ export async function getUserSettings(): Promise<UserSettingsView> {
       currency: userSettings.currency,
       language: userSettings.language,
       theme: userSettings.theme,
+      onboardedAt: userSettings.onboardedAt,
     })
     .from(userSettings)
     .where(eq(userSettings.userId, user.id))
@@ -33,6 +35,7 @@ export async function getUserSettings(): Promise<UserSettingsView> {
       currency: userSettings.currency,
       language: userSettings.language,
       theme: userSettings.theme,
+      onboardedAt: userSettings.onboardedAt,
     });
 
   return inserted;

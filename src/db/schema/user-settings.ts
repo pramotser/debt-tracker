@@ -12,6 +12,8 @@ export const userSettings = pgTable("user_settings", {
   currency: text("currency").notNull().default("THB"),
   language: text("language").notNull().default("th"),
   theme: text("theme").notNull().default("light"),
+  // เวลาที่ผู้ใช้ผ่าน onboarding (welcome modal + tour) — NULL = ผู้ใช้ใหม่ ยังไม่เคยเห็น
+  onboardedAt: timestamp("onboarded_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
