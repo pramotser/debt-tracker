@@ -35,7 +35,6 @@ export default function LoginPage() {
       </div>
 
       <p className="mt-6 text-center text-[12.5px] text-[#8A99AD]">
-        เข้าสู่ระบบ = ยอมรับการใช้งานตามปกติ ·{" "}
         <Link href="/" className="underline-offset-4 hover:text-foreground hover:underline">
           กลับหน้าแรก
         </Link>
