@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
+import { useEffect, useRef, useState, useTransition } from "react";
 import {
   CreditCard,
   LayoutDashboard,
@@ -23,13 +24,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { markOnboarded } from "@/server/actions/onboarding";
 
-import {
-  markWelcomeSeen,
-  skipAllTours,
-  startDashboardTour,
-  WELCOME_KEY,
-} from "./tour";
+import { routeToKey, runTour, type TourKey } from "./tour";
 
 type ChecklistItem = {
   href: string;
@@ -71,48 +68,87 @@ const checklist: ChecklistItem[] = [
   },
 ];
 
-export function WelcomeOnboarding({ firstName }: { firstName: string }) {
-  const [open, setOpen] = useState(false);
+/**
+ * Onboarding orchestrator — ผูกกับบัญชีผู้ใช้ (prop `onboarded` มาจาก user_settings.onboarded_at)
+ * - onboarded = true → ไม่ทำอะไร (เคยผ่านแล้ว)
+ * - onboarded = false → เด้ง welcome modal + spotlight tour รายหน้า (ครั้งเดียวต่อบัญชี)
+ *
+ * mount ใน (portal)/layout.tsx → instance นี้อยู่ข้าม client navigation ระหว่างหน้าใน portal
+ * จึงจำได้ว่าหน้าไหน "ทัวร์ไปแล้วในรอบนี้" ด้วย ref (ไม่ต้องพึ่ง localStorage)
+ */
+export function Onboarding({
+  firstName,
+  onboarded,
+}: {
+  firstName: string;
+  onboarded: boolean;
+}) {
+  const pathname = usePathname();
+  const [active, setActive] = useState(!onboarded);
+  const [welcomeOpen, setWelcomeOpen] = useState(!onboarded);
   const [step, setStep] = useState(1);
+  const shownPagesRef = useRef<Set<TourKey>>(new Set());
+  const persistedRef = useRef(false);
+  const [, startTransition] = useTransition();
 
-  // เช็คหลัง mount เท่านั้น — server render = ปิดเสมอ ไม่มี hydration mismatch
+  // เขียน onboarded_at ลง DB ครั้งเดียว (กันยิงซ้ำ)
+  function persist() {
+    if (persistedRef.current) return;
+    persistedRef.current = true;
+    startTransition(() => {
+      void markOnboarded();
+    });
+  }
+
+  // auto-run ทัวร์ของหน้าที่เข้า "ครั้งแรกในรอบ onboarding นี้"
   useEffect(() => {
-    try {
-      // localStorage อ่านได้เฉพาะ client → ต้องเช็คใน effect (เลี่ยง hydration mismatch)
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      if (!localStorage.getItem(WELCOME_KEY)) setOpen(true);
-    } catch {
-      // localStorage ใช้ไม่ได้ (private mode ฯลฯ) — ไม่ต้องเด้ง
-    }
-  }, []);
+    if (!active || welcomeOpen) return;
+    const key = routeToKey(pathname);
+    if (!key || shownPagesRef.current.has(key)) return;
+    let cancelled = false;
+    const t = setTimeout(() => {
+      if (cancelled) return;
+      shownPagesRef.current.add(key);
+      runTour(key);
+    }, 450); // รอ chart/tab เรนเดอร์เสร็จ
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
+  }, [pathname, active, welcomeOpen]);
 
-  // ปิดแบบ X / overlay หรือกด "ข้ามทั้งหมด" → ไม่ให้ทัวร์รายหน้าเด้งอีก
+  // ปิดแบบ X/overlay หรือกด "ข้ามทั้งหมด" → จบ onboarding ทั้งหมด
   function skip() {
-    skipAllTours();
-    setOpen(false);
+    persist();
+    setActive(false);
+    setWelcomeOpen(false);
   }
 
-  // กด "เริ่มทัวร์" → ปิด modal แล้วเริ่ม spotlight tour ของ dashboard
+  // "เริ่มทัวร์" → ปิด modal แล้วพาเดิน dashboard tour (รอบนี้ทัวร์หน้าอื่นยังเด้งตอน navigate)
   function startGuide() {
-    setOpen(false);
-    startDashboardTour();
+    persist();
+    setWelcomeOpen(false);
+    shownPagesRef.current.add("dashboard");
+    runTour("dashboard");
   }
 
-  // กดลิงก์ checklist → จำว่าเห็น welcome แล้ว (ทัวร์ของหน้านั้นจะเด้งเองตอนไปถึง)
+  // กดลิงก์ checklist → ปิด modal (ทัวร์ของหน้านั้นเด้งเองตอนไปถึง)
   function gotoPage() {
-    markWelcomeSeen();
-    setOpen(false);
+    persist();
+    setWelcomeOpen(false);
   }
 
   function handleOpenChange(next: boolean) {
-    if (!next) skipAllTours();
-    setOpen(next);
+    if (!next) skip();
+    else setWelcomeOpen(true);
   }
+
+  if (!active) return null;
 
   const greeting = firstName ? `ยินดีต้อนรับ ${firstName} 👋` : "ยินดีต้อนรับ 👋";
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
+    <Dialog open={welcomeOpen} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <Badge variant="secondary" className="gap-1">

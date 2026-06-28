@@ -2,18 +2,11 @@
 
 import { driver, type DriveStep } from "driver.js";
 import "driver.js/dist/driver.css";
-import { usePathname } from "next/navigation";
-import { useEffect } from "react";
 
 /**
- * Spotlight onboarding tour ต่อหน้า (driver.js)
- * - แต่ละหน้ามีทัวร์ของตัวเอง · auto-run ครั้งแรกที่เข้า (จำด้วย localStorage)
- * - dashboard tour เป็นตัวหลัก: พาเดินเมนู + อธิบายแต่ละหน้าจอ
+ * Spotlight tour engine (driver.js) — เป็น "เครื่องมือ" ล้วน ไม่จัดการสถานะว่าเห็นแล้วหรือยัง
+ * การตัดสินใจว่าจะเด้งหรือไม่ + จำสถานะ อยู่ที่ <Onboarding> (ผูกกับบัญชีผู้ใช้)
  */
-
-export const WELCOME_KEY = "dt-onboarding-v1";
-const SKIP_ALL_KEY = "dt-tour-skip-all-v1";
-const seenKey = (key: TourKey) => `dt-tour-${key}-v1`;
 
 export type TourKey =
   | "dashboard"
@@ -146,7 +139,7 @@ const TOURS: Record<TourKey, Step[]> = {
   ],
 };
 
-function routeToKey(pathname: string): TourKey | null {
+export function routeToKey(pathname: string): TourKey | null {
   if (pathname === "/" || pathname === "/dashboard") return "dashboard";
   if (pathname.startsWith("/recurring")) return "recurring";
   if (pathname.startsWith("/credit-cards")) return "credit-cards";
@@ -163,45 +156,11 @@ function resolveNav(slug: string): Element | undefined {
   return els.find((el) => el.offsetParent !== null) ?? els[0];
 }
 
-function markSeen(key: TourKey) {
-  try {
-    localStorage.setItem(seenKey(key), "1");
-  } catch {
-    // เงียบไว้
-  }
-}
-
-/** welcome modal: ปิดแบบ "ข้ามทั้งหมด" → ไม่ให้ทัวร์รายหน้าเด้งอีก */
-export function markWelcomeSeen() {
-  try {
-    localStorage.setItem(WELCOME_KEY, "1");
-  } catch {
-    // เงียบไว้
-  }
-}
-
-export function skipAllTours() {
-  markWelcomeSeen();
-  try {
-    localStorage.setItem(SKIP_ALL_KEY, "1");
-  } catch {
-    // เงียบไว้
-  }
-}
-
-/** welcome modal: กด "เริ่มทัวร์" → ปิด modal แล้วพาเดิน dashboard tour */
-export function startDashboardTour() {
-  markWelcomeSeen();
-  markSeen("dashboard"); // กัน PageTour เด้งซ้ำหลังจบ
-  runTour("dashboard");
-}
-
-/** เริ่มทัวร์ของหน้าที่ระบุทันที (เรียกจากปุ่ม "เริ่มทัวร์" หรือ auto-run) */
-export function runTour(key: TourKey) {
+/** เริ่มทัวร์ของหน้าที่ระบุทันที · onDone เรียกเมื่อจบ/ปิด (ใช้ persist สถานะ) */
+export function runTour(key: TourKey, onDone?: () => void) {
   const config = TOURS[key];
   if (!config) return;
-  const isMobile =
-    typeof window !== "undefined" && window.innerWidth < 768;
+  const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
 
   const steps: DriveStep[] = config.map((s) => {
     let element: string | Element | undefined;
@@ -214,12 +173,7 @@ export function runTour(key: TourKey) {
     }
     return {
       element,
-      popover: {
-        title: s.title,
-        description: s.description,
-        side,
-        align: s.align,
-      },
+      popover: { title: s.title, description: s.description, side, align: s.align },
     };
   });
 
@@ -230,37 +184,8 @@ export function runTour(key: TourKey) {
     prevBtnText: "ย้อนกลับ",
     doneBtnText: "เข้าใจแล้ว",
     popoverClass: "dt-tour",
-    onDestroyed: () => markSeen(key),
+    onDestroyed: () => onDone?.(),
     steps,
   });
   d.drive();
-}
-
-/** mount ครั้งเดียวใน portal layout · auto-run ทัวร์ของหน้าที่เข้าครั้งแรก */
-export function PageTour() {
-  const pathname = usePathname();
-
-  useEffect(() => {
-    const key = routeToKey(pathname);
-    if (!key) return;
-    let cancelled = false;
-    try {
-      if (localStorage.getItem(SKIP_ALL_KEY)) return;
-      // รอจนปิด welcome modal ก่อน (กันทัวร์เด้งทับ modal)
-      if (!localStorage.getItem(WELCOME_KEY)) return;
-      if (localStorage.getItem(seenKey(key))) return;
-    } catch {
-      return;
-    }
-    // หน่วงให้หน้า (chart/tab) เรนเดอร์เสร็จก่อน
-    const t = setTimeout(() => {
-      if (!cancelled) runTour(key);
-    }, 450);
-    return () => {
-      cancelled = true;
-      clearTimeout(t);
-    };
-  }, [pathname]);
-
-  return null;
 }
