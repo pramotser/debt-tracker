@@ -46,7 +46,7 @@ const CATEGORIES = [
 export function LandingDashboardDemo() {
   return (
     <div className="space-y-3 rounded-2xl border border-foreground/10 bg-muted/40 p-4">
-      {/* แนวโน้ม 6 เดือนย้อนหลัง — mirror real monthly-trend-chart.tsx (title + BarChart) */}
+      {/* แนวโน้ม 6 เดือนย้อนหลัง — mirror real monthly-trend-chart.tsx (title + LineChart) */}
       <div className="rounded-xl border border-foreground/10 bg-card p-4">
         {/* MoM = (เดือนล่าสุด − เดือนก่อน) / เดือนก่อน · (14400 − 9100) / 9100 ≈ +58% */}
         <div className="mb-3 flex items-center justify-between gap-2">
