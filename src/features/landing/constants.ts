@@ -24,6 +24,16 @@ export const CATEGORY_FLOW = [
   { name: "ชำระบิล", icon: "💧", color: "#E8973C", amount: 1200, widthPct: 9 },
 ];
 
+// KPI ของแท็บ "เดือนนี้ต้องจ่ายอะไรบ้าง" (แท็บ default ของ dashboard จริง)
+// due ผูกกับ floating teaser card บน hero (฿9,279)
+export const DASHBOARD_KPI = {
+  yearMonth: "2026/06",
+  total: 44279,
+  paid: 35000,
+  due: 9279,
+  paidPct: 79,
+};
+
 export const INSTALLMENT_DEMO = {
   name: "iPad Air",
   card: "UOB Premier",
