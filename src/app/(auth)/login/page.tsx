@@ -21,7 +21,7 @@ export default function LoginPage() {
     <>
       <AuthBrand />
 
-      <div className="rounded-2xl border border-foreground/10 bg-card p-7 shadow-[0_1px_2px_rgba(22,36,63,0.04),0_18px_44px_-28px_rgba(22,36,63,0.28)]">
+      <div className="rounded-2xl border border-white/50 bg-card/70 p-7 shadow-[0_1px_2px_rgba(22,36,63,0.04),0_30px_60px_-24px_rgba(22,36,63,0.4)] backdrop-blur-xl dark:border-white/10 dark:bg-card/60">
         <div className="mb-6 text-center">
           <h1 className="text-[22px] font-semibold tracking-[-0.01em]">
             เข้าสู่ระบบ
