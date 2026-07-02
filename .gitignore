@@ -42,5 +42,6 @@ yarn-error.log*
 next-env.d.ts
 
 # claude code local state
-.claude/
+.claude/settings.local.json
+CLAUDE.local.md
 plan/
