@@ -181,3 +181,8 @@ index: `(is_active, sort_order)`
 - ตาราง `user_credit_cards` (Phase 2) และ `recurring_templates` / `installments` / `transactions` ของ v2 (Phase 3)
 - หน้าจอ admin จัดการ banks / categories / card_networks ของ v2
 - การ sync อัตโนมัติ (Phase นี้ seed ครั้งเดียว รันซ้ำเองได้)
+
+## Update — แก้ config ผ่านหน้าเว็บ (`/v2/config`)
+- admin เพิ่ม/แก้/ลบ/เปิด-ปิด ธนาคาร · หมวดหมู่ · เครือข่ายบัตร ได้ที่ `/v2/config` (เขียน schema `v2` เท่านั้น)
+- ตั้งแต่ตรงนี้ **v2 เป็นต้นทางของ config เอง** — ไม่ sync จาก public ต่อแล้ว
+- `seed-v2-config.ts` เปลี่ยนเป็น insert-only (`ON CONFLICT DO NOTHING`) → รันซ้ำไม่ทับของที่แก้ในเว็บ · แต่แถวที่ลบไปแล้วจะถูกเพิ่มกลับ

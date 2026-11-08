@@ -1,9 +1,10 @@
 // v2 Phase 1 seed — copy config จาก public → v2 (idempotent · รันซ้ำได้)
+// insert-only: แถวที่มีใน v2 แล้ว (legacy_id ซ้ำ) จะไม่ถูกทับ → แก้ใน /v2/config ได้โดยไม่โดน seed เขียนทับ
+// ⚠️ ถ้าลบแถวใน v2 แล้วรัน seed ใหม่ แถวที่มาจากของเดิมจะกลับมา
 // รัน: npx tsx --env-file=.env.local src/db/seed-v2-config.ts
 // ⚠️ แตะ public แบบ SELECT อย่างเดียว · เขียนเฉพาะ schema v2
 // ต้องรัน drizzle-v2/0001_v2_config.sql ก่อน
 
-import { sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 
@@ -67,18 +68,7 @@ async function main() {
           sortOrder: b.sort_order,
           isActive: b.active,
         })
-        .onConflictDoUpdate({
-          target: v2Banks.legacyId,
-          set: {
-            shortName: b.short_name,
-            nameTh: b.name,
-            brandBg: b.brand_bg,
-            brandFg: b.brand_fg,
-            sortOrder: b.sort_order,
-            isActive: b.active,
-            updatedAt: sql`now()`,
-          },
-        });
+        .onConflictDoNothing({ target: v2Banks.legacyId });
     }
 
     // ---------- categories (เฉพาะ catalog ระบบ) ----------
@@ -109,18 +99,7 @@ async function main() {
           sortOrder: c.sort_order,
           isActive: c.active,
         })
-        .onConflictDoUpdate({
-          target: v2Categories.legacyId,
-          set: {
-            nameTh: c.name,
-            icon: c.icon,
-            colorBg: c.color_bg,
-            colorFg: c.color_fg,
-            sortOrder: c.sort_order,
-            isActive: c.active,
-            updatedAt: sql`now()`,
-          },
-        });
+        .onConflictDoNothing({ target: v2Categories.legacyId });
     }
 
     // ---------- card_networks ----------
